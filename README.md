@@ -26,9 +26,9 @@ Download repository [here](https://ziggotv.github.io/ziggotv/repository.ziggotv/
 Instructions [here](https://ziggotv.github.io)
 
 ## development info
-The project title is `repository.ziggotv` which will be installed as a repository in Kodi.
-The folder `plugin.video.ziggotv` contains the actual plugin. In Pycharm I set this as the source folder for development.
+The project title is `plugin.video.ziggotv`. There is another repository `repository.ziggotv` which will have to be installed as a repository in Kodi. From that repository the plugin can be installed.
+This repository (`plugin.video.ziggotv`) contains the actual plugin. 
 I created a version using aiohttp, but finally left that path due to the many dependencies I needed. Although it works, it is no longer maintained, although I decided to keep it  as reference (folder `aiohttp-version`) for future developmenent.
-kodiAll folders starting with `script.module.` are copies of the libraries used  by `aiohttp`.
+All folders starting with `script.module.` are copies of the libraries used  by `aiohttp`.
 
 
