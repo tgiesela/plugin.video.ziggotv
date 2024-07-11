@@ -4,8 +4,8 @@ Classes for processing channels
 import dataclasses
 from typing import List, Tuple
 from collections import UserList
-from resources.lib.events import EventList
 import xbmcaddon
+from resources.lib.events import EventList
 
 
 class Channel:

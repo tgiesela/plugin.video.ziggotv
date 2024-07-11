@@ -9,6 +9,12 @@ import typing
 from pathlib import Path
 from urllib.parse import parse_qsl
 
+import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcplugin
+import xbmcvfs
+
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.ziggoplayer import VideoHelpers
@@ -17,12 +23,6 @@ from resources.lib.globals import G, S
 from resources.lib.recording import RecordingList, SingleRecording, PlannedRecording, SeasonRecording
 from resources.lib.utils import SharedProperties, ProxyHelper, WebException
 from resources.lib.webcalls import LoginSession
-
-import xbmc
-import xbmcaddon
-import xbmcgui
-import xbmcplugin
-import xbmcvfs
 
 
 class ZiggoPlugin:

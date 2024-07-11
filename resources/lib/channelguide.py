@@ -5,15 +5,15 @@ import datetime
 import json
 from pathlib import Path
 
+import xbmc
+import xbmcvfs
+import xbmcaddon
+
 from resources.lib.channel import Channel
 from resources.lib.events import Event, EventList
 from resources.lib.webcalls import LoginSession
 from resources.lib.globals import G
 from resources.lib.utils import ProxyHelper, DatetimeHelper
-
-import xbmc
-import xbmcvfs
-import xbmcaddon
 
 
 class ChannelGuide:

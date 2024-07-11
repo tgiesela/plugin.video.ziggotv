@@ -1,5 +1,5 @@
 [MASTER]
-init-hook='import sys; sys.path.append("plugin.video.ziggotv")'
+init-hook='import sys; sys.path.append("./")'
 [BASIC]
 const-naming-style=UPPER_CASE
 class-naming-style=PascalCase
