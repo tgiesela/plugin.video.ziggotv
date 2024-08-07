@@ -192,7 +192,7 @@ class SeasonRecording:
             if recType == 'planned':
                 if episode.recordingState == 'planned':
                     retList.append(episode)
-            elif recType == 'recorded':
+            elif recType in ['recorded', 'ongoing']:
                 if episode.recordingState != 'planned':
                     retList.append(episode)
         return retList
