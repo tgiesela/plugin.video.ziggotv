@@ -73,7 +73,7 @@ class Channel:
         if 'genre' in channelJson:
             self.genre = channelJson['genre']
         else:
-            self.genre = ''
+            self.genre = []
         self.streamInfo = Channel.StreamInfo(channelJson)
 
     # properties
