@@ -174,3 +174,7 @@ msgstr "Opname ingepland"
 msgctxt "#40028"
 msgid "Show recording scheduled"
 msgstr "Show opname ingepland"
+
+msgctxt "#40029"
+msgid "HD resolution not allowed, fallback to lower resolution"
+msgstr "HD resolutie niet toegestaan, schakel naar lage resolutie"

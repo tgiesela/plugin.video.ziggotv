@@ -37,6 +37,7 @@ class StringIds:
     MSG_DELETE_SEASON = 40026
     MSG_EVENT_SCHEDULED = 40027
     MSG_SHOW_SCHEDULED = 40028
+    MSG_FALLBACK_HD = 40029
 
     def __init__(self):
         pass

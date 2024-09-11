@@ -151,6 +151,10 @@ class VideoHelpers:
             except WebException as webexc:
                 xbmc.log(webexc.response.decode('utf-8'), xbmc.LOGERROR)
                 if webexc.status == 403 and not suppressHD:
+                    xbmcgui.Dialog().notification('Info',
+                                                  self.addon.getLocalizedString(S.MSG_FALLBACK_HD),
+                                                  xbmcgui.NOTIFICATION_INFO,
+                                                  2000)
                     return get_token(True)
                 else:
                     xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))

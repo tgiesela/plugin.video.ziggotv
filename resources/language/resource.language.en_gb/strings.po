@@ -174,3 +174,7 @@ msgstr ""
 msgctxt "#40028"
 msgid "Show recording scheduled"
 msgstr ""
+
+msgctxt "#40029"
+msgid "HD resolution not allowed, fallback to lower resolution"
+msgstr ""
