@@ -14,7 +14,7 @@ from resources.lib.streaminginfo import ReplayStreamingInfo
 from resources.lib.urltools import UrlTools
 from resources.lib.events import Event
 from resources.lib.globals import S
-from resources.lib.utils import ProxyHelper, SharedProperties
+from resources.lib.utils import ProxyHelper, SharedProperties, WebException
 from resources.lib.webcalls import LoginSession
 
 
@@ -138,13 +138,29 @@ class VideoHelpers:
 
     def __play_channel(self, channel):
         urlHelper = UrlTools(self.addon)
-        locator, assetType = channel.get_locator(self.addon)
-        if locator is None:
-            xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
-            return None
-        streamInfo = self.helper.dynamic_call(LoginSession.obtain_tv_streaming_token,
-                                              channelId=channel.id, assetType=assetType)
+
+        def get_token(suppressHD: bool = False):
+            get_token.locator, assetType = channel.get_locator(self.addon, suppressHD)
+            if get_token.locator is None:
+                xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
+                return None, None
+            try:
+                _streamInfo = self.helper.dynamic_call(LoginSession.obtain_tv_streaming_token,
+                                                       channelId=channel.id, assetType=assetType)
+                return get_token.locator, _streamInfo
+            except WebException as webexc:
+                xbmc.log(webexc.response.decode('utf-8'), xbmc.LOGERROR)
+                if webexc.status == 403 and not suppressHD:
+                    return get_token(True)
+                else:
+                    xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
+                return get_token.locator, None
+
+        streamInfo = None
         try:
+            locator, streamInfo = get_token()
+            if streamInfo is None:
+                return
             url = urlHelper.build_url(streamInfo.token, locator)
             playItem = self.liHelper.listitem_from_url(requesturl=url,
                                                        streamingToken=streamInfo.token,

@@ -105,12 +105,13 @@ class Channel:
         return self.jsonData['linearProducts']
     # pylint: enable=missing-function-docstring
 
-    def get_locator(self, addon: xbmcaddon.Addon) -> Tuple[str, str]:
+    def get_locator(self, addon: xbmcaddon.Addon, disableFullHD: bool = False) -> Tuple[str, str]:
         """
         Function to get the correct locator(url) to play a channel. The selected locator
         depends on the maximal resolution allowed according to inputstream adaptive (ISA) and
         the available type of locators.
 
+        @param disableFullHD: option to suppress fullHD if server does not allow this
         @param addon:
         @return: URL of the channel
         """
@@ -122,7 +123,7 @@ class Channel:
             hdAllowed = True
         assetType = 'Orion-DASH'
         fullHD = addon.getSettingBool('full-hd')
-        if hdAllowed and not fullHD:
+        if hdAllowed and not fullHD or disableFullHD:
             hdAllowed = False
         if 'Orion-DASH-HEVC' in self.locators and hdAllowed:
             avc = self.locators['Orion-DASH-HEVC']
