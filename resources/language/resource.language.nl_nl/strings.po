@@ -73,6 +73,18 @@ msgctxt "#41014"
 msgid "Hide channels outside subscription"
 msgstr "Verberg zenders buiten abonnement"
 
+msgctxt "#41015"
+msgid "http connect timeout (seconds)"
+msgstr "http connect wachttijd(seconden)"
+
+msgctxt "#41016"
+msgid "http data timeout (seconds)"
+msgstr "http data wachttijd (seconden)"
+
+msgctxt "#41017"
+msgid "Expert"
+msgstr "Expert"
+
 # Labels used in python scripts
 
 msgctxt "#40004"

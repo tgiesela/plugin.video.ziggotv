@@ -77,12 +77,13 @@ class ProxyServer(http.server.HTTPServer):
     def __init__(self, addon, server_address, lock):
         http.server.HTTPServer.__init__(self, server_address, HTTPRequestHandler)
         self.lock = lock
-        self.addon = addon
-        self.session = LoginSession(xbmcaddon.Addon())
-        self.urlTools = UrlTools(addon)
+        self.addon = xbmcaddon.Addon()
+        self.session = LoginSession(self.addon)
+        self.urlTools = UrlTools(self.addon)
         self.home = SharedProperties(addon=self.addon)
         self.kodiMajorVersion = self.home.get_kodi_version_major()
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
+        self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
     def set_streaming_token(self, token):
@@ -129,7 +130,10 @@ class ProxyServer(http.server.HTTPServer):
             with self.lock:
                 if requestType == 'get':
                     response = self.session.get_manifest(manifestUrl)
-                    manifestBaseurl = self.baseurl_from_manifest(response.content)
+                    if response.status_code == 200:
+                        manifestBaseurl = self.baseurl_from_manifest(response.content)
+                    else:
+                        manifestBaseurl = None
                 elif requestType == 'head':
                     response = self.session.do_head(manifestUrl)
                     manifestBaseurl = None
@@ -155,9 +159,9 @@ class ProxyServer(http.server.HTTPServer):
         url = self.urlTools.replace_baseurl(request.path, self.get_streaming_token())
         parsedDestUrl = urlparse(url)
         if parsedDestUrl.scheme == 'https':
-            connection = HTTPSConnection(parsedDestUrl.hostname, timeout=10)
+            connection = HTTPSConnection(parsedDestUrl.hostname, timeout=self.connectionTimeout)
         else:
-            connection = HTTPConnection(parsedDestUrl.hostname, timeout=10)
+            connection = HTTPConnection(parsedDestUrl.hostname, timeout=self.connectionTimeout)
         connection.request("GET", parsedDestUrl.path)
         response = connection.getresponse()
         request.send_response(response.status)
@@ -220,6 +224,9 @@ class ProxyServer(http.server.HTTPServer):
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        except BrokenPipeError as exc:
+            xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
@@ -265,6 +272,8 @@ class ProxyServer(http.server.HTTPServer):
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
+        except BrokenPipeError as exc:
+            xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Exception in do_post(): {0}'.format(exc), xbmc.LOGERROR)
@@ -279,67 +288,83 @@ class ProxyServer(http.server.HTTPServer):
         @param request:
         @return:
         """
-        request.send_response(200, "ok")
-        request.send_header('Access-Control-Allow-Origin', '*')
-        request.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        request.send_header('access-control-allow-headers', 'Accept-Charset')
-        request.send_header('access-control-allow-headers', 'Accept-Encoding')
-        request.send_header('access-control-allow-headers', 'Access-Control-Request-Headers')
-        request.send_header('access-control-allow-headers', 'Access-Control-Request-Method')
-        request.send_header('access-control-allow-headers', 'Authorization')
-        request.send_header('access-control-allow-headers', 'Cache-Control')
-        request.send_header('access-control-allow-headers', 'Connection')
-        request.send_header('access-control-allow-headers', 'Content-Encoding')
-        request.send_header('access-control-allow-headers', 'Content-Type')
-        request.send_header('access-control-allow-headers', 'Content-Length')
-        request.send_header('access-control-allow-headers', 'Cookie')
-        request.send_header('access-control-allow-headers', 'DNT')
-        request.send_header('access-control-allow-headers', 'Date')
-        request.send_header('access-control-allow-headers', 'Host')
-        request.send_header('access-control-allow-headers', 'If-Modified-Since')
-        request.send_header('access-control-allow-headers', 'Keep-Alive, Origin')
-        request.send_header('access-control-allow-headers', 'Referer')
-        request.send_header('access-control-allow-headers', 'Server')
-        request.send_header('access-control-allow-headers', 'TokenIssueTime')
-        request.send_header('access-control-allow-headers', 'Transfer-Encoding')
-        request.send_header('access-control-allow-headers', 'User-Agent')
-        request.send_header('access-control-allow-headers', 'Vary')
-        request.send_header('access-control-allow-headers', 'X-CustomHeader')
-        request.send_header('access-control-allow-headers', 'X-Requested-With')
-        request.send_header('access-control-allow-headers', 'password')
-        request.send_header('access-control-allow-headers', 'username')
-        request.send_header('access-control-allow-headers', 'x-request-id')
-        request.send_header('access-control-allow-headers', 'x-ratelimit-app')
-        request.send_header('access-control-allow-headers', 'x-guest-token')
-        request.send_header('access-control-allow-headers', 'X-HTTP-Method-Override')
-        request.send_header('access-control-allow-headers', 'x-oesp-username')
-        request.send_header('access-control-allow-headers', 'x-oesp-token')
-        request.send_header('access-control-allow-headers', 'x-cus')
-        request.send_header('access-control-allow-headers', 'x-dev')
-        request.send_header('access-control-allow-headers', 'X-Client-Id')
-        request.send_header('access-control-allow-headers', 'X-Device-Code')
-        request.send_header('access-control-allow-headers', 'X-Language-Code')
-        request.send_header('access-control-allow-headers', 'UserRole')
-        request.send_header('access-control-allow-headers', 'x-session-id')
-        request.send_header('access-control-allow-headers', 'x-entitlements-token')
-        request.send_header('access-control-allow-headers', 'x-go-dev')
-        request.send_header('access-control-allow-headers', 'x-profile')
-        request.send_header('access-control-allow-headers', 'x-api-key')
-        request.send_header('access-control-allow-headers', 'nv-authorizations')
-        request.send_header('access-control-allow-headers', 'X-Viewer-Id')
-        request.send_header('access-control-allow-headers', 'x-oesp-profile-id')
-        request.send_header('access-control-allow-headers', 'x-streaming-token')
-        request.send_header('access-control-allow-headers', 'x-streaming-token-refresh-interval')
-        request.send_header('access-control-allow-headers', 'x-drm-device-id')
-        request.send_header('access-control-allow-headers', 'x-profile-id')
-        request.send_header('access-control-allow-headers', 'x-ui-language')
-        request.send_header('access-control-allow-headers', 'deviceName')
-        request.send_header('access-control-allow-headers', 'x-drm-schemeId')
-        request.send_header('access-control-allow-headers', 'x-refresh-token')
-        request.send_header('access-control-allow-headers', 'X-Username')
-        request.send_header('access-control-allow-headers', 'Location')
-        request.send_header('access-control-allow-headers', 'x-tracking-id')
-        request.end_headers()
+        try:
+            request.send_response(200, "ok")
+            request.send_header('Access-Control-Allow-Origin', '*')
+            request.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            request.send_header('access-control-allow-headers', 'Accept-Charset')
+            request.send_header('access-control-allow-headers', 'Accept-Encoding')
+            request.send_header('access-control-allow-headers', 'Access-Control-Request-Headers')
+            request.send_header('access-control-allow-headers', 'Access-Control-Request-Method')
+            request.send_header('access-control-allow-headers', 'Authorization')
+            request.send_header('access-control-allow-headers', 'Cache-Control')
+            request.send_header('access-control-allow-headers', 'Connection')
+            request.send_header('access-control-allow-headers', 'Content-Encoding')
+            request.send_header('access-control-allow-headers', 'Content-Type')
+            request.send_header('access-control-allow-headers', 'Content-Length')
+            request.send_header('access-control-allow-headers', 'Cookie')
+            request.send_header('access-control-allow-headers', 'DNT')
+            request.send_header('access-control-allow-headers', 'Date')
+            request.send_header('access-control-allow-headers', 'Host')
+            request.send_header('access-control-allow-headers', 'If-Modified-Since')
+            request.send_header('access-control-allow-headers', 'Keep-Alive, Origin')
+            request.send_header('access-control-allow-headers', 'Referer')
+            request.send_header('access-control-allow-headers', 'Server')
+            request.send_header('access-control-allow-headers', 'TokenIssueTime')
+            request.send_header('access-control-allow-headers', 'Transfer-Encoding')
+            request.send_header('access-control-allow-headers', 'User-Agent')
+            request.send_header('access-control-allow-headers', 'Vary')
+            request.send_header('access-control-allow-headers', 'X-CustomHeader')
+            request.send_header('access-control-allow-headers', 'X-Requested-With')
+            request.send_header('access-control-allow-headers', 'password')
+            request.send_header('access-control-allow-headers', 'username')
+            request.send_header('access-control-allow-headers', 'x-request-id')
+            request.send_header('access-control-allow-headers', 'x-ratelimit-app')
+            request.send_header('access-control-allow-headers', 'x-guest-token')
+            request.send_header('access-control-allow-headers', 'X-HTTP-Method-Override')
+            request.send_header('access-control-allow-headers', 'x-oesp-username')
+            request.send_header('access-control-allow-headers', 'x-oesp-token')
+            request.send_header('access-control-allow-headers', 'x-cus')
+            request.send_header('access-control-allow-headers', 'x-dev')
+            request.send_header('access-control-allow-headers', 'X-Client-Id')
+            request.send_header('access-control-allow-headers', 'X-Device-Code')
+            request.send_header('access-control-allow-headers', 'X-Language-Code')
+            request.send_header('access-control-allow-headers', 'UserRole')
+            request.send_header('access-control-allow-headers', 'x-session-id')
+            request.send_header('access-control-allow-headers', 'x-entitlements-token')
+            request.send_header('access-control-allow-headers', 'x-go-dev')
+            request.send_header('access-control-allow-headers', 'x-profile')
+            request.send_header('access-control-allow-headers', 'x-api-key')
+            request.send_header('access-control-allow-headers', 'nv-authorizations')
+            request.send_header('access-control-allow-headers', 'X-Viewer-Id')
+            request.send_header('access-control-allow-headers', 'x-oesp-profile-id')
+            request.send_header('access-control-allow-headers', 'x-streaming-token')
+            request.send_header('access-control-allow-headers', 'x-streaming-token-refresh-interval')
+            request.send_header('access-control-allow-headers', 'x-drm-device-id')
+            request.send_header('access-control-allow-headers', 'x-profile-id')
+            request.send_header('access-control-allow-headers', 'x-ui-language')
+            request.send_header('access-control-allow-headers', 'deviceName')
+            request.send_header('access-control-allow-headers', 'x-drm-schemeId')
+            request.send_header('access-control-allow-headers', 'x-refresh-token')
+            request.send_header('access-control-allow-headers', 'X-Username')
+            request.send_header('access-control-allow-headers', 'Location')
+            request.send_header('access-control-allow-headers', 'x-tracking-id')
+            request.end_headers()
+        except ConnectionResetError as exc:
+            xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        except ConnectionAbortedError as exc:
+            xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        except BrokenPipeError as exc:
+            xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.send_response(500)
+            request.end_headers()
 
     def handle_function(self, request):
         """
@@ -385,10 +410,26 @@ class ProxyServer(http.server.HTTPServer):
         #  We should forward this to real server, but for now we will respond with code 501
         path = request.path  # Path with parameters received from request e.g. "/license?id=234324"
         xbmc.log('HTTP HEAD request received: {0}'.format(unquote(path)), xbmc.LOGDEBUG)
-        if '/manifest' in path:
-            self.handle_manifest(request, 'head')
-        else:
-            request.send_response(501)
+        try:
+            if '/manifest' in path:
+                self.handle_manifest(request, 'head')
+            else:
+                request.send_response(501)
+                request.end_headers()
+        except ConnectionResetError as exc:
+            xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        except ConnectionAbortedError as exc:
+            xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        except BrokenPipeError as exc:
+            xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.send_response(500)
             request.end_headers()
 
     @staticmethod

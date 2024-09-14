@@ -325,8 +325,7 @@ class VideoHelpers:
         @param channel:
         @return:
         """
-        if xbmc.Player().isPlaying():
-            xbmc.Player().stop()
+        self.stop_player()
 
         if not self.channels.is_entitled(channel):
             xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_NOT_ENTITLED))
@@ -361,14 +360,19 @@ class VideoHelpers:
         elif action == 'cancel':
             pass
 
+    @staticmethod
+    def stop_player():
+        if xbmc.Player().isPlaying():
+            xbmc.executebuiltin('PlayerControl(stop)')
+            xbmc.sleep(2500)  # Wait is necessary because it takes some time to stop all activity
+
     def play_movie(self, movieOverview, resumePoint) -> xbmcgui.ListItem:
         """
         Play a movie
         @param movieOverview:
         @return:
         """
-        if xbmc.Player().isPlaying():
-            xbmc.Player().stop()
+        self.stop_player()
         return self.__play_vod(movieOverview, resumePoint)
 
     def play_recording(self, recording: SingleRecording, resumePoint):
@@ -378,8 +382,7 @@ class VideoHelpers:
         @param resumePoint:
         @return:
         """
-        if xbmc.Player().isPlaying():
-            xbmc.Player().stop()
+        self.stop_player()
         return self.__play_recording(recording, resumePoint)
 
     def play_channel(self, channel: Channel) -> xbmcgui.ListItem:
@@ -388,8 +391,7 @@ class VideoHelpers:
         @param channel:
         @return:
         """
-        if xbmc.Player().isPlaying():
-            xbmc.Player().stop()
+        self.stop_player()
         return self.__play_channel(channel)
 
     def __wait_for_player(self):

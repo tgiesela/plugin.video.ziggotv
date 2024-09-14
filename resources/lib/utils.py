@@ -228,6 +228,7 @@ class ProxyHelper:
         self.port = addon.getSetting('proxy-port')
         self.ip = addon.getSetting('proxy-ip')
         self.host = 'http://{0}:{1}/'.format(self.ip, self.port)
+        self.dataTimeout = addon.getSettingNumber('data-timeout')
 
     def dynamic_call(self, method, **kwargs) -> Any:
         """
@@ -249,7 +250,7 @@ class ProxyHelper:
             response = requests.get(
                 url=self.host + 'function/{method}'.format(method=method.__name__),
                 params={'args': json.dumps(arguments)},
-                timeout=60)
+                timeout=self.dataTimeout)
             if response.status_code != 200:
                 raise WebException(response)
             contentType = response.headers.get('content-type')

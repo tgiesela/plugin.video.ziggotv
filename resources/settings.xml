@@ -60,31 +60,6 @@
 						<dependency type="enable" setting="print-network-traffic">true</dependency>
 					</dependencies>
                 </setting>
-                <setting id="use-proxy" type="boolean" label="41006">
-                    <default>true</default>
-                    <level>0</level>
-                    <control type="toggle"/>
-                </setting>
-                <setting id="proxy-port" subsetting="true" type="number" label="41008" parent="use-proxy">
-                    <default>6969</default>
-                    <level>0</level>
-                    <control type="edit" format="number">
-		                <heading></heading>
-	                </control>
-					<dependencies>
-						<dependency type="enable" setting="use-proxy">true</dependency>
-					</dependencies>
-                </setting>
-                <setting id="proxy-ip" subsetting="true" type="string" label="41009" parent="use-proxy">
-                    <default>127.0.0.1</default>
-                    <level>0</level>
-                    <control type="edit" format="ip">
-		                <heading></heading>
-	                </control>
-					<dependencies>
-						<dependency type="enable" setting="use-proxy">true</dependency>
-					</dependencies>
-                </setting>
                 <setting id="full-hd" type="boolean" label="41010">
                     <default>true</default>
                     <level>0</level>
@@ -97,8 +72,53 @@
                 </setting>
                 <setting id="adult-allowed" type="boolean" label="41007">
                     <default>false</default>
-                    <level>1</level>
+                    <level>0</level>
                     <control type="toggle"/>
+                </setting>
+            </group>
+        </category>
+        <category id="Expert" label="41017" help="">
+            <level>3</level>
+            <group id="3" label="Settings">
+                <level>3</level>
+                <setting id="use-proxy" type="boolean" label="41006">
+                    <default>true</default>
+                    <level>3</level>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="proxy-port" subsetting="true" type="number" label="41008" parent="use-proxy">
+                    <default>6969</default>
+                    <level>3</level>
+                    <control type="edit" format="number">
+		                <heading></heading>
+	                </control>
+					<dependencies>
+						<dependency type="enable" setting="use-proxy">true</dependency>
+					</dependencies>
+                </setting>
+                <setting id="proxy-ip" subsetting="true" type="string" label="41009" parent="use-proxy">
+                    <default>127.0.0.1</default>
+                    <level>3</level>
+                    <control type="edit" format="ip">
+		                <heading></heading>
+	                </control>
+					<dependencies>
+						<dependency type="enable" setting="use-proxy">true</dependency>
+					</dependencies>
+                </setting>
+                <setting id="data-timeout" type="number" label="41016">
+                    <default>60</default>
+                    <level>3</level>
+                    <control type="edit" format="number">
+		                <heading></heading>
+	                </control>
+                </setting>
+                <setting id="connection-timeout" type="number" label="41015">
+                    <default>10</default>
+                    <level>3</level>
+                    <control type="edit" format="number">
+		                <heading></heading>
+	                </control>
                 </setting>
             </group>
         </category>

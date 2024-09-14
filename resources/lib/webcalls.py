@@ -35,6 +35,8 @@ class Web(requests.Session):
         self.printRequestContent = addon.getSettingBool('print-request-content')
         self.printNetworkTraffic = addon.getSettingBool('print-network-traffic')
         self.addonPath = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+        self.connectTimeout = addon.getSettingNumber('connection-timeout')
+        self.dataTimeout = addon.getSettingNumber('data-timeout')
         self.load_cookies()
 
     def pluginpath(self, name):
@@ -145,7 +147,8 @@ class Web(requests.Session):
             headers.update({"Content-Type": "application/json; charset=utf-8"})
         for key in extraHeaders:
             headers.update({key: extraHeaders[key]})
-        response = super().post(url, data=data, json=jsonData, headers=headers, params=params)
+        response = super().post(url, data=data, json=jsonData, headers=headers, params=params,
+                                timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
         self.save_cookies(response)
         return response
@@ -167,7 +170,8 @@ class Web(requests.Session):
             headers.update({"Content-Type": "application/json; charset=utf-8"})
         for key in extraHeaders:
             headers.update({key: extraHeaders[key]})
-        response = super().get(url, data=data, json=jsonData, headers=headers, params=params)
+        response = super().get(url, data=data, json=jsonData, headers=headers, params=params,
+                               timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
         # self.dump_cookies()
         self.save_cookies(response)
@@ -190,7 +194,8 @@ class Web(requests.Session):
             headers.update({"Content-Type": "application/json; charset=utf-8"})
         for key in extraHeaders:
             headers.update({key: extraHeaders[key]})
-        response = super().head(url, data=data, json=jsonData, headers=headers, params=params)
+        response = super().head(url, data=data, json=jsonData, headers=headers, params=params,
+                                timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
         # self.dump_cookies()
         self.save_cookies(response)
@@ -213,7 +218,8 @@ class Web(requests.Session):
             headers.update({"Content-Type": "application/json; charset=utf-8"})
         for key in extraHeaders:
             headers.update({key: extraHeaders[key]})
-        response = super().delete(url, data=data, json=jsonData, headers=headers, params=params)
+        response = super().delete(url, data=data, json=jsonData, headers=headers, params=params,
+                                  timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
         # self.dump_cookies()
         self.save_cookies(response)
