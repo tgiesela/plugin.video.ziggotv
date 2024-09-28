@@ -3,6 +3,7 @@ module with utility functions
 """
 import binascii
 import inspect
+import traceback
 from datetime import datetime
 from enum import IntEnum
 import threading
@@ -248,7 +249,7 @@ class ProxyHelper:
             else:
                 arguments = kwargs
             response = requests.get(
-                url=self.host + 'function/{method}'.format(method=method.__name__),
+                url=self.host + 'function/{method}'.format(method=method.__qualname__),
                 params={'args': json.dumps(arguments)},
                 timeout=self.dataTimeout)
             if response.status_code != 200:
@@ -264,8 +265,45 @@ class ProxyHelper:
             raise exc
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Exception during dynamic Call: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log('Exception during dynamic call: {0} {1}'.format(method, exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
             return None
+
+
+class KodiLock:
+    """
+    Note: we are using the [2] entry from the stack, because we always use 'with'
+        if [1] is used one would always see __enter or __exit
+    """
+    def __init__(self):
+        self._lock = threading.Lock()
+
+    def acquire(self):
+        """
+        Function called to acquire lock
+        @return:
+        """
+        # xbmc.log('KODILOCK acquire {0}'.format(inspect.stack()[2].function), xbmc.LOGDEBUG)
+        # traceback.print_tb
+        # pylint: disable=consider-using-with
+        self._lock.acquire()
+        # xbmc.log('KODILOCK acquired {0}'.format(inspect.stack()[2].function), xbmc.LOGDEBUG)
+
+    def release(self):
+        """
+        Function called to release lock
+        @return:
+        """
+        # xbmc.log('KODILOCK release {0}'.format(inspect.stack()[2].function), xbmc.LOGDEBUG)
+        # traceback.print_tb
+        self._lock.release()
+        # xbmc.log('KODILOCK released {0}'.format(inspect.stack()[2].function), xbmc.LOGDEBUG)
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, _type, value, _traceback):
+        self.release()
 
 
 if __name__ == '__main__':

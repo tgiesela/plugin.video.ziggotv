@@ -11,8 +11,8 @@ from tests.test_base import TestBase
 
 class TestRecordings(TestBase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
     def print_recordings(self, recs: RecordingList):
         self.do_login()

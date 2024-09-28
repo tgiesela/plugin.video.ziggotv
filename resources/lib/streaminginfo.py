@@ -18,17 +18,17 @@ class StreamingInfo:
         if 'isAdult' in streamingJson:
             self.isAdult = streamingJson['isAdult']
         self.token = None
+        self.url = None
 
 
 @dataclasses.dataclass
-class ReplayStreamingInfo:
+class ReplayStreamingInfo(StreamingInfo):
     """
     class for streaming info of a replay event
     """
     # pylint: disable=too-many-instance-attributes
     def __init__(self, streamingJson):
-        self.registrationRequired = streamingJson['deviceRegistrationRequired']
-        self.drmContentId = streamingJson['drmContentId']
+        super().__init__(streamingJson)
         if 'licenceDurationSeconds' in streamingJson:
             self.licenseDurationSeconds = streamingJson['licenceDurationSeconds']
         else:
@@ -38,9 +38,6 @@ class ReplayStreamingInfo:
         self.prePaddingTime = streamingJson['prePaddingTime']
         self.postPaddingTime = streamingJson['postPaddingTime']
         self.thumbnailUrl = streamingJson['thumbnailServiceUrl']
-        self.isAdult = False
-        if 'isAdult' in streamingJson:
-            self.isAdult = streamingJson['isAdult']
         self.ageRating = -1
         if 'ageRating' in streamingJson:
             self.ageRating = streamingJson['ageRating']
@@ -50,7 +47,6 @@ class ReplayStreamingInfo:
         self.trickPlayControl = []
         if 'trickPlayControl' in streamingJson:
             self.trickPlayControl = streamingJson['trickPlayControl']
-        self.token = None
 
     @property
     def fastForwardAllowed(self) -> bool:
@@ -78,14 +74,13 @@ class ReplayStreamingInfo:
 
 
 @dataclasses.dataclass
-class VodStreamingInfo:
+class VodStreamingInfo(StreamingInfo):
     """
     class for streaming info of a Video On Demand
     """
     # pylint: disable=too-many-instance-attributes
     def __init__(self, streamingJson):
-        self.registrationRequired = streamingJson['deviceRegistrationRequired']
-        self.drmContentId = streamingJson['drmContentId']
+        super().__init__(streamingJson)
         self.displayProviderName = streamingJson['displayProviderName']
         self.displayProvider = streamingJson['displayProvider']
         self.contentProviderName = streamingJson['contentProviderName']
@@ -96,27 +91,24 @@ class VodStreamingInfo:
             self.licenseDurationSeconds = streamingJson['licenceDurationSeconds']
         else:
             self.licenseDurationSeconds = -1
-        self.token = None
 
 
 @dataclasses.dataclass
-class RecordingStreamingInfo:
+class RecordingStreamingInfo(StreamingInfo):
     """
     class for streaming info of a recording
     """
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, streamingJson):
-        self.registrationRequired = streamingJson['deviceRegistrationRequired']
+        super().__init__(streamingJson)
         self.trickPlayControl = streamingJson['trickPlayControl']
         self.thumbnailUrl = streamingJson['thumbnailServiceUrl']
         self.eventSessionStartTime = streamingJson['eventSessionStartTime']
         self.eventSessionEndTime = streamingJson['eventSessionEndTime']
         self.prePaddingTime = streamingJson['prePaddingTime']
         self.postPaddingTime = streamingJson['postPaddingTime']
-        self.drmContentId = streamingJson['drmContentId']
         self.isAvad = streamingJson['isAvad']
         self.actualProgramStartOffset = streamingJson['actualProgramStartOffset']
         self.url = streamingJson['url']
         self.fallbackUrl = streamingJson['fallbackUrl']
-        self.token = None

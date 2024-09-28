@@ -17,7 +17,7 @@ import xbmcvfs
 
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.ziggoplayer import VideoHelpers
+from resources.lib.videohelpers import VideoHelpers
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.globals import G, S
 from resources.lib.recording import RecordingList, SingleRecording, PlannedRecording, SeasonRecording
@@ -744,6 +744,24 @@ class ZiggoPlugin:
         @param categoryId:
         @return: nothing
         """
+        def process_items(items):
+            for item in items:
+                if item['id'] in itemsSeen:
+                    continue
+                if item['type'] == 'ASSET':
+                    details = self.__get_details(item)
+                    playableInstance = self.__get_playable_instance(details)
+                    if playableInstance is not None:
+                        li = self.listitemHelper.listitem_from_movie(item, details, playableInstance)
+                        itemsSeen.append((item['id']))
+                        if li.getProperty('IsPlayable') == 'true':
+                            callbackUrl = '{0}?action=play&type=movie&id={1}'.format(self.url,
+                                                                                     playableInstance['id'])
+                        else:
+                            callbackUrl = '{0}?action=cantplay&video={1}'.format(self.url, playableInstance['id'])
+                        li.setProperty('IsPlayable', 'false')
+                        listing.append((callbackUrl, li, False))
+
         # Create a list for our items.
         listing = []
         movieList = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=categoryId)
@@ -751,22 +769,7 @@ class ZiggoPlugin:
         self.__load_movie_overviews()
         if 'collections' in movieList:
             for collection in movieList['collections']:
-                for item in collection['items']:
-                    if item['id'] in itemsSeen:
-                        continue
-                    if item['type'] == 'ASSET':
-                        details = self.__get_details(item)
-                        playableInstance = self.__get_playable_instance(details)
-                        if playableInstance is not None:
-                            li = self.listitemHelper.listitem_from_movie(item, details, playableInstance)
-                            itemsSeen.append((item['id']))
-                            if li.getProperty('IsPlayable') == 'true':
-                                callbackUrl = '{0}?action=play&type=movie&id={1}'.format(self.url,
-                                                                                         playableInstance['id'])
-                            else:
-                                callbackUrl = '{0}?action=cantplay&video={1}'.format(self.url, playableInstance['id'])
-                            li.setProperty('IsPlayable', 'false')
-                            listing.append((callbackUrl, li, False))
+                process_items(collection['items'])
 
         # Save overviews
         Path(self.plugin_path(G.MOVIE_INFO)).write_text(json.dumps(self.movieOverviews), encoding='utf-8')

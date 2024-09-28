@@ -26,6 +26,9 @@ class Addon(xbmcaddon.Addon):
     def setSetting(self, id: str, value: str) -> None:
         self.settings.update({id: value})
 
+    def setSettingNumber(self, id: str, value: float) -> None:
+        self.settings.update({id: value})
+
     def getSetting(self, id: str) -> str:
         return self.settings[id]
 
@@ -51,15 +54,17 @@ class TestBase(unittest.TestCase):
         self.addon.setSetting('full-hd', 'true')
         self.addon.setSetting('print-response-content', 'true')
         self.addon.setSetting('print-request-content', 'true')
+        self.addon.setSettingNumber('connection-timeout', 10)
+        self.addon.setSettingNumber('data-timeout', 10)
         self.cleanup_all()
-        self.session = LoginSession(xbmcaddon.Addon())
+        self.session = LoginSession(self.addon)
         self.session.printNetworkTraffic = False
-        self.svc = HttpProxyService(threading.Lock())
+        self.svc = HttpProxyService(threading.Lock(), self.addon)
         self.svc.set_address((self.addon.getSetting('proxy-ip'), self.addon.getSettingInt('proxy-port')))
         sleep(1)
 
     def setUp(self):
-        self.session = LoginSession(xbmcaddon.Addon())
+        self.session = LoginSession(self.addon)
         self.svc.start_http_server()
         print("Executing setup",  self._testMethodName)
 

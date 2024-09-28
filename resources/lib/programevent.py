@@ -11,7 +11,8 @@ import xbmcgui
 from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
-from resources.lib.ziggoplayer import ZiggoPlayer, VideoHelpers
+from resources.lib.ziggoplayer import ZiggoPlayer
+from resources.lib.videohelpers import VideoHelpers
 from resources.lib.events import Event
 from resources.lib.globals import A
 from resources.lib.recording import RecordingList
@@ -611,12 +612,10 @@ class ProgramEvent:
         self.programEvent = event
 
         eventStart = event.startTime
-        if eventStart < self.grid.unixstarttime:
-            eventStart = self.grid.unixstarttime
+        eventStart = max(eventStart, self.grid.unixstarttime)
 
         eventEnd = event.endTime
-        if eventEnd > self.grid.unixendtime:
-            eventEnd = self.grid.unixendtime
+        eventEnd = min(eventEnd, self.grid.unixendtime)
 
         ctrlgroup = self.window.getControl(2000)
         ctrl = self.window.getControl(2003)

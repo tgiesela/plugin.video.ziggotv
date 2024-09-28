@@ -3,7 +3,6 @@ Proxy server related classes
 """
 import pickle
 import traceback
-from socket import socket
 from urllib.parse import urlparse, parse_qs, unquote
 
 import json
@@ -17,18 +16,21 @@ from http.client import HTTPConnection
 from http.client import HTTPSConnection
 
 from xml.dom import minidom
+
+import xbmc
+
 from resources.lib.urltools import UrlTools
 from resources.lib.webcalls import LoginSession
 from resources.lib.utils import WebException, SharedProperties
-import xbmc
-import xbmcaddon
+
+from resources.lib.avstream import StreamSession
 
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
     """
     class to handle HTTP requests that arrive at the proxy server
     """
-    def __init__(self, request: socket, client_address: typing.Tuple[str, int], server: socketserver.BaseServer):
+    def __init__(self, request, client_address: typing.Tuple[str, int], server: socketserver.BaseServer):
         # pylint: disable=useless-parent-delegation
         super().__init__(request, client_address, server)
 
@@ -67,44 +69,38 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     # pylint: enable=invalid-name
 
 
-class ProxyServer(http.server.HTTPServer):
+class ProxyServer(http.server.ThreadingHTTPServer):
     """
         Proxyserver for processing license and manifest request.
         Contains some functions to maintain state because HttpRequestHandler is instantiated
         for every new call
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, addon, server_address, lock):
-        http.server.HTTPServer.__init__(self, server_address, HTTPRequestHandler)
+        http.server.ThreadingHTTPServer.__init__(self, server_address, HTTPRequestHandler)
         self.lock = lock
-        self.addon = xbmcaddon.Addon()
+        self.addon = addon
         self.session = LoginSession(self.addon)
+        self.streamsession = StreamSession(self.session)
         self.urlTools = UrlTools(self.addon)
         self.home = SharedProperties(addon=self.addon)
         self.kodiMajorVersion = self.home.get_kodi_version_major()
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
+        self.currStream = None
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
-    def set_streaming_token(self, token):
-        """
-        function to set the streaming token for the currently playing stream
-        The streaming token is kept in session.
-        @param token: the streaming token to be used
-        @return:
-        """
-        with self.lock:
-            self.session.streamingToken = token
-            xbmc.log('Setting streaming token to: {0}'.format(token), xbmc.LOGDEBUG)
-
-    def get_streaming_token(self):
-        """
-        function to get the streaming token for the currently playing stream
-        The streaming token is kept in session.
-        @return:  the streaming token to be used
-        """
-        with self.lock:
-            return self.session.streamingToken
+    # def set_streaming_token(self, token):
+    #     """
+    #     function to set the streaming token for the currently playing stream
+    #     The streaming token is kept in session.
+    #     @param token: the streaming token to be used
+    #     @return:
+    #     """
+    #     with self.lock:
+    #         self.session.streamingToken = token
+    #         xbmc.log('Setting streaming token to: {0}'.format(token), xbmc.LOGDEBUG)
 
     def handle_manifest(self, request, requestType='get'):
         """
@@ -118,25 +114,19 @@ class ProxyServer(http.server.HTTPServer):
         parsedUrl = urlparse(request.path)
         qs = parse_qs(parsedUrl.query)
         if 'path' in qs and 'hostname' in qs and 'token' in qs:
-            origToken = qs['token'][0]
-            streamingToken = self.get_streaming_token()
-            if streamingToken is None:
-                # This can occur at the first call. The notification with the token is not
-                # sent immediately
-                xbmc.log("Using original token", xbmc.LOGDEBUG)
-                self.set_streaming_token(origToken)
-                streamingToken = origToken
-            manifestUrl = self.urlTools.get_manifest_url(proxyUrl=request.path, streamingToken=streamingToken)
+            self.currStream = self.streamsession.find_stream(qs['token'][0])
+            if self.currStream is None:
+                raise RuntimeError('Stream not found for token: {0}'.format(qs['token'][0]))
+            manifestUrl = self.urlTools.get_manifest_url(proxyUrl=request.path,
+                                                         streamingToken=self.currStream.latestToken)
             with self.lock:
+                manifestBaseurl = None
                 if requestType == 'get':
                     response = self.session.get_manifest(manifestUrl)
                     if response.status_code == 200:
                         manifestBaseurl = self.baseurl_from_manifest(response.content)
-                    else:
-                        manifestBaseurl = None
                 elif requestType == 'head':
                     response = self.session.do_head(manifestUrl)
-                    manifestBaseurl = None
             self.urlTools.update_redirection(request.path, response.url, manifestBaseurl)
             request.send_response(response.status_code)
             # See wiki of InputStream Adaptive. Also depends on inputstream.adaptive.manifest_type. See listitemhelper.
@@ -156,7 +146,12 @@ class ProxyServer(http.server.HTTPServer):
         @param request:
         @return:
         """
-        url = self.urlTools.replace_baseurl(request.path, self.get_streaming_token())
+        if self.currStream is None:
+            request.send_response(500)
+            request.end_headers()
+            return
+
+        url = self.urlTools.replace_baseurl(request.path, self.currStream.latestToken)
         parsedDestUrl = urlparse(url)
         if parsedDestUrl.scheme == 'https':
             connection = HTTPSConnection(parsedDestUrl.hostname, timeout=self.connectionTimeout)
@@ -258,12 +253,13 @@ class ProxyServer(http.server.HTTPServer):
             hdrs = {}
             for key in request.headers:
                 hdrs[key] = request.headers[key]
+            hdrs['x-streaming-token'] = self.currStream.latestToken
             with self.lock:
                 response = self.session.get_license(contentId, receivedData, hdrs)
             for key in response.headers:
                 request.headers.add_header(key, response.headers[key])
-                if key.lower() == 'x-streaming-token':
-                    self.set_streaming_token(response.headers[key])
+                # if key.lower() == 'x-streaming-token':
+                #     self.set_streaming_token(response.headers[key])
             request.send_response(response.status_code)
             request.end_headers()
             request.wfile.write(response.content)
@@ -376,13 +372,23 @@ class ProxyServer(http.server.HTTPServer):
         """
         parsedUrl = urlparse(request.path)
         method = parsedUrl.path[10:]
+        parts = method.split('.')
+        calledclass = parts[0]
+        calledmethod = parts[1]
         qs = parse_qs(parsedUrl.query)
         if 'args' in qs:
             args = json.loads(qs['args'][0])
             try:
-                callableMethod = getattr(self.session, method)
-                with self.lock:
-                    retval = callableMethod(**args)
+                retval = None
+                if calledclass == self.session.__class__.__name__:
+                    callableMethod = getattr(self.session, calledmethod)
+                    with self.lock:
+                        retval = callableMethod(**args)
+                else:
+                    if calledclass == self.streamsession.__class__.__name__:
+                        callableMethod = getattr(self.streamsession, calledmethod)
+                        with self.lock:
+                            retval = callableMethod(**args)
                 request.send_response(200)
                 if retval is None:
                     request.send_header('content-type', 'text/html')

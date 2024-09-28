@@ -1,3 +1,6 @@
+"""
+Module containing the ziggo proxy service
+"""
 import xbmc
 
 from resources.lib.servicemonitor import ServiceMonitor
@@ -24,7 +27,8 @@ if __name__ == '__main__':
                 xbmc.log("MONITOR PROXYSERVICE WAITFORABORT timeout", xbmc.LOGINFO)
                 break
 
-    except:
+    # pylint: disable=broad-exception-caught
+    except Exception as exc:
         pass
     xbmc.log("STOPPING PROXYSERVICE", xbmc.LOGINFO)
     monitor_service.shutdown()

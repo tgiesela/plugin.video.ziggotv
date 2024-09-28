@@ -494,6 +494,7 @@ class LoginSession(Web):
         @return: StreamingInfo object
         """
         url = G.STREAMING_URL.format(householdid=self.sessionInfo['householdId']) + '/live'
+        self.extraHeaders = {}
         response = super().do_post(url,
                                    params={
                                        'channelId': channelId,
@@ -515,6 +516,7 @@ class LoginSession(Web):
         @return: ReplayStreamingInfo object
         """
         url = G.STREAMING_URL.format(householdid=self.sessionInfo['householdId']) + '/replay'
+        self.extraHeaders = {}
         response = super().do_post(url,
                                    params={
                                        'eventId': path,
@@ -535,6 +537,7 @@ class LoginSession(Web):
         @return: VodStreamingInfo object
         """
         url = G.STREAMING_URL.format(householdid=self.sessionInfo['householdId']) + '/vod'
+        self.extraHeaders = {}
         response = super().do_post(url,
                                    params={
                                        'contentId': streamId,
@@ -555,6 +558,7 @@ class LoginSession(Web):
         @return: RecordingStreamingInfo object
         """
         url = G.STREAMING_URL.format(householdid=self.sessionInfo['householdId']) + '/recording'
+        self.extraHeaders = {}
         response = super().do_post(url,
                                    params={
                                        'recordingId': streamid,
@@ -577,7 +581,7 @@ class LoginSession(Web):
         @return: response of the host
         """
         url = G.LICENSE_URL
-        licenseHeaders.update({'x-streaming-token': self.streamingToken})
+        # licenseHeaders.update({'x-streaming-token': self.streamingToken})
         for key in licenseHeaders:
             if key in ALLOWED_LICENSE_HEADERS:
                 pass
@@ -1181,3 +1185,10 @@ class LoginSession(Web):
         @return:
         """
         return self.cookies.get_dict()
+
+    def close(self):
+        """
+        method to close a session. Only here for debugging purpose
+        @return:
+        """
+        super().close()
