@@ -2,6 +2,7 @@
 import unittest
 from urllib.parse import unquote
 
+from avstream import AvStream
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.urltools import UrlTools
 from tests.test_base import TestBase
@@ -20,12 +21,14 @@ class TestVideoPlayer(TestBase):
 
     def test_widevine_license(self):
         self.session.refresh_widevine_license()
+        self.session.close()
 
     def test_buildurl(self):
         # pylint: disable=too-many-statements
         urlHelper = UrlTools(self.addon)
         helpers = ListitemHelper(self.addon)
         self.session.refresh_widevine_license()
+        self.session.get_customer_info()
 
         # Test for play channels
 
@@ -41,24 +44,26 @@ class TestVideoPlayer(TestBase):
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/dash,'
             'vxttoken=0123456789ABCDEF/go-dash-hdready-avc/NL_000001_019401/manifest.mpd')
         createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
         print(manifestUrl)
-        urlHelper.update_redirection(createdUrl[s:], redirectedUrl)
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        stream.update_redirection(createdUrl[s:], redirectedUrl)
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
         videoUrl = (
             '/private1/Header.m4s')
         expectedVideoUrl = (
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/dash,'
             'vxttoken=0123456789ABCDEF/go-dash-hdready-avc/NL_000001_019401/private1/Header.m4s')
-        baseurl = urlHelper.replace_baseurl(videoUrl, '0123456789ABCDEF')
+        baseurl = stream.replace_baseurl(videoUrl, '0123456789ABCDEF')
         self.assertEqual(expectedVideoUrl, baseurl, 'URL not as expected')
 
         li = helpers.listitem_from_url(url, '0123456789ABCDEF', 'content')
         print(li.getLabel())
+        stream.stop(timeronly=True)
         # Tests for replay
 
         url = ('http://wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash/LIVE$NL_000001_019401/index.mpd'
@@ -75,15 +80,17 @@ class TestVideoPlayer(TestBase):
             '-prod.prod.cdn.dmdsdp.com/sdash,vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd/Manifest'
         )
         createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
         print(manifestUrl)
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
-        urlHelper.update_redirection(createdUrl[s:], redirectedUrl)
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        stream.update_redirection(createdUrl[s:], redirectedUrl)
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        stream.stop(timeronly=True)
 
         li = helpers.listitem_from_url(url, '0123456789ABCDEF', 'content')
 
@@ -96,7 +103,7 @@ class TestVideoPlayer(TestBase):
             'vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd/S'
             '!d2ESQVZDLU9UVC1EQVNILVBSLVdWEgJDeAz7ykSIKfvKFgSf/QualityLevels(128000,'
             'Level_params=dxADIeIBnw..)/Fragments(audio_482_dut=Init)')
-        baseurl = urlHelper.replace_baseurl(videoUrl, '0123456789ABCDEF')
+        baseurl = stream.replace_baseurl(videoUrl, '0123456789ABCDEF')
         self.assertEqual(expectedVideoUrl, baseurl, 'URL not as expected')
 
         # Test for video-on-demand urls
@@ -117,15 +124,17 @@ class TestVideoPlayer(TestBase):
             '-prod.prod.cdn.dmdsdp.com/sdash,vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd/Manifest'
         )
         createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
         print(manifestUrl)
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
-        urlHelper.update_redirection(createdUrl[s:], redirectedUrl)
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        stream.update_redirection(createdUrl[s:], redirectedUrl)
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        stream.stop(timeronly=True)
 
         url = ('http://wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live/disk1/'
                'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd')
@@ -141,14 +150,15 @@ class TestVideoPlayer(TestBase):
             'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd'
         )
         createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(unquote(createdUrl), expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
         print(manifestUrl)
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
-        urlHelper.update_redirection(createdUrl[s:], redirectedUrl, '../_shared_a997aca19aa594f6aba2bcbd76c87946/')
-        manifestUrl = urlHelper.get_manifest_url(createdUrl[s:], '0123456789ABCDEF')
+        stream.update_redirection(createdUrl[s:], redirectedUrl, '../_shared_a997aca19aa594f6aba2bcbd76c87946/')
+        manifestUrl = stream.get_manifest_url(createdUrl[s:])
         self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
         videoUrl = ('http://127.0.0.1:6868/_shared_a997aca19aa594f6aba2bcbd76c87946/NL_000011_019563-mp4a_128000_nld'
                     '=20000-init.mp4')
@@ -156,9 +166,11 @@ class TestVideoPlayer(TestBase):
             'https://da-d436304520010b88000108000000000000000005.id.cdn.upcbroadband.com/wp/'
             'wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,vxttoken=0123456789ABCDEF/disk1/'
             'NL_000011_019563/_shared_a997aca19aa594f6aba2bcbd76c87946/NL_000011_019563-mp4a_128000_nld=20000-init.mp4')
-        defaultUrl = urlHelper.replace_baseurl(videoUrl, '0123456789ABCDEF')
+        defaultUrl = stream.replace_baseurl(videoUrl, '0123456789ABCDEF')
         self.assertEqual(expectedUrl, defaultUrl, 'URL not as expected')
         print(defaultUrl)
+        stream.stop(timeronly=True)
+        self.session.close()
 
 
 if __name__ == '__main__':

@@ -32,7 +32,7 @@ class TestProxyServer(TestBase):
         thread = None
         proxyServer = None
         try:
-            proxyServer = ProxyServer(self, (self.address, self.port), self.lock)
+            proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
             thread = threading.Thread(target=proxyServer.serve_forever)
             thread.start()
             sleep(1)
@@ -60,7 +60,7 @@ class TestProxyServer(TestBase):
         thread = None
         proxyServer = None
         try:
-            proxyServer = ProxyServer(self, (self.address, self.port), self.lock)
+            proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
             thread = threading.Thread(target=proxyServer.serve_forever)
             thread.start()
             sleep(1)

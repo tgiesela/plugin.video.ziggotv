@@ -94,7 +94,7 @@ class AvStream:
         if self.tokenTimer is not None:
             self.tokenTimer.stop()
 
-    def stop(self):
+    def stop(self, timeronly=False):
         """
         Function to stop streaming. It will stop the timer to refresh the token and delete the token
         @return:
@@ -105,6 +105,8 @@ class AvStream:
             return
         self.tokenTimer.stop()
         try:
+            if timeronly:
+                return
             self.loginsession.delete_token(streamingId=self.latestToken)
             xbmc.log('AVSTREAM TOKEN DELETED {0}'.format(self.token), xbmc.LOGDEBUG)
         except WebException as webExc:
