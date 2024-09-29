@@ -141,45 +141,50 @@ class SeasonRecording:
     # pylint: disable=too-many-instance-attributes, too-few-public-methods
     def __init__(self, recordingJson):
         self.poster = Poster(posterJson=recordingJson['poster'])
-        self.episodes = recordingJson['noOfEpisodes']
-        self.seasonTitle = recordingJson['seasonTitle']
-        self.showId = recordingJson['showId']
-        self.minimumAge = 0
-        if 'minimumAge' in recordingJson:
-            self.minimumAge = recordingJson['minimumAge']
-        self.channelId = recordingJson['channelId']
-        self.diskSpace = 0
-        if 'diskSpace' in recordingJson:
-            self.diskSpace = recordingJson['diskSpace']
         self.title = recordingJson['title']
         self.source = recordingJson['source']
+        self.episodes = recordingJson['noOfEpisodes']
+        self.channelId = recordingJson['channelId']
         self.id = recordingJson['id']
-        self.isPremiereAirings = False
-        if 'isPremiereAirings' in recordingJson:
-            self.isPremiereAirings = recordingJson['isPremiereAirings']
-        self.relevantEpisode = None
-        if 'mostRelevantEpisode' in recordingJson:
-            self.relevantEpisode = recordingJson['mostRelevantEpisode']
-        self.episodes = []
-        if 'episodes' in recordingJson:
-            episodes = recordingJson['episodes']
-            self.images = episodes['images']
-            self.seasons = episodes['seasons']
-            self.genres = episodes['genres']
-            self.synopsis = ''
-            if 'shortSynopsis' in episodes:
-                self.synopsis = episodes['shortSynopsis']
-            self.cnt = 0
-            if 'total' in episodes:
-                self.cnt = episodes['total']
+        self.type = recordingJson['type']
+        if self.type == 'season':
+            self.seasonTitle = recordingJson['seasonTitle']
+            self.showId = recordingJson['showId']
+            self.minimumAge = 0
+            if 'minimumAge' in recordingJson:
+                self.minimumAge = recordingJson['minimumAge']
+            self.diskSpace = 0
+            if 'diskSpace' in recordingJson:
+                self.diskSpace = recordingJson['diskSpace']
+            self.isPremiereAirings = False
+            if 'isPremiereAirings' in recordingJson:
+                self.isPremiereAirings = recordingJson['isPremiereAirings']
+            self.relevantEpisode = None
+            if 'mostRelevantEpisode' in recordingJson:
+                self.relevantEpisode = recordingJson['mostRelevantEpisode']
             self.episodes = []
-            for episode in episodes['data']:
-                if episode['recordingState'] == 'planned':
-                    recPlanned = PlannedRecording(episode)
-                    self.episodes.append(recPlanned)
-                else:
-                    recSingle = SingleRecording(episode)
-                    self.episodes.append(recSingle)
+            if 'episodes' in recordingJson:
+                episodes = recordingJson['episodes']
+                self.images = episodes['images']
+                self.seasons = episodes['seasons']
+                self.genres = episodes['genres']
+                self.synopsis = ''
+                if 'shortSynopsis' in episodes:
+                    self.synopsis = episodes['shortSynopsis']
+                self.cnt = 0
+                if 'total' in episodes:
+                    self.cnt = episodes['total']
+                self.episodes = []
+                for episode in episodes['data']:
+                    if episode['recordingState'] == 'planned':
+                        recPlanned = PlannedRecording(episode)
+                        self.episodes.append(recPlanned)
+                    else:
+                        recSingle = SingleRecording(episode)
+                        self.episodes.append(recSingle)
+        else:
+            self.episodes = []
+            self.showId = self.id
 
     def get_episodes(self, recType):
         """
@@ -263,7 +268,7 @@ class RecordingList:
         self.quota = recordingsJson['quota']['quota']
         self.occupied = recordingsJson['quota']['occupied']
         for data in recordingsJson['data']:
-            if data['type'] == 'season':
+            if data['type'] in ['season', 'show']:
                 season = SeasonRecording(data)
                 self.recs.append(season)
             elif data['type'] == 'single':

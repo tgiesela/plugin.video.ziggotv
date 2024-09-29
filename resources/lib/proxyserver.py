@@ -19,7 +19,6 @@ from xml.dom import minidom
 
 import xbmc
 
-from resources.lib.urltools import UrlTools
 from resources.lib.webcalls import LoginSession
 from resources.lib.utils import WebException, SharedProperties
 
@@ -79,16 +78,15 @@ class ProxyServer(http.server.ThreadingHTTPServer):
     # pylint: disable=too-many-instance-attributes
     def __init__(self, addon, server_address, lock):
         http.server.ThreadingHTTPServer.__init__(self, server_address, HTTPRequestHandler)
+        self.latestToken = None
         self.lock = lock
         self.addon = addon
         self.session = LoginSession(self.addon)
         self.streamsession = StreamSession(self.session)
-        self.urlTools = UrlTools(self.addon)
         self.home = SharedProperties(addon=self.addon)
         self.kodiMajorVersion = self.home.get_kodi_version_major()
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
-        self.currStream = None
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
     # def set_streaming_token(self, token):
@@ -114,11 +112,10 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         parsedUrl = urlparse(request.path)
         qs = parse_qs(parsedUrl.query)
         if 'path' in qs and 'hostname' in qs and 'token' in qs:
-            self.currStream = self.streamsession.find_stream(qs['token'][0])
-            if self.currStream is None:
+            stream = self.streamsession.find_stream(qs['token'][0])
+            if stream is None:
                 raise RuntimeError('Stream not found for token: {0}'.format(qs['token'][0]))
-            manifestUrl = self.urlTools.get_manifest_url(proxyUrl=request.path,
-                                                         streamingToken=self.currStream.latestToken)
+            manifestUrl = stream.get_manifest_url(proxyUrl=request.path)
             with self.lock:
                 manifestBaseurl = None
                 if requestType == 'get':
@@ -127,13 +124,14 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                         manifestBaseurl = self.baseurl_from_manifest(response.content)
                 elif requestType == 'head':
                     response = self.session.do_head(manifestUrl)
-            self.urlTools.update_redirection(request.path, response.url, manifestBaseurl)
+            stream.update_redirection(request.path, response.url, manifestBaseurl)
             request.send_response(response.status_code)
             # See wiki of InputStream Adaptive. Also depends on inputstream.adaptive.manifest_type. See listitemhelper.
             if self.kodiMajorVersion > 20:
                 request.send_header('content-type', 'application/dash+xml')
             request.end_headers()
             request.wfile.write(response.content)
+            self.latestToken = stream.latestToken
 
         else:
             request.send_response(404)
@@ -146,12 +144,17 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         @param request:
         @return:
         """
-        if self.currStream is None:
+        if 'x-streaming-token' in request.headers:
+            token = request.headers['x-streaming-token']
+            stream = self.streamsession.find_stream(token)
+            if stream is None:
+                raise RuntimeError('Stream not found for token: {0}'.format(token))
+        else:
             request.send_response(500)
             request.end_headers()
             return
 
-        url = self.urlTools.replace_baseurl(request.path, self.currStream.latestToken)
+        url = stream.replace_baseurl(request.path, stream.latestToken)
         parsedDestUrl = urlparse(url)
         if parsedDestUrl.scheme == 'https':
             connection = HTTPSConnection(parsedDestUrl.hostname, timeout=self.connectionTimeout)
@@ -235,6 +238,17 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         @param request:
         @return:
         """
+        if 'x-streaming-token' in request.headers:
+            token = request.headers['x-streaming-token']
+            stream = self.streamsession.find_stream(token)
+            if stream is None:
+                raise RuntimeError('Stream not found for token: {0}'.format(token))
+            token = stream.latestToken
+        else:
+            request.send_response(500)
+            request.end_headers()
+            return
+
         path = request.path  # Path with parameters received from request e.g. "/license?id=234324"
         xbmc.log('HTTP POST request received: {0}'.format(unquote(path)), xbmc.LOGDEBUG)
         if '/license' not in path:
@@ -253,7 +267,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             hdrs = {}
             for key in request.headers:
                 hdrs[key] = request.headers[key]
-            hdrs['x-streaming-token'] = self.currStream.latestToken
+            hdrs['x-streaming-token'] = token
             with self.lock:
                 response = self.session.get_license(contentId, receivedData, hdrs)
             for key in response.headers:

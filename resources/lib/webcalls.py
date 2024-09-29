@@ -620,6 +620,7 @@ class LoginSession(Web):
         if 'x-streaming-token' in response.headers:
             self.streamingToken = response.headers['x-streaming-token']
             return response.headers["x-streaming-token"]
+        self.extraHeaders = {}
         return ''
 
     def delete_token(self, streamingId):
@@ -641,6 +642,7 @@ class LoginSession(Web):
                                      data=None,
                                      params=None,
                                      extraHeaders=self.extraHeaders)
+        self.extraHeaders = {}
         if not self.__status_code_ok(response):
             raise WebException(response)
 

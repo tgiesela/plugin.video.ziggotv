@@ -37,7 +37,6 @@ class ListitemHelper:
         self.kodiMajorVersion = self.home.get_kodi_version_major()
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
 
-
     @staticmethod
     def __get_pricing_from_offer(instance):
         if 'offers' in instance:
@@ -104,8 +103,8 @@ class ListitemHelper:
         # See wiki of InputStream Adaptive. Also depends on header in manifest response. See Proxyserver.
         if self.kodiMajorVersion < 21:
             li.setProperty(
-               key='inputstream.adaptive.manifest_type',
-               value=G.PROTOCOL)
+                key='inputstream.adaptive.manifest_type',
+                value=G.PROTOCOL)
         li.setProperty(
             key='inputstream.adaptive.license_type',
             value=G.DRM)
@@ -158,11 +157,14 @@ class ListitemHelper:
         li.setProperty(
             key='inputstream.adaptive.server_certificate',
             value=widevineCertificate)
+        li.setProperty(
+            key='inputstream.adaptive.stream_headers',
+            value='x-streaming-token={0}'.format(streamingToken))
         self.__send_notification(li, streamingToken, url)  # send the streaming-token to the Service
 
         return li
 
-    def listitem_from_recording(self, recording, recType, season: SeasonRecording=None) -> xbmcgui.ListItem:
+    def listitem_from_recording(self, recording, recType, season: SeasonRecording = None) -> xbmcgui.ListItem:
         """
         Creates a ListItem from a SingleRecording
         @param season: the information of the season to which the recording belongs
