@@ -89,17 +89,6 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
-    # def set_streaming_token(self, token):
-    #     """
-    #     function to set the streaming token for the currently playing stream
-    #     The streaming token is kept in session.
-    #     @param token: the streaming token to be used
-    #     @return:
-    #     """
-    #     with self.lock:
-    #         self.session.streamingToken = token
-    #         xbmc.log('Setting streaming token to: {0}'.format(token), xbmc.LOGDEBUG)
-
     def handle_manifest(self, request, requestType='get'):
         """
         Function to handle the manifest request. The url for the real host is constructed here. The
