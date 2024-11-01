@@ -18,7 +18,7 @@ jobs:
 
   call-addzipfiles-workflow:
     needs: call-create-repo
-    uses: 'ziggotv/ziggotv.github.io/.github/workflows/submit_zipfiles.yml@master'
+    uses: 'ziggotv/ziggotv.github.io/.github/workflows/submit_zipfiles.yml@main'
     with:
       repo-zipfile: 'repo-zipfiles'
     secrets:
