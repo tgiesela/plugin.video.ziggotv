@@ -1,0 +1,36 @@
+on:
+  workflow_call
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: extract-version
+        id: step1
+        run: |
+          import xml.etree.ElementTree
+          import os
+
+          x = xml.etree.ElementTree.ElementTree()
+          p = x.parse('addon.xml')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as go:
+            go.write("ADDON_VERSION={0}\n".format(p.attrib['version']))
+        shell: python
+
+      - name: print-version 1
+        run: echo VERSION=${{ steps.step1.outputs.ADDON_VERSION }}
+
+      - name: add-tag
+        run: |
+          git config --global user.email "<>"
+          git config --global user.name "github action"
+          TAG_NAME="v${{ steps.step1.outputs.ADDON_VERSION }}"
+          git tag -af $TAG_NAME -m 'tag set by workflow action'
+          git tag -l
+          git push origin tag $TAG_NAME

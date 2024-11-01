@@ -1,0 +1,25 @@
+on:
+  push
+
+jobs:
+  set-version-tag:
+    uses: './github/workflows/settag.yml@master'
+    secrets:
+      inherit
+
+  call-create-repo:
+    needs: set-version-tag
+    uses: 'tgiesela/repository.ziggotv/.github/workflows/createrepo.yml@master'
+    with:
+      repo-zipfile: 'repository.ziggotv.zip'
+      plugin-zipfile: 'plugin.video.ziggotv.zip'
+    secrets:
+      inherit
+
+  call-addzipfiles-workflow:
+    needs: call-create-repo
+    uses: 'ziggotv/ziggotv.github.io/.github/workflows/submit_zipfiles.yml@master'
+    with:
+      repo-zipfile: 'repo-zipfiles'
+    secrets:
+      inherit
