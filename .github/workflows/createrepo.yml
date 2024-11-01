@@ -12,9 +12,6 @@ jobs:
   call-create-repo:
     needs: set-version-tag
     uses: 'tgiesela/repository.ziggotv/.github/workflows/createrepo.yml@master'
-    with:
-      repo-zipfile: 'repository.ziggotv.zip'
-      plugin-zipfile: 'plugin.video.ziggotv.zip'
     secrets:
       inherit
 
