@@ -3,7 +3,7 @@ on:
 
 jobs:
   set-version-tag:
-    uses: './github/workflows/settag.yml@master'
+    uses: './.github/workflows/settag.yml@master'
     secrets:
       inherit
 
