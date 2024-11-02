@@ -10,6 +10,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
         with:
+          ref: master
           token: ${{ secrets.ziggotvtoken }}
 
       - name: extract-version
@@ -30,9 +31,9 @@ jobs:
 
       - name: add-tag
         run: |
-          git config --global user.email "<>"
-          git config --global user.name "github action"
+          git config user.email "<>"
+          git config user.name "github action"
           TAG_NAME="v${{ steps.step1.outputs.ADDON_VERSION }}"
           git tag -af $TAG_NAME -m 'tag set by workflow action'
           git tag -l
-          git push origin tag $TAG_NAME
+          git push origin tag -f $TAG_NAME
