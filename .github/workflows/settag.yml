@@ -7,11 +7,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: show env
+        run: |
+            env
+            ls -als
       - name: checkout
         uses: actions/checkout@v4
         with:
           ref: master
-          token: ${{ secrets.ziggotvtoken }}
+          token: ${{ github.token }}
 
       - name: extract-version
         id: step1

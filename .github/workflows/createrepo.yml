@@ -1,6 +1,5 @@
 on:
   push:
-    tags-ignore: '*'
   workflow_dispatch:
 
 permissions:
