@@ -1,5 +1,9 @@
 on:
-  workflow_call
+  workflow_call:
+    secrets:
+      pat-token: 
+         description: 'Token for accessing ziggotv repo'
+         required: true  
 
 jobs:
   get-version:
@@ -7,15 +11,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: show env
-        run: |
-            env
-            ls -als
       - name: checkout
         uses: actions/checkout@v4
         with:
           ref: master
-          token: ${{ github.token }}
+          token: ${{ secrets.pat-token }}
 
       - name: extract-version
         id: step1

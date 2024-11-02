@@ -8,13 +8,13 @@ jobs:
   set-version-tag:
     uses: './.github/workflows/settag.yml'
     secrets:
-      inherit
+      pat-token: ${{ secrets.ZIGGOTVTOKEN }}
 
   call-create-repo:
     needs: set-version-tag
     uses: 'tgiesela/repository.ziggotv/.github/workflows/createrepo.yml@master'
     secrets:
-      inherit
+      pat-token: ${{ secrets.ZIGGOTVTOKEN }}
 
   call-addzipfiles-workflow:
     needs: call-create-repo
@@ -22,4 +22,4 @@ jobs:
     with:
       repo-zipfile: 'repo-zipfiles'
     secrets:
-      inherit
+      pat-token: ${{ secrets.ZIGGOTVTOKEN }}
