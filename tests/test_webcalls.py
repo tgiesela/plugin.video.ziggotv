@@ -11,6 +11,7 @@ from xml.dom import minidom
 import requests
 import xbmcaddon
 
+from avstream import StreamSession
 from resources.lib.globals import G
 from resources.lib.urltools import UrlTools
 from resources.lib.utils import WebException, DatetimeHelper
@@ -86,7 +87,7 @@ class TestWebCalls(TestBase):
 
     def test_entitlements(self):
         self.cleanup_all()
-        self.session = LoginSession(xbmcaddon.Addon())
+        self.session = LoginSession(self.addon)
         self.session.printNetworkTraffic = 'false'
         self.do_login()
         self.session.refresh_entitlements()
@@ -150,6 +151,11 @@ class TestWebCalls(TestBase):
             locator = locator.replace("/sdash", "/sdash,vxttoken=" + tkn.token).replace("http://", "https://")
         elif '/live' in locator:
             locator = locator.replace("/live", "/live,vxttoken=" + tkn.token).replace("http://", "https://")
+
+        streamsession = StreamSession(self.session)
+        streamsession.start_stream(tkn.token)
+        stream = streamsession.find_stream(tkn.token)
+
         response = self.session.get_manifest(locator)
         self.session.delete_token(tkn.token)
         mpd = str(response.content, 'utf-8')
@@ -158,7 +164,7 @@ class TestWebCalls(TestBase):
         baseURL = self.baseurl_from_manifest(response.content)
         if baseURL is None:
             print('BaseURL not found')
-        tools.update_redirection(locator, 'https://da-d436304520010b88000108000000000000000005.id.cdn.upcbroadband'
+        stream.update_redirection(locator, 'https://da-d436304520010b88000108000000000000000005.id.cdn.upcbroadband'
                                           '.com/wp/wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,'
                                           'vxttoken'
                                           '=YXNzVHlwPU9yaW9uLURBU0gmYy1pcC11bmxvY2tlZD0xJmNvbklkPU5MXzAwMDAxMV8wMTk1Nj'
@@ -171,7 +177,9 @@ class TestWebCalls(TestBase):
                                           'dGRCcVVLM29TYmkyV2o2STlKUEZ6JnNlc1RpbWU9MTcwNjI2NzkyMyZzdHJMaW09Myw4NWYxZjU'
                                           '1OTY0NTQxYTlhNGJhYTQyODhhYjFlNzI3YzU1Y2Q1MzAyNWUxYmRjZmQ2N2UzMjg5NGVjYTg3Nz'
                                           'A4/disk1/NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd', baseURL)
-        print('REDIRECTED URL: {0}'.format(tools.redirectedUrl))
+
+        print('LOCATOR URL: {0}'.format(stream.redirectedUrl))
+        print('REDIRECTED URL: {0}'.format(stream.get_manifest_url(locator)))
 
         for c in channels:
             if c.name == 'STAR Channel':
@@ -196,20 +204,6 @@ class TestWebCalls(TestBase):
         if baseURL is None:
             print('BaseURL not found')
             return
-        tools.update_redirection(locator, 'https://da-d436304520010b88000108000000000000000005.id.cdn.upcbroadband'
-                                          '.com/wp/wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,'
-                                          'vxttoken'
-                                          '=YXNzVHlwPU9yaW9uLURBU0gmYy1pcC11bmxvY2tlZD0xJmNvbklkPU5MXzAwMDAxMV8wMTk1Nj'
-                                          'MmY29uVHlwZT00JmN1c0lkPTg2NTQ4MDdfbmwmZGV2RmFtPXdlYi1kZXNrdG9wJmRyPTAmZHJtQ'
-                                          '29uSWQ9bmxfdHZfc3RhbmRhYXJkX2NlbmMmZHJtRGV2SWQ9YTZjOTBlZTZjMGYxYzczMjEyNTAy'
-                                          'Yjc2ODA0ZTc2MGQ2MTQwY2ZlMmNhYzZiNDQ4MjI5MGNhZWZlNTQ0MDc3OCZleHBpcnk9MTcwNjI'
-                                          '2ODA3NCZmbj1zaGEyNTYmcGF0aFVSST0lMkZsaXZlJTJGZGlzazElMkZOTF8wMDAwMTFfMDE5NT'
-                                          'YzJTJGZ28tZGFzaC1oZHJlYWR5LWF2YyUyRiUyQSZwcm9maWxlPTA5OGFjYzBmLTFlNGItNDNhZ'
-                                          'i04ODk3LWI2ZWJkOGVhNWRjYiZyZXVzZT0tMSZzTGltPTMmc2VzSWQ9LTFJa0pSNVJpTUR2M3lG'
-                                          'dGRCcVVLM29TYmkyV2o2STlKUEZ6JnNlc1RpbWU9MTcwNjI2NzkyMyZzdHJMaW09Myw4NWYxZjU'
-                                          '1OTY0NTQxYTlhNGJhYTQyODhhYjFlNzI3YzU1Y2Q1MzAyNWUxYmRjZmQ2N2UzMjg5NGVjYTg3Nz'
-                                          'A4/disk1/NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd', baseURL)
-        print('REDIRECTED URL: {0}'.format(tools.redirectedUrl))
 
     def test_voor_jou(self):
         self.do_login()
@@ -290,7 +284,10 @@ class TestWebCalls(TestBase):
                     print(
                         '\t\tFAILED: {0}:{1}'.format(item['type'], item['gridLink']['title']))
             else:
-                print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], item['title']))
+                if 'title' in item:
+                    print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], item['title']))
+                else:
+                    print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], 'NO TITLE'))
                 if item['type'] == 'SERIES':
                     overview = self.session.obtain_series_overview(item['id'])
                     print('\t\t{0}'.format(','.join(overview['genres'])))

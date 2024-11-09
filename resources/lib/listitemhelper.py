@@ -184,12 +184,13 @@ class ListitemHelper:
         start = start.replace(tzinfo=timezone.utc).astimezone(tz=None)
         title = "{0} ({1})".format(recording.title, start.strftime('%Y-%m-%d %H:%M'))
         li = xbmcgui.ListItem(label=title)
-        thumbname = xbmc.getCacheThumbName(recording.poster.url)
-        thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
-        if os.path.exists(thumbfile):
-            os.remove(thumbfile)
-        li.setArt({'icon': recording.poster.url,
-                   'thumb': recording.poster.url})
+        if recording.poster is not None:
+            thumbname = xbmc.getCacheThumbName(recording.poster.url)
+            thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
+            if os.path.exists(thumbfile):
+                os.remove(thumbfile)
+            li.setArt({'icon': recording.poster.url,
+                       'thumb': recording.poster.url})
         # set the list item to playable
         li.setProperty('IsPlayable', 'true')
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
@@ -383,8 +384,12 @@ class ListitemHelper:
         # set the list item to playable
         li.setProperty('IsPlayable', 'true')
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        tag.setTitle(item['title'])
-        tag.setSortTitle(item['title'])
+        if 'title' in item:
+            tag.setTitle(item['title'])
+            tag.setSortTitle(item['title'])
+        else:
+            tag.setTitle('<>')
+            tag.setSortTitle('<>')
         tag.setPlot(overview['synopsis'])
         tag.setMediaType('set')
         if 'genres' in overview:

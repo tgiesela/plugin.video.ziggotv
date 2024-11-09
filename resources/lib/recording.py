@@ -42,7 +42,10 @@ class Recording:
 
     def __init__(self, recordingJson):
         # pylint: disable=too-many-branches, too-many-statements
-        self.poster = Poster(posterJson=recordingJson['poster'])
+        if 'poster' in recordingJson:
+            self.poster = Poster(posterJson=recordingJson['poster'])
+        else:
+            self.poster = None
         self.recordingState = recordingJson['recordingState']  # recorded, planned
         self.minimumAge = 0
         self.private = False
