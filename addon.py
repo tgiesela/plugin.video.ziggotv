@@ -432,7 +432,7 @@ class ZiggoPlugin:
         xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_LABEL)
 
         # Finish creating a virtual folder.
-        xbmcplugin.endOfDirectory(self.handle, updateListing=True)
+        xbmcplugin.endOfDirectory(self.handle)
 
     @staticmethod
     def __find_season(recordingId, recordings: RecordingList):

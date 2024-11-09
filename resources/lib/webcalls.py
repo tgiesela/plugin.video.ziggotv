@@ -1118,25 +1118,27 @@ class LoginSession(Web):
             if recording['type'] == 'season':
                 seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
                 recording.update({'episodes': seasonRecordings})
+        recJson.update({'planned': recordingsPlanned})
         if includeAdult:
             adultRecordingsPlanned = self.__get_recordings_planned(isAdult=True)
             for recording in adultRecordingsPlanned['data']:
                 if recording['type'] == 'season':
                     seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
                     recording.update({'episodes': seasonRecordings})
-        recJson.update({'planned': recordingsPlanned})
+            recJson['planned']['data'].extend(adultRecordingsPlanned['data'])
         recordings = self.__get_recordings(isAdult=False)
         for recording in recordings['data']:
             if recording['type'] == 'season':
                 seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
                 recording.update({'episodes': seasonRecordings})
+        recJson.update({'recorded': recordings})
         if includeAdult:
             adultRecordings = self.__get_recordings(isAdult=True)
             for recording in adultRecordings['data']:
                 if recording['type'] == 'season':
                     seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
                     recording.update({'episodes': seasonRecordings})
-        recJson.update({'recorded': recordings})
+            recJson['recorded']['data'].extend(adultRecordings['data'])
         Path(self.pluginpath(G.RECORDINGS_INFO)).write_text(json.dumps(recJson), encoding='utf-8')
 
     def get_recordings_planned(self) -> RecordingList:
