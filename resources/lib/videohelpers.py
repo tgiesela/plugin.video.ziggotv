@@ -15,11 +15,16 @@ from resources.lib.recording import SingleRecording, SavedStateList
 from resources.lib.streaminginfo import ReplayStreamingInfo
 from resources.lib.urltools import UrlTools
 from resources.lib.events import Event
-from resources.lib.globals import S
+from resources.lib.globals import S, G
 from resources.lib.utils import ProxyHelper, SharedProperties, WebException
 from resources.lib.webcalls import LoginSession
 from resources.lib.ziggoplayer import ZiggoPlayer
 
+try:
+    # pylint: disable=import-error, broad-exception-caught
+    from inputstreamhelper import Helper
+except Exception as excpt:
+    from tests.testinputstreamhelper import Helper
 
 class VideoItem:
     """
@@ -67,6 +72,9 @@ class VideoHelpers:
         self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
         self.channels = ChannelList(self.helper.dynamic_call(LoginSession.get_channels), self.entitlements)
         self.uuId = SharedProperties(addon=self.addon).get_uuid()
+        isHelper = Helper(G.PROTOCOL, drm=G.DRM)
+        isHelper.check_inputstream()
+
 
     def user_wants_switch(self):
         """

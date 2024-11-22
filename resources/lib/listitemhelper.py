@@ -388,8 +388,12 @@ class ListitemHelper:
             tag.setTitle(item['title'])
             tag.setSortTitle(item['title'])
         else:
-            tag.setTitle('<>')
-            tag.setSortTitle('<>')
+            if 'gridLink' in item and 'title' in item['gridLink']:
+                tag.setTitle(item['gridLink']['title'])
+                tag.setSortTitle(item['gridLink']['title'])
+            else:
+                tag.setTitle('<>')
+                tag.setSortTitle('<>')
         tag.setPlot(overview['synopsis'])
         tag.setMediaType('set')
         if 'genres' in overview:

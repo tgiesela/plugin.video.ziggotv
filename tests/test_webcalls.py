@@ -287,7 +287,10 @@ class TestWebCalls(TestBase):
                 if 'title' in item:
                     print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], item['title']))
                 else:
-                    print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], 'NO TITLE'))
+                    if 'gridLink' in item and 'title' in item['gridLink']:
+                        print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], item['gridLink']['title']))
+                    else:
+                        print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], 'NO TITLE'))
                 if item['type'] == 'SERIES':
                     overview = self.session.obtain_series_overview(item['id'])
                     print('\t\t{0}'.format(','.join(overview['genres'])))
