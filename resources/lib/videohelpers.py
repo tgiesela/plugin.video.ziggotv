@@ -22,7 +22,7 @@ from resources.lib.ziggoplayer import ZiggoPlayer
 
 try:
     # pylint: disable=import-error, broad-exception-caught
-    from inputstreamhelper import Helper
+    from inputstreamhelper import Helper # type: ignore
 except Exception as excpt:
     from tests.testinputstreamhelper import Helper
 

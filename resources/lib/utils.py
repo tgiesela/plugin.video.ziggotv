@@ -1,6 +1,7 @@
 """
 module with utility functions
 """
+import sys
 import binascii
 import inspect
 import traceback
@@ -305,6 +306,38 @@ class KodiLock:
     def __exit__(self, _type, value, _traceback):
         self.release()
 
+def invoke_debugger(enable_debug: bool, debug_type:str):
+    """
+        debug_type: one of 'vscode', 'eclipse', 'web'
+    """
+    if enable_debug:
+        try:
+            if debug_type == 'eclipse':
+                try:
+                    # sys.path.append('E:\Eclipse IDE\eclipse\plugins\org.python.pydev.core_10.2.1.202307021217\pysrc')
+                    # or add pydevd as a dependency (update addon.xml and install the script.module.pydevd)
+                    import pydevd
+                    pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+                except:
+                    sys.stderr.write("Error: " + "You must add org.python.pydev.debug.pysrc to your PYTHONPATH")
+                    sys.stderr.write("Error: " + "Debug not available")
+            elif debug_type == 'vscode': # debugpy
+                try:
+                    # add debugpy as a dependency (update addon.xml and install the plugin.script.debugpy)
+                    import debugpy
+                    # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+                    if not debugpy.is_client_connected():
+                        debugpy.connect(('localhost', 5678))
+                    debugpy.breakpoint()
+                except:
+                    sys.stderr.write("Error: " + "You must add debugpy to your PYTHONPATH or install the addon script.module.debugpy")
+                    sys.stderr.write("Error: " + "Debug not available")
+            elif debug_type == 'web':
+                import web_pdb # type: ignore
+                web_pdb.set_trace()
+        except Exception as exc:
+            xbmc.log('Could not connect to debugger: {0}'.format(exc), xbmc.LOGERROR)
+    return
 
 if __name__ == '__main__':
     pass

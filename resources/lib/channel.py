@@ -140,10 +140,10 @@ class ChannelList(UserList):
     class to get a list of channels with options to suppress hidden channels or only get channels
     for which you ar entitled.
     """
-    def __init__(self, channels: [Channel], entitlements):
+    def __init__(self, channels: List[Channel], entitlements):
         super().__init__(channels)
-        self.channels: [Channel] = channels
-        self.filteredChannels: [Channel] = []
+        self.channels: List[Channel] = channels
+        self.filteredChannels: List[Channel] = []
         self.entitlements = entitlements
         self.suppressHidden = True
         self._entitledOnly = False

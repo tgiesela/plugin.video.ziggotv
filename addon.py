@@ -57,7 +57,7 @@ class ZiggoPlugin:
         Function to select the profile from the addon settings menu.
         @return:
         """
-        custinfo: {} = self.helper.dynamic_call(LoginSession.get_customer_info)
+        custinfo = self.helper.dynamic_call(LoginSession.get_customer_info)
         profileId = self.ADDON.getSettingString('profile')
         if 'assignedDevices' in custinfo:
             defaultProfileId = custinfo['assignedDevices'][0]['defaultProfileId']
@@ -84,7 +84,7 @@ class ZiggoPlugin:
         Function to set the active profile based on the Addon settings
         @return: nothing
         """
-        custInfo: {} = self.helper.dynamic_call(LoginSession.get_customer_info)
+        custInfo = self.helper.dynamic_call(LoginSession.get_customer_info)
         profile = self.ADDON.getSettingString('profile')
         if 'assignedDevices' in custInfo:
             defaultProfileId = custInfo['assignedDevices'][0]['defaultProfileId']
@@ -891,20 +891,9 @@ class ZiggoPlugin:
         if not home.is_service_active():
             raise RuntimeError('Service did not start in time')
 
-
-REMOTE_DEBUG = False
 if __name__ == '__main__':
-    # if REMOTE_DEBUG:
-    #     try:
-    #         sys.path.append('E:\Eclipse IDE\eclipse\plugins\org.python.pydev.core_10.2.1.202307021217\pysrc')
-    #         import pydevd
-    #         pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
-    #     except:
-    #         sys.stderr.write("Error: " + "You must add org.python.pydev.debug.pysrc to your PYTHONPATH")
-    #         sys.stderr.write("Error: " + "Debug not available")
-    # else:
-    #     import web_pdb
-    #     web_pdb.set_trace()
+    from resources.lib.utils import invoke_debugger
+    invoke_debugger(False, 'eclipse')
 
     plugin = ZiggoPlugin()
 

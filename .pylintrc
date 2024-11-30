@@ -10,7 +10,9 @@ variable-naming-style=camelCase
 argument-naming-style=camelCase
 class-attribute-naming-style=UPPER_CASE
 attr-naming-style=camelCase
-max-positional-args=6
+
+[DESIGN]
+max-positional-arguments=6
 
 [FORMAT]
 max-line-length=120

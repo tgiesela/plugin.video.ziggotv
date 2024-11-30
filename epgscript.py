@@ -124,16 +124,9 @@ def check_service():
         raise RuntimeError('Service did not start in time')
 
 
-REMOTE_DEBUG = False
 if __name__ == '__main__':
-    # if REMOTE_DEBUG:
-    #     try:
-    #         sys.path.append('E:\Eclipse IDE\eclipse\plugins\org.python.pydev.core_10.2.1.202307021217\pysrc')
-    #         import pydevd
-    #         pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
-    #     except:
-    #         sys.stderr.write("Error: " + "You must add org.python.pydev.debug.pysrc to your PYTHONPATH")
-    #         sys.stderr.write("Error: " + "Debug not available")
+    from resources.lib.utils import invoke_debugger
+    invoke_debugger(False, 'eclipse')
     addonId = sys.argv[1]
     addon = xbmcaddon.Addon(addonId)
     xbmc.executebuiltin('Dialog.Close(busydialog)', True)

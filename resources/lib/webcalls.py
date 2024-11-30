@@ -704,7 +704,7 @@ class LoginSession(Web):
             raise WebException(response)
         return response.content
 
-    def obtain_home_collection(self, collection: []):
+    def obtain_home_collection(self, collection: List[any]):
         """
         Obtain the home collection for the web-page. Currently not used
         @param collection:

@@ -1,7 +1,7 @@
 kodi-addon-checker
 polib
 pycryptodomex
-pylint
+pylint~=3.2.7
 requests~=2.31.0
 setuptools
 xmlschema
