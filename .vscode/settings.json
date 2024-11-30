@@ -1,0 +1,5 @@
+{
+    "pylint.args": [
+        "--unknown-option=no"
+    ]
+}

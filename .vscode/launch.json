@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Listen (use for kodi)", // Client must invoke connect(('127.0.0.1', 5678))
+            "type": "debugpy",
+            "request": "attach",
+            "listen": {
+                "host": "127.0.0.1",
+                "port": 5678
+            },
+        },
+        {
+            "name": "Python Debugger: Connect", // Client should invoke listen(('127.0.0.1', 5678))
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 5678
+            },
+        }
+    ]
+}
