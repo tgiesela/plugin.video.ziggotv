@@ -109,7 +109,9 @@ class Recording:
         else:
             self.autoDeletionProtected = False
         self.isPremiere = recordingJson['isPremiere']  # false, true: when latest episode playing
-        self.trickPlayControl = recordingJson['trickPlayControl']
+        self.trickPlayControl = []
+        if 'trickPlayControl' in recordingJson:
+            self.trickPlayControl = recordingJson['trickPlayControl']
 
     @property
     def isRecording(self) -> bool:
