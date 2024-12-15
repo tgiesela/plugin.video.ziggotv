@@ -102,7 +102,9 @@ class RecordingStreamingInfo(StreamingInfo):
     # pylint: disable=too-many-instance-attributes
     def __init__(self, streamingJson):
         super().__init__(streamingJson)
-        self.trickPlayControl = streamingJson['trickPlayControl']
+        self.trickPlayControl = []
+        if 'trickPlayControl' in streamingJson:
+            self.trickPlayControl = streamingJson['trickPlayControl']
         self.thumbnailUrl = streamingJson['thumbnailServiceUrl']
         self.eventSessionStartTime = streamingJson['eventSessionStartTime']
         self.eventSessionEndTime = streamingJson['eventSessionEndTime']
