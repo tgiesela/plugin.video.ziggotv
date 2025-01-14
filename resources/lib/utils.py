@@ -80,7 +80,10 @@ class SharedProperties:
             self.kodiVersion = '21.0'
         digits = self.kodiVersion.split('.')
         self.kodiVersionMajor = digits[0]
-        self.kodiVersionMinor = digits[1]
+        if (digits[1].isnumeric()):
+            self.kodiVersionMinor = digits[1]
+        else:
+            self.kodiVersionMinor = digits[1].split('-')[0]
 
     def set_service_status(self, status: ServiceStatus):
         """set the service status"""

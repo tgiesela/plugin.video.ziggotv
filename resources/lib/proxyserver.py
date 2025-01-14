@@ -89,7 +89,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
-    def handle_manifest(self, request, requestType='get'):
+    def handle_manifest(self, request: HTTPRequestHandler, requestType='get'):
         """
         Function to handle the manifest request. The url for the real host is constructed here. The
         parameters in the request (hostname, path and token) are extracted and the streaming token
@@ -126,7 +126,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.send_response(404)
             request.end_headers()
 
-    def handle_default(self, request):
+    def handle_default(self, request: HTTPRequestHandler):
         """
         Handles get requests which are not manifest/license request. This concerns the video/audio requests.
         Also here the url for the real host must be constructed and the streaming token must be inserted.
@@ -188,7 +188,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                     return
                 block = response.read(8192)
 
-    def handle_get(self, request):
+    def handle_get(self, request: HTTPRequestHandler):
         """
         General function to handle get requests
         @param request:
@@ -221,7 +221,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.send_response(500)
             request.end_headers()
 
-    def handle_post(self, request):
+    def handle_post(self, request: HTTPRequestHandler):
         """
         Function to handle the license request. The request is forwarded to the real host.
         @param request:
@@ -280,7 +280,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.end_headers()
 
     @staticmethod
-    def handle_options(request):
+    def handle_options(request: HTTPRequestHandler):
         # pylint: disable=too-many-statements
         """
         Handle http OPTIONS request. Just sends the headers. Is probably not used.
@@ -365,7 +365,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.send_response(500)
             request.end_headers()
 
-    def handle_function(self, request):
+    def handle_function(self, request: HTTPRequestHandler):
         """
         This function processes dynamic procedure calls via HTTP. Those requests are transformed into
         a call to LoginSession. This way only one LoginSession is kept alive and all access to ziggo-GO are
@@ -409,7 +409,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.send_response(400)
             request.end_headers()
 
-    def handle_head(self, request):
+    def handle_head(self, request: HTTPRequestHandler):
         """
         when a HEAD request is received, it is assumed to be a manifest call. If so, it
         will be forwarded to the real host to get all the headers. Used occasionally by Input Stream Adaptive
