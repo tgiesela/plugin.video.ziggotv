@@ -107,14 +107,14 @@
 					</dependencies>
                 </setting>
                 <setting id="data-timeout" type="number" label="41016">
-                    <default>60</default>
+                    <default>10</default>
                     <level>3</level>
                     <control type="edit" format="number">
 		                <heading></heading>
 	                </control>
                 </setting>
                 <setting id="connection-timeout" type="number" label="41015">
-                    <default>10</default>
+                    <default>5</default>
                     <level>3</level>
                     <control type="edit" format="number">
 		                <heading></heading>

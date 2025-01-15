@@ -190,6 +190,7 @@ class ZiggoPlugin:
         # pylint: disable=broad-exception-caught
         except Exception as excpt:
             xbmc.log('Error in play_video: type {0}, args {1}'.format(type(excpt), excpt.args), xbmc.LOGERROR)
+            raise excpt
 
     def play_movie(self, path):
         """
@@ -219,6 +220,7 @@ class ZiggoPlugin:
         # pylint: disable=broad-exception-caught
         except Exception as excpt:
             xbmc.log('Error in play_movie: type {0}, args {1}'.format(type(excpt), excpt.args), xbmc.LOGERROR)
+            raise excpt
 
     def play_recording(self, path, recType, seasonId=None):
         """
@@ -267,6 +269,7 @@ class ZiggoPlugin:
         # pylint: disable=broad-exception-caught
         except Exception as excpt:
             xbmc.log('Error in play_recording: type {0}, args {1}'.format(type(excpt), excpt.args), xbmc.LOGERROR)
+            raise excpt
 
     @staticmethod
     def __get_episode_and_season(seasons, seasonId, episodeId) -> typing.Tuple[str, str]:
@@ -318,6 +321,7 @@ class ZiggoPlugin:
         # pylint: disable=broad-exception-caught
         except Exception as excpt:
             xbmc.log('Error in play_movie: type {0}, args {1}'.format(type(excpt), excpt.args), xbmc.LOGERROR)
+            raise excpt
 
     def list_subcategories(self, screenId):
         """
@@ -906,8 +910,10 @@ if __name__ == '__main__':
         plugin.router(sys.argv[2], __url__, __handle__)
     except WebException as exc:
         xbmcgui.Dialog().ok('Error', '{0}'.format(exc.response))
-        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+        xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        xbmcplugin.endOfDirectory(__handle__)
     # pylint: disable=broad-exception-caught
     except Exception as exc:
         xbmcgui.Dialog().ok('Error', f'{exc}')
-        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+        xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+        xbmcplugin.endOfDirectory(__handle__)

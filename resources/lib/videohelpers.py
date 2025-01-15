@@ -176,7 +176,7 @@ class VideoHelpers:
             self.__handleWebException(webExc)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_channel: type {0}, args {1}'.format(type(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log('Error in __play_channel: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
             return None
@@ -202,7 +202,7 @@ class VideoHelpers:
             self.__handleWebException(webExc)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __replay_event: type {0}, args {1}'.format(type(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log('Error in __replay_event: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
 
@@ -236,7 +236,7 @@ class VideoHelpers:
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(type(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
             return None
@@ -256,7 +256,7 @@ class VideoHelpers:
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(type(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
             return None

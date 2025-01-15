@@ -89,6 +89,16 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
+    def send_error(self, exc: Exception, request: HTTPRequestHandler):
+        try:
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.send_response(500)
+            request.send_header('Content-Type','text/html')
+            request.end_headers()
+            request.wfile.write(bytes(str(exc), 'utf-8'))
+        except Exception as ex:
+            xbmc.log('Failed to send proper response: {0}'.format(ex))
+
     def handle_manifest(self, request: HTTPRequestHandler, requestType='get'):
         """
         Function to handle the manifest request. The url for the real host is constructed here. The
@@ -140,7 +150,9 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 raise RuntimeError('Stream not found for token: {0}'.format(token))
         else:
             request.send_response(500)
+            request.send_header('Content-Type','text/html')
             request.end_headers()
+            request.wfile.write(bytes('x-streaming-token missing', 'utf-8'))
             return
 
         url = stream.replace_baseurl(request.path, stream.latestToken)
@@ -208,18 +220,19 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         except ConnectionResetError as exc:
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except BrokenPipeError as exc:
             xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
-            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
-            request.send_response(500)
-            request.end_headers()
+            self.send_error(exc, request)
 
     def handle_post(self, request: HTTPRequestHandler):
         """
@@ -235,7 +248,9 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             token = stream.latestToken
         else:
             request.send_response(500)
+            request.send_header('Content-Type','text/html')
             request.end_headers()
+            request.wfile.write(bytes('x-streaming-token missing', 'utf-8'))
             return
 
         path = request.path  # Path with parameters received from request e.g. "/license?id=234324"
@@ -269,18 +284,22 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             xbmc.log('HTTP POST request processed: {0}'.format(unquote(path)), xbmc.LOGDEBUG)
         except ConnectionResetError as exc:
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except BrokenPipeError as exc:
             xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Exception in do_post(): {0}'.format(exc), xbmc.LOGERROR)
-            request.send_response(500)
-            request.end_headers()
+            self.send_error(exc, request)
 
-    @staticmethod
-    def handle_options(request: HTTPRequestHandler):
+    def handle_options(self, request: HTTPRequestHandler):
         # pylint: disable=too-many-statements
         """
         Handle http OPTIONS request. Just sends the headers. Is probably not used.
@@ -352,18 +371,19 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         except ConnectionResetError as exc:
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except BrokenPipeError as exc:
             xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
-            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
-            request.send_response(500)
-            request.end_headers()
+            xbmc.log('Exception in handle_options(): {0}'.format(exc), xbmc.LOGERROR)
+            self.send_error(exc, request)
 
     def handle_function(self, request: HTTPRequestHandler):
         """
@@ -424,22 +444,25 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 self.handle_manifest(request, 'head')
             else:
                 request.send_response(501)
+                request.send_header('Content-Type','text/html')
                 request.end_headers()
+                request.wfile('/manifest missing')
         except ConnectionResetError as exc:
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True     
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         except BrokenPipeError as exc:
             xbmc.log('Connection lost during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            request.close_connection = True
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Exception in handle_get(): {0}'.format(exc), xbmc.LOGERROR)
-            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
-            request.send_response(500)
-            request.end_headers()
+            xbmc.log('Exception in handle_head(): {0}'.format(exc), xbmc.LOGERROR)
+            self.send_error(exc, request)
 
     @staticmethod
     def baseurl_from_manifest(manifest):

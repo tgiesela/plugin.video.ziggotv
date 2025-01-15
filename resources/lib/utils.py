@@ -270,8 +270,8 @@ class ProxyHelper:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Exception during dynamic call: {0} {1}'.format(method, exc), xbmc.LOGERROR)
-            xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
-            return None
+            xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+            raise exc
 
 
 class KodiLock:
