@@ -48,6 +48,7 @@
         <news>v1.0.15 (2025-01-16)
 - Improved error-handling, solved error message b''
 - Set default timers to more realistic values
+- Fix for non-numeric versions of Kodi such as 20.0-ALPHA1
         </news>
     </extension>
 </addon>
