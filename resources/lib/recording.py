@@ -91,7 +91,8 @@ class Recording:
         if 'ottPaddingsBlackout' in recordingJson:
             self.ottPaddingsBlackout = recordingJson['ottPaddingsBlackout']  # false
         else:
-            self.ottPaddingsBlackout = recordingJson['isOttBlackout']  # false
+            if 'isOttBlackout' in recordingJson:
+                self.ottPaddingsBlackout = recordingJson['isOttBlackout']  # false
         if 'isPremiereAirings' in recordingJson:
             self.isPremiereAirings = recordingJson['isPremiereAirings']  # false
         else:
@@ -226,7 +227,9 @@ class SingleRecording(Recording):
         else:
             self.diskSpace = 0
         self.technicalDuration = recordingJson['technicalDuration']
-        self.isOttBlackout = recordingJson['isOttBlackout']  # false
+        self.isOttBlackout = False
+        if 'isOttBlackout' in recordingJson:
+            self.isOttBlackout = recordingJson['isOttBlackout']  # false
         self.duration = recordingJson['duration']  # 598,
         self.bookmark = recordingJson['bookmark']  # 0
         self.viewState = recordingJson['viewState']  # notWatched
