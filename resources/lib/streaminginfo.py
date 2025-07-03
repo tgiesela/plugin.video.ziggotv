@@ -41,7 +41,10 @@ class ReplayStreamingInfo(StreamingInfo):
         self.ageRating = -1
         if 'ageRating' in streamingJson:
             self.ageRating = streamingJson['ageRating']
-        self.fallbackUrl = streamingJson['fallbackUrl']
+        if 'fallbackUrl' in streamingJson:
+            self.fallbackUrl = streamingJson['fallbackUrl']
+        else:
+            self.fallbackUrl = ''
         self.url = streamingJson['url']
         self.isAvad = streamingJson['isAvad']
         self.trickPlayControl = []
@@ -113,4 +116,7 @@ class RecordingStreamingInfo(StreamingInfo):
         self.isAvad = streamingJson['isAvad']
         self.actualProgramStartOffset = streamingJson['actualProgramStartOffset']
         self.url = streamingJson['url']
-        self.fallbackUrl = streamingJson['fallbackUrl']
+        if 'fallbackUrl' in streamingJson:
+            self.fallbackUrl = streamingJson['fallbackUrl']
+        else:
+            self.fallbackUrl = ''
