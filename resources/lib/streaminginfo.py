@@ -114,7 +114,10 @@ class RecordingStreamingInfo(StreamingInfo):
         self.prePaddingTime = streamingJson['prePaddingTime']
         self.postPaddingTime = streamingJson['postPaddingTime']
         self.isAvad = streamingJson['isAvad']
-        self.actualProgramStartOffset = streamingJson['actualProgramStartOffset']
+        if 'actualProgramStartOffset' in streamingJson:
+            self.actualProgramStartOffset = streamingJson['actualProgramStartOffset']
+        else:
+            self.actualProgramStartOffset = 0
         self.url = streamingJson['url']
         if 'fallbackUrl' in streamingJson:
             self.fallbackUrl = streamingJson['fallbackUrl']
