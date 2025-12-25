@@ -1,0 +1,17 @@
+<!-- If a number is typed during a playing video, it is interpreted as a channel switch-->
+<keymap>
+  <FullScreenVideo>
+    <keyboard>
+      <zero>RunScript(special://home/addons/plugin.video.window/keymapaction.py,0)</zero> 
+      <one>RunScript(special://home/addons/plugin.video.window/keymapaction.py,1)</one>
+      <two>RunScript(special://home/addons/plugin.video.window/keymapaction.py,2)</two>
+      <three>RunScript(special://home/addons/plugin.video.window/keymapaction.py,3)</three>
+      <four>RunScript(special://home/addons/plugin.video.window/keymapaction.py,4)</four>
+      <five>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</five>
+      <six>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</six>
+      <seven>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</seven>
+      <eight>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</eight>
+      <nine>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</nine>
+    </keyboard>
+  </FullScreenVideo>
+</keymap>

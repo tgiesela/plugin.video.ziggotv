@@ -190,3 +190,7 @@ msgstr "Show opname ingepland"
 msgctxt "#40029"
 msgid "HD resolution not allowed, fallback to lower resolution"
 msgstr "HD resolutie niet toegestaan, schakel naar lage resolutie"
+
+msgctxt "#40030"
+msgid "Movies/Series"
+msgstr "Films/Series"

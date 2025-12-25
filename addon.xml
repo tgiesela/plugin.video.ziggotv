@@ -9,8 +9,12 @@
         <import addon="script.module.pyjwt" version="1.7.1"/>
         <import addon="script.module.web-pdb" version="1.6.2"/>
     </requires>
-    <extension point="xbmc.python.pluginsource" library="addon.py">
+<!--    <extension point="xbmc.python.pluginsource" library="addon.py">
         <provides>video</provides>
+    </extension>
+-->
+    <extension point="xbmc.python.script" library="addon.py">
+	<provides>video</provides>
     </extension>
     <extension point="xbmc.service" library="proxyservice.py"/>
     <extension point="xbmc.addon.metadata">

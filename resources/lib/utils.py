@@ -113,7 +113,23 @@ class SharedProperties:
     def get_kodi_version_minor(self) -> int:
         """return the minor version number of Kodi"""
         return int(self.kodiVersionMinor)
+    
+    def get_sort_options(self):
+        """get the current sort options from kodi"""
+        sortby = self.window.getProperty('ziggotv.SortMethod')
+        if sortby == '':
+            sortby = 'ascending'
+        sortorder = self.window.getProperty('ziggotv.SortOrder')
+        if sortorder == '':
+            sortorder = 'name'
+        return sortby, sortorder
 
+    def set_sort_options(self, sortby: str=None, sortorder: str=None):
+        """set the sort options in kodi"""
+        if sortby is not None:
+            self.window.setProperty('ziggotv.SortMethod', sortby)
+        if sortorder is not None:
+            self.window.setProperty('ziggotv.SortOrder', sortorder)
 
 class Timer(threading.Thread):
     """

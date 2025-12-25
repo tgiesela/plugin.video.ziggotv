@@ -240,6 +240,19 @@ class EventList(LinkedList):
             else:
                 return None
         return None
+    
+    def get_next_event(self, current: Event) -> Event:
+        currentNode: Node = self.head
+        while currentNode is not None:
+            currentEvent: Event = currentNode.data
+            if currentEvent.id == current.id:
+                if currentNode.next is None:
+                    return None
+                else:
+                    return currentNode.next.data
+            else:
+                currentNode = currentNode.next
+        return None
 
     def __find_event(self, ts: datetime.datetime, te: datetime.datetime) -> Node:
         windowStartTime = utils.DatetimeHelper.unix_datetime(ts)

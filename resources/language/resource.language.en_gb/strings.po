@@ -189,3 +189,7 @@ msgstr ""
 msgctxt "#40029"
 msgid "HD resolution not allowed, fallback to lower resolution"
 msgstr ""
+
+msgctxt "#40030"
+msgid "Movies/Series"
+msgstr ""

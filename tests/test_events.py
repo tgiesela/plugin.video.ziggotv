@@ -47,6 +47,7 @@ class TestEvents(TestBase):
             events: EventList = channel.events
             if events is not None and events.head is not None:
                 event = events.head.data
+                nextevent = events.get_next_event(event)
                 event.details = self.session.get_event_details(event.id)
             channels.append(channel)
 
