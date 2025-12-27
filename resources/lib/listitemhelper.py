@@ -334,7 +334,7 @@ class ListitemHelper:
         tag.setGenres(video.genre)
         tag.setSetId(video.logicalChannelNumber)
         tag.setMediaType('video')
-        tag.setUniqueIDs({'ziggochannelid': video.id})
+        tag.setUniqueIDs({'ziggochannelid': video.id, 'ziggochannelnumber': str(video.logicalChannelNumber)})
         li.setProperty('IsPlayable', 'true')
         li.setMimeType('application/dash+xml')
         li.setContentLookup(False)

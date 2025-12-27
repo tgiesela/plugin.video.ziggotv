@@ -2,7 +2,7 @@ import xbmc
 import xbmcgui
 import xbmcaddon
 
-from resources.lib.windows.sidewindow import loadsideWindow
+from resources.lib.utils import SharedProperties
 
 class baseWindow(xbmcgui.WindowXML):
     OPTIONICON=9001
@@ -10,9 +10,15 @@ class baseWindow(xbmcgui.WindowXML):
     def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon: xbmcaddon.Addon=None):
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia)
         self.addon = addon
-        self.sidewindow = loadsideWindow(self.addon, self)
+        self.sharedproperties = SharedProperties(addon)
+        self.sortby, self.sortorder = self.sharedproperties.get_sort_options()
+        if self.sortby == '' or self.sortorder == '':
+            self.sortby = str(SharedProperties.TEXTID_NUMBER)
+            self.sortorder = str(SharedProperties.TEXTID_ASCENDING)
+            self.sharedproperties.set_sort_options(sortby=self.sortby, sortorder=self.sortorder)
 
     def onAction(self, action):
+        super().onAction(action)
         if action.getId() == xbmcgui.ACTION_STOP:
             xbmc.log(f'Window onAction STOP', xbmc.LOGDEBUG)
             return
@@ -21,27 +27,26 @@ class baseWindow(xbmcgui.WindowXML):
             xbmc.log(f'Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
             return
 
-        super().onAction(action)
-
     def onClick(self, controlId):
         if controlId in [self.OPTIONICON,self.OPTIONLABEL]:
             xbmc.log(f'Window OPTION Icon', xbmc.LOGDEBUG)
             self.showOptions()
             return
-        if not self.sidewindow.onClick(controlId):
-            if controlId == self.CHANNELBUTTON:
-                from resources.lib.windows.channelwindow import loadchannelWindow
-                loadchannelWindow(self.addon)
-            elif controlId == self.EPGBUTTON:
-                loadepgWindow(self.addon)
-            else:
-                super().onClick(controlId)
+        super().onClick(controlId)
 
     def onFocus(self, controlId):
-        if self.sidewindow.onFocus(controlId):
-            return True
         return super().onFocus(controlId)
 
     def showOptions(self):
-        self.sidewindow.window.doModal()
-        sortby, sortorder = self.sidewindow.getSortOptions()
+        from resources.lib.windows.sidewindow import loadsideWindow
+        window = loadsideWindow(self.addon, self)
+        self.sortby, self.sortorder = self.sharedproperties.get_sort_options()
+        del window
+        self.optionsSelected()
+
+    def optionsSelected(self):
+        """
+        Should be overriden to receive signal that options were selected
+        in the side window
+        """
+        pass

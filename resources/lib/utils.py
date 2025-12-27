@@ -71,6 +71,12 @@ class SharedProperties:
     """
     class to share properties between service and addon/scripts
     """
+    TEXTID_ASCENDING=21430
+    TEXTID_DESCENDING=21431
+    TEXTID_NAME=551
+    TEXTID_NUMBER=549
+    TEXTID_DATE=552
+    TEXTID_SIZE=553
 
     def __init__(self, addon: xbmcaddon.Addon):
         self.addon: xbmcaddon.Addon = addon
@@ -117,11 +123,7 @@ class SharedProperties:
     def get_sort_options(self):
         """get the current sort options from kodi"""
         sortby = self.window.getProperty('ziggotv.SortMethod')
-        if sortby == '':
-            sortby = 'ascending'
         sortorder = self.window.getProperty('ziggotv.SortOrder')
-        if sortorder == '':
-            sortorder = 'name'
         return sortby, sortorder
 
     def set_sort_options(self, sortby: str=None, sortorder: str=None):
@@ -357,6 +359,28 @@ def invoke_debugger(enable_debug: bool, debug_type:str):
         except Exception as exc:
             xbmc.log('Could not connect to debugger: {0}'.format(exc), xbmc.LOGERROR)
     return
+
+def check_service(addon: xbmcaddon.Addon):
+    """
+    Function to check if the Ziggo service is running
+    @return:
+    """
+    home: SharedProperties = SharedProperties(addon=addon)
+    if home.is_service_active():
+        return
+    secondsToWait = 30
+    timeWaiting = 0
+    interval = 0.5
+    dlg = xbmcgui.DialogProgress()
+    dlg.create('ZiggoTV', 'Waiting for service to start...')
+    while (not home.is_service_active() and
+           timeWaiting < secondsToWait and not home.is_service_active() and not dlg.iscanceled()):
+        xbmc.sleep(int(interval * 1000))
+        timeWaiting += interval
+        dlg.update(int(timeWaiting / secondsToWait * 100), 'Waiting for service to start...')
+    dlg.close()
+    if not home.is_service_active():
+        raise RuntimeError('Service did not start in time')
 
 if __name__ == '__main__':
     pass

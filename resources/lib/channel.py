@@ -222,16 +222,18 @@ class ChannelList(UserList):
         """
         return 'PVR' in self.entitlements
 
-    def channels_by_lcn(self) -> List[Channel]:
+    def channels_by_lcn(self, reverse=False) -> List[Channel]:
         """
         Get a list of channels sorted by logical channel number
         @return: List[Channel]
         """
-        return sorted(self.channels, key=lambda x: x.logicalChannelNumber, reverse=False)
+        self.channels.sort(key=lambda x: x.logicalChannelNumber, reverse=reverse)
+        return self.channels
 
-    def channels_by_name(self) -> List[Channel]:
+    def channels_by_name(self, reverse=False) -> List[Channel]:
         """
         Get a list of channels sorted by name
         @return: List[Channel]
         """
-        return sorted(self.channels, key=lambda x: x.name, reverse=False)
+        self.channels.sort(key=lambda x: x.name, reverse=reverse)
+        return self.channels

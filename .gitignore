@@ -10,3 +10,7 @@ html/
 package-lock.json
 
 /plugin.video.ziggotv/tests/epg.json
+channels.json
+cookies.json
+entitlements.json
+session.json

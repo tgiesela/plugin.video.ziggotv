@@ -2,8 +2,10 @@ import xbmc
 import xbmcgui
 import xbmcaddon
 
+from resources.lib.utils import check_service
 from resources.lib.windows.basewindow import baseWindow
 from resources.lib.windows.channelwindow import loadchannelWindow
+from resources.lib.windows.epgwindow import loadepgWindow
 class homeWindow(baseWindow):
     GROUPLIST=50
     CHANNELBUTTON=5
@@ -21,8 +23,6 @@ class homeWindow(baseWindow):
         self.setFocusId(5)
 
     def onFocus(self, controlId):
-        if self.sidewindow.onFocus(controlId):
-            return True
         super().onFocus(controlId)
     
     def onAction(self, action):
@@ -42,10 +42,13 @@ class homeWindow(baseWindow):
         if controlId == self.CHANNELBUTTON:
             loadchannelWindow(self.addon)
         elif controlId == self.EPGBUTTON:
-            pass
+            loadepgWindow(self.addon)
 
 
 def loadhomeWindow(addon: xbmcaddon.Addon):
+    from resources.lib.utils import invoke_debugger
+    invoke_debugger(False, 'eclipse')
+    check_service(addon)
     window = homeWindow('ziggohome.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
     window.doModal()
 

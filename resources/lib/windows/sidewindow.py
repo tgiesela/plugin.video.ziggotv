@@ -3,32 +3,40 @@ import xbmcgui
 import xbmcaddon
 
 from resources.lib.utils import SharedProperties
+from resources.lib.windows.basewindow import baseWindow
 
-class sideWindow():
+class sideWindow(xbmcgui.WindowXMLDialog):
     SIDECHANNELBUTTON=100
     SIDEEPGBUTTON=101
     SIDERECORDINGSBUTTON=102
     SIDEMOVIESBUTTON=103
-    LABELSELECTED=60522
+    LABELSELECTED=9102
     LABELVIEWTYPE=200
-    SORTMETHODBUTTON=6053
-    SORTORDERBUTTON=6055
-    def __init__(self, addon: xbmcaddon.Addon, currentWindow=None):
-        self.window = xbmcgui.WindowXMLDialog('sidewindow.xml', addon.getAddonInfo('path'), defaultRes='1080i', isMedia=False)
-        self.addon = addon
+    SORTMETHODBUTTON=9301
+    SORTMETHODLABEL=9302
+    SORTORDERBUTTON=9401
+    SORTORDERLABEL=9402
+    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon:xbmcaddon.Addon=None,currentWindow=None):
+        super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
+        self.ADDON = addon
         self.currentWindow = currentWindow
         self.sharedproperties = SharedProperties(addon)
-        self.onInit()
+        self.sortmethod, self.sortorder = self.sharedproperties.get_sort_options()
+        if self.sortorder == '':    
+            self.sortorder = SharedProperties.TEXTID_ASCENDING
+        if self.sortmethod == '':
+            self.sortmethod = SharedProperties.TEXTID_NAME
+        self.show()
+
+    def __setlabels(self):
+        self.getControl(self.SORTORDERLABEL).setLabel(xbmc.getLocalizedString(int(self.sortorder)))
+        self.getControl(self.SORTMETHODLABEL).setLabel(xbmc.getLocalizedString(int(self.sortmethod)))
 
     def onInit(self):
-        xbmc.log(f'SideWindow onInit', xbmc.LOGINFO)
-
-        sortorder, sortmethod = self.sharedproperties.get_sort_options()
-        self.window.getControl(self.SORTMETHODBUTTON).setLabel(sortmethod)
-        self.window.getControl(self.SORTORDERBUTTON).setLabel(sortorder)
+        self.__setlabels()
 
     def onAction(self, action):
-        pass
+        super().onAction(action)
 
     def onClick(self, controlId):
         if controlId in [self.SIDECHANNELBUTTON, self.SIDEEPGBUTTON, self.SIDERECORDINGSBUTTON]:
@@ -36,38 +44,46 @@ class sideWindow():
             return True
         else:
             if controlId == self.SORTORDERBUTTON:
-                if self.window.getControl(self.SORTORDERBUTTON).getLabel() == 'Ascending':
-                    sortorder = 'Descending'
+                if int(self.sortorder) == SharedProperties.TEXTID_DESCENDING:
+                    self.sortorder = SharedProperties.TEXTID_ASCENDING
                 else:
-                    sortorder = 'Ascending'
-                self.sharedproperties.set_sort_options(sortorder=sortorder)
-                return True
-            return False
+                    self.sortorder = SharedProperties.TEXTID_DESCENDING
+            elif controlId == self.SORTMETHODBUTTON:
+                wc = self.currentWindow.__class__.__name__
+                if wc in ['channelWindow', 'epgWindow']:
+                    if int(self.sortmethod) == SharedProperties.TEXTID_NAME:
+                        self.sortmethod = SharedProperties.TEXTID_NUMBER
+                    elif int(self.sortmethod) == SharedProperties.TEXTID_NUMBER:
+                        self.sortmethod = SharedProperties.TEXTID_NAME
+                else:
+                    if int(self.sortmethod) == SharedProperties.TEXTID_NAME:
+                        self.sortmethod = SharedProperties.TEXTID_NUMBER
+                    elif int(self.sortmethod) == SharedProperties.TEXTID_NUMBER:
+                        self.sortmethod = SharedProperties.TEXTID_NAME
+
+            self.sharedproperties.set_sort_options(sortby=str(self.sortmethod), sortorder=str(self.sortorder))
+            self.__setlabels()
+            return True
         
     def onFocus(self, controlId):
         if controlId == self.SIDECHANNELBUTTON:
-            self.window.getControl(self.LABELSELECTED).setLabel(self.addon.getLocalizedString(40010))
+            sclbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
+            sclbl.setLabel(xbmc.getLocalizedString(19019))
             return True
         elif controlId == self.SIDEEPGBUTTON:
-            self.window.getControl(self.LABELSELECTED).setLabel(self.addon.getLocalizedString(40011))
+            selbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
+            selbl.setLabel(xbmc.getLocalizedString(19069))
             return True
         elif controlId == self.SIDERECORDINGSBUTTON:
-            self.window.getControl(self.LABELSELECTED).setLabel(self.addon.getLocalizedString(40015))
+            srlbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
+            srlbl.setLabel(xbmc.getLocalizedString(19017))
             return True
         else:
             return False
 
-    def show(self):
-        self.window.show()
-        if self.currentWindow.__class__.__name__ == "homeWindow":
-            self.onInit()
-        elif self.currentWindow.__class__.__name__ == "channelWindow":
-#            self.window.getControl(self.SIDECHANNELBUTTON).setEnabled(False)
-            self.onInit()
-
     def getSortOptions(self):
-        sortbyControl: xbmcgui.ControlButton = self.window.getControl(self.SORTMETHODBUTTON)
-        sortorderControl: xbmcgui.ControlButton = self.window.getControl(self.SORTORDERBUTTON)
+        sortbyControl: xbmcgui.ControlButton = self.getControl(self.SORTMETHODBUTTON)
+        sortorderControl: xbmcgui.ControlButton = self.getControl(self.SORTORDERBUTTON)
         sortby = sortbyControl.getLabel()
         sortorder = sortorderControl.getLabel()
         return sortby, sortorder
@@ -75,13 +91,14 @@ class sideWindow():
     def shortcutClicked(self, controlId):
         if controlId == self.SIDECHANNELBUTTON:
             from resources.lib.windows.channelwindow import loadchannelWindow
-            loadchannelWindow(self.addon)
+            self.close()
+            loadchannelWindow(self.ADDON)
         elif controlId == self.SIDEEPGBUTTON:
             from resources.lib.windows.epgwindow import loadepgWindow
-            loadepgWindow(self.addon)
+            loadepgWindow(self.ADDON)
 
 def loadsideWindow(addon: xbmcaddon.Addon, currentWindow=None):
     CWD: str=addon.getAddonInfo('path')
-    sidewindow = sideWindow(addon, currentWindow)
+    sidewindow = sideWindow('sideWindow.xml', CWD, defaultRes='1080i', addon=addon)
+    sidewindow.doModal()
     return sidewindow
-

@@ -7,7 +7,7 @@ from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.utils import ProxyHelper
+from resources.lib.utils import ProxyHelper, SharedProperties
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import baseWindow
@@ -24,7 +24,6 @@ class channelWindow(baseWindow):
         self.pos = -1
         self.show()
         self.channels: ChannelList = None
-        # self.sidewindow = sideWindow(self, addon, self)
 
     def onInit(self):
         xbmc.sleep(100)
@@ -70,6 +69,8 @@ class channelWindow(baseWindow):
             li.setProperty('epgEventEndTime', endTime.strftime('%H:%M'))
             duration = time.strftime("%H:%M", time.gmtime(event.duration))
             li.setProperty('epgEventDuration', duration)
+            tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+            tag.setDuration(event.duration)  # in seconds
             li.setProperty('epgEventTitle', event.title)
             elapsed = utils.DatetimeHelper.unix_datetime(utils.DatetimeHelper.now()) - event.startTime
             percentage = (elapsed/event.duration) * 100
@@ -77,11 +78,6 @@ class channelWindow(baseWindow):
         else:
             li.setProperty('hasepg','false')
         return event
-
-    # def onFocus(self, controlId):
-    #     if self.sidewindow.onFocus(controlId):
-    #         return True
-    #     return super().onFocus(controlId)
 
     def onAction(self, action):
         super().onAction(action)
@@ -100,18 +96,24 @@ class channelWindow(baseWindow):
             return
         
     def onClick(self, controlId):
-        if not self.sidewindow.onClick(controlId):
-            if controlId == self.LISTBOX:
-                list: xbmcgui.ControlList = self.getControl(self.LISTBOX)
-                li = list.getSelectedItem()
-                channel = self.__findchannel(li)
-                self.videoHelper.play_channel(channel=channel)
         super().onClick(controlId)
+        if controlId == self.LISTBOX:
+            list: xbmcgui.ControlList = self.getControl(self.LISTBOX)
+            li = list.getSelectedItem()
+            channel = self.__findchannel(li)
+            self.videoHelper.play_channel(channel=channel)
+
+    def optionsSelected(self):
+        """
+        called when options were selected in the side window
+        """
+        self.showchannels()
 
     def showchannels(self):
         list: xbmcgui.ControlList = self.getControl(self.LISTBOX) # Fixedlist
 
         # Create a list for our items.
+        list.reset()
         listing = []
         self.channels = self.helper.dynamic_call(LoginSession.get_channels)
         entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
@@ -153,7 +155,16 @@ class channelWindow(baseWindow):
             #     callbackUrl = '{0}?action=cantplay&video={1}'.format(self.url, channel.id)
             li.setProperty('IsPlayable', 'false')  # Turn off to avoid kodi complaining about item not playing
             listing.append(li)
-        listing.sort(key=lambda x: x.getLabel().lower())
+        if int(self.sortby) == SharedProperties.TEXTID_NAME:
+            if int(self.sortorder) == SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: x.getLabel().lower())
+            else:
+                listing.sort(key=lambda x: x.getLabel().lower(), reverse=True)
+        elif int(self.sortby) == SharedProperties.TEXTID_NUMBER:
+            if int(self.sortorder) == SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')))
+            else:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')), reverse=True)
         list.addItems(listing)
         list.selectItem(0)
         self.setFocusId(self.LISTBOX)

@@ -16,7 +16,7 @@ from resources.lib.videohelpers import VideoHelpers
 from resources.lib.events import Event
 from resources.lib.globals import A
 from resources.lib.recording import RecordingList
-from resources.lib.utils import ProxyHelper, WebException
+from resources.lib.utils import ProxyHelper, SharedProperties, WebException
 from resources.lib.webcalls import LoginSession
 
 
@@ -27,7 +27,7 @@ class ProgramEventGrid:
     # pylint: disable=too-many-instance-attributes
     MINUTES_IN_GRID = 120
     HALFHOUR_WIDTH = 350
-    MAXROWS = 15
+    MAXROWS = 14
 
     def __init__(self,
                  window: xbmcgui.WindowXML,
@@ -42,6 +42,7 @@ class ProgramEventGrid:
         self.unixendtime = None
         self.rows: List[ProgramEventRow] = []
         self.channels: ChannelList = channels
+        self.sortedchannels: List[Channel] = []
         self.channelsInGrid: List[Channel] = []
         self.mediaFolder = mediaFolder
         self.window = window
@@ -60,7 +61,7 @@ class ProgramEventGrid:
     def __set_epg_date(self, date: datetime.datetime):
         # 1011 EPG Date
         lbl: xbmcgui.ControlLabel = self.__get_control(1011)
-        lbl.setLabel(date.strftime('%d-%m-%y'))
+        lbl.setLabel(date.strftime('%x'))
 
     def __set_epg_time(self, date: datetime.datetime):
         # 1012-1015 half hour time
@@ -114,7 +115,7 @@ class ProgramEventGrid:
         self.guide.obtain_events_in_window(
             self.startWindow.astimezone(datetime.timezone.utc),
             self.endWindow.astimezone(datetime.timezone.utc))
-        for channel in self.channels:
+        for channel in self.sortedchannels:
             channel.events = self.guide.get_events(channel.id)
 
     def __shift_window(self, leftorright):
@@ -128,12 +129,6 @@ class ProgramEventGrid:
 
     def __position_time(self):
         timeBar: xbmcgui.ControlLabel = self.window.getControl(2100)
-        leftGrid: xbmcgui.ControlImage = self.window.getControl(2106)
-        rightGrid: xbmcgui.ControlImage = self.window.getControl(2107)
-        leftGrid.setHeight(len(self.rows) * self.rows[0].rowHeight)
-        rightGrid.setHeight(len(self.rows) * self.rows[0].rowHeight)
-        leftGrid.setVisible(False)
-        rightGrid.setVisible(False)
         timeBar.setVisible(False)
         currentTime = datetime.datetime.now()
         pixelsForWindow = 4 * self.HALFHOUR_WIDTH  # 4 times half an hour
@@ -144,21 +139,6 @@ class ProgramEventGrid:
             width = int(deltaMinutes * pixelsPerMinute)
             timeBar.setPosition(int(deltaMinutes * pixelsPerMinute), 0)
             timeBar.setVisible(True)
-            leftGrid.setPosition(1, 0)
-            leftGrid.setWidth(width-2)
-            leftGrid.setVisible(True)
-            rightGrid.setPosition(width + 2, 0)
-            rightGrid.setWidth(pixelsForWindow - width - 2)
-            rightGrid.setVisible(True)
-        else:
-            if currentTime < self.startWindow:
-                rightGrid.setPosition(1, 0)
-                rightGrid.setWidth(pixelsForWindow-2)
-                rightGrid.setVisible(True)
-            else:
-                leftGrid.setPosition(1, 0)
-                leftGrid.setWidth(pixelsForWindow-2)
-                leftGrid.setVisible(True)
 
     def __get_control(self, controlId):
         return self.window.getControl(controlId)
@@ -181,6 +161,29 @@ class ProgramEventGrid:
             row.clear()
         self.rows.clear()
 
+    def sortchannels(self):
+        """
+        function to sort the channels in the grid
+        @return:
+        """
+        sharedprops = SharedProperties(self.addon)
+        sortby, sortorder = sharedprops.get_sort_options()
+        if sortby == '' or sortorder == '':
+            sortby = str(SharedProperties.TEXTID_NUMBER)
+            sortorder = str(SharedProperties.TEXTID_ASCENDING)
+            sharedprops.set_sort_options(sortby=sortby, sortorder=sortorder)
+
+        if int(sortby) == SharedProperties.TEXTID_NAME:
+            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
+                self.sortedchannels = self.channels.channels_by_name(reverse=False)
+            else:
+                self.sortedchannels = self.channels.channels_by_name(reverse=True)
+        elif int(sortby) == SharedProperties.TEXTID_NUMBER:
+            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
+                self.sortedchannels = self.channels.channels_by_lcn(reverse=False)
+            else:
+                self.sortedchannels = self.channels.channels_by_lcn(reverse=True)
+
     def build(self, stayOnRow=False):
         """
         function to build the epg. Window parameters must have been set before
@@ -189,8 +192,10 @@ class ProgramEventGrid:
         """
         self.clear()
         row = 0
-        while row < self.MAXROWS and self.firstChannelIndex + row < len(self.channels):
-            self.rows.append(ProgramEventRow(row, self.channels[self.firstChannelIndex + row], self))
+        self.sortchannels()
+
+        while row < self.MAXROWS and self.firstChannelIndex + row < len(self.sortedchannels):
+            self.rows.append(ProgramEventRow(row, self.sortedchannels[self.firstChannelIndex + row], self))
             row += 1
         if not stayOnRow:
             self.currentRow = 0
@@ -311,7 +316,7 @@ class ProgramEventGrid:
         Shift epg window down one page if we are not on the last row
         @return:
         """
-        if self.firstChannelIndex + self.MAXROWS >= len(self.channels):
+        if self.firstChannelIndex + self.MAXROWS >= len(self.sortedchannels):
             return
         self.firstChannelIndex += self.MAXROWS - 1
         self.clear()
@@ -388,7 +393,7 @@ class ProgramEventGrid:
         if not event.hasDetails:
             event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
         title: xbmcgui.ControlLabel = self.__get_control(1201)
-        title.setLabel(event.title)
+        title.setLabel(f'[B]{event.title}[/B]')
 
         description: xbmcgui.ControlLabel = self.__get_control(1203)
         description.setLabel(event.details.description)
@@ -396,7 +401,7 @@ class ProgramEventGrid:
         times: xbmcgui.ControlLabel = self.__get_control(1202)
         startTime = utils.DatetimeHelper.from_unix(event.startTime)
         endTime = utils.DatetimeHelper.from_unix(event.endTime)
-        times.setLabel(startTime.strftime('%H:%M') + ' - ' + endTime.strftime('%H:%M'))
+        times.setLabel(f'[I]{startTime.strftime("%x %H:%M")} - {endTime.strftime("%H:%M")}[/I]')
 
         seasoninfo: xbmcgui.ControlLabel = self.__get_control(1204)
         if event.details.isSeries:
