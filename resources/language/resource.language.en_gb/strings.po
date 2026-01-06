@@ -193,3 +193,12 @@ msgstr ""
 msgctxt "#40030"
 msgid "Movies/Series"
 msgstr ""
+
+msgctxt "#40031"
+msgid "Planned"
+msgstr ""
+
+msgctxt "#40032"
+msgid "Recorded"
+msgstr ""
+

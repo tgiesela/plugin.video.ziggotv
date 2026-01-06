@@ -1,9 +1,11 @@
 """
 Module with classes for playing videos
 """
+import shutil
 import xbmc
+import xbmcvfs
 
-from resources.lib.utils import WebException
+from resources.lib.utils import WebException, ZiggoKeyMap
 
 
 class ZiggoPlayer(xbmc.Player):
@@ -17,6 +19,7 @@ class ZiggoPlayer(xbmc.Player):
         self.prePadding = None
         xbmc.log("ZIGGOPLAYER CREATED", xbmc.LOGDEBUG)
         self.replay = False
+        self.keymap: ZiggoKeyMap = None
 
     def __del__(self):
         if self.item is not None:
@@ -36,6 +39,10 @@ class ZiggoPlayer(xbmc.Player):
                 xbmc.log("ZIGGOPLAYER WEBEXC {0}".format(exc))
             xbmc.log("ZIGGOPLAYER STOPPED item " + self.item.url, xbmc.LOGDEBUG)
             self.item = None
+
+        if self.keymap is not None:
+            self.keymap.deactivate()
+            self.keymap = None
         xbmc.log("ZIGGOPLAYER STOPPED", xbmc.LOGDEBUG)
 
     def onPlayBackPaused(self) -> None:
@@ -49,6 +56,9 @@ class ZiggoPlayer(xbmc.Player):
 
     def onPlayBackEnded(self) -> None:
         xbmc.log("ZIGGOPLAYER PLAYBACKENDED", xbmc.LOGDEBUG)
+        if self.keymap is not None:
+            self.keymap.deactivate()
+            self.keymap = None
 
     def onAVChange(self) -> None:
         xbmc.log("ZIGGOPLAYER AVCHANGE", xbmc.LOGDEBUG)
@@ -71,3 +81,7 @@ class ZiggoPlayer(xbmc.Player):
 
     def setItem(self, item):
         self.item = item
+
+    def setKeymap(self, keymap: ZiggoKeyMap):
+        self.keymap = keymap
+        self.keymap.activate()

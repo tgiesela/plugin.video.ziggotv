@@ -107,6 +107,9 @@ class TestBase(unittest.TestCase):
     def cleanup_playbackstates(self):
         self.remove(G.PLAYBACK_INFO)
 
+    def cleanup_savechannelstates(self):
+        self.remove(G.RECENTCHANNELS_INFO)
+
     def cleanup_all(self):
         self.cleanup_customer()
         self.cleanup_session()
@@ -117,6 +120,7 @@ class TestBase(unittest.TestCase):
         self.cleanup_epg()
         self.cleanup_recordings()
         self.cleanup_playbackstates()
+        self.cleanup_savechannelstates()
 
     def do_login(self):
         with open('c:/temp/credentials.json', 'r', encoding='utf-8') as credfile:

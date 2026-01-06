@@ -11,7 +11,7 @@ from xml.dom import minidom
 import requests
 import xbmcaddon
 
-from avstream import StreamSession
+from resources.lib.avstream import StreamSession
 from resources.lib.globals import G
 from resources.lib.urltools import UrlTools
 from resources.lib.utils import WebException, DatetimeHelper

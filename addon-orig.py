@@ -234,7 +234,7 @@ class ZiggoPlugin:
         if recType == 'planned':
             recordings = self.helper.dynamic_call(LoginSession.get_recordings_planned)
         else:
-            recordings = self.helper.dynamic_call(LoginSession.get_recordings)
+            recordings = self.helper.dynamic_call(LoginSession.get_recordings_recorded)
         recording = None
         if seasonId is not None:
             season: SeasonRecording = self.__find_season(seasonId, recordings)
@@ -405,25 +405,25 @@ class ZiggoPlugin:
         if recType == 'planned':
             recordings = self.helper.dynamic_call(LoginSession.get_recordings_planned)
         else:
-            recordings = self.helper.dynamic_call(LoginSession.get_recordings)
+            recordings = self.helper.dynamic_call(LoginSession.get_recordings_recorded)
 
         for rec in recordings.recs:
             if isinstance(rec, SingleRecording):
-                li = self.listitemHelper.listitem_from_recording(rec, recType)
+                li = self.listitemHelper.listitem_from_recording(rec)
                 callbackUrl = (
-                    '{0}?action=play&type=recording&id={1}&rectype={2}'.format(self.url, rec.id, recType))
+                    '{0}?action=play&type=recording&id={1}&rectype={2}'.format(self.url, rec.id, rec.recordingState))
                 isFolder = False
             elif isinstance(rec, PlannedRecording):
-                li = self.listitemHelper.listitem_from_recording(rec, recType)
+                li = self.listitemHelper.listitem_from_recording(rec)
                 callbackUrl = (
                     '{0}?action=play&type=recording&id={1}&rectype={2}'.format(self.url, rec.id, rec.recordingState))
                 isFolder = False
             elif isinstance(rec, SeasonRecording):
                 season: SeasonRecording = rec
-                li = self.listitemHelper.listitem_from_recording_season(season, recType)
+                li = self.listitemHelper.listitem_from_recording_season(season)
                 callbackUrl = '{0}?action=sublist&type=recording&recording={1}&rectype={2}'.format(self.url,
                                                                                                    rec.id,
-                                                                                                   recType)
+                                                                                                   season.recordingtype)
                 isFolder = True
             else:
                 continue
@@ -462,12 +462,12 @@ class ZiggoPlugin:
         if recType == 'planned':
             recordings = self.helper.dynamic_call(LoginSession.get_recordings_planned)
         else:
-            recordings = self.helper.dynamic_call(LoginSession.get_recordings)
+            recordings = self.helper.dynamic_call(LoginSession.get_recordings_recorded)
         season: SeasonRecording = self.__find_season(seasonId, recordings)
         if season is not None:
             for rec in season.get_episodes(recType):
                 rec.title = season.title
-                li = self.listitemHelper.listitem_from_recording(rec, recType, season)
+                li = self.listitemHelper.listitem_from_recording(rec, season)
                 callbackUrl = ('{0}?action=play&type=recording&id={1}&rectype={2}&seasonId={3}'
                                .format(self.url,
                                        rec.id,

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<defaultcontrol always="true">50</defaultcontrol>
+	<backgroundcolor>background</backgroundcolor>
+	<menucontrol>9000</menucontrol>
+	<controls>
+		<include>DefaultBackground</include>
+		<control type="group">
+			<control type="group">
+				<include>OpenClose_Left</include>
+
+				<control type="group"> <!-- horizontal list of movie categories (For You/Series etc)-->
+					<top>60</top>
+					<left>0</left>
+					<right>980</right>
+					<control type="label">
+						<height>30</height>
+						<label>$LOCALIZE[31148]</label>
+						<font>font13</font>
+					</control>
+					<control type="list" id = "150">
+						<top>60</top>
+						<width>980</width>
+						<height>150</height>
+						<itemgap>20</itemgap>
+						<align>left</align>
+						<orientation>horizontal</orientation>
+						<focusposition>0</focusposition>
+						<movement>1</movement>
+						<ondown>9001</ondown>
+						<onup>50</onup>
+						<itemlayout height="200" width="200" infoupdate="5000">
+							<control type="image">
+								<top>0</top>
+								<left>25</left>
+								<width>120</width>
+								<height>120</height>
+								<aspectratio align="center">keep</aspectratio>
+								<visible>true</visible>
+								<texture>$INFO[ListItem.ActualIcon]</texture>
+							</control>
+							<control type="label">
+								<top>120</top>
+								<left>25</left>
+								<width>150</width>
+								<height>25</height>
+								<font>font10</font>
+								<align>center</align>
+								<label>$INFO[ListItem.Label]</label>
+							</control>
+						</itemlayout>
+						<focusedlayout height="200" width="200" infoupdate="5000">
+							<control type="image">
+								<left>0</left>
+								<top>0</top>
+								<right>0</right>
+								<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
+								<texture colordiffuse="button_focus">lists/focus.png</texture>
+								<visible>Control.HasFocus(150)</visible>
+							</control>
+							<control type="image">
+								<top>0</top>
+								<left>25</left>
+								<width>120</width>
+								<height>120</height>
+								<aspectratio align="center">keep</aspectratio>
+								<visible>true</visible>
+								<texture>$INFO[ListItem.ActualIcon]</texture>
+							</control>
+							<control type="label">
+								<top>120</top>
+								<left>25</left>
+								<width>150</width>
+								<height>25</height>
+								<font>font10</font>
+								<align>center</align>
+								<label>$INFO[ListItem.Label]</label>
+							</control>
+						</focusedlayout>
+					</control>
+
+				</control>
+
+				<control type="list" id="50"> <!-- List of movies -->
+					<left>0</left>
+					<top>300</top>
+					<right>980</right>
+					<bottom>list_bottom_offset</bottom>
+					<onleft>SendClick(9001)</onleft>
+					<onright>73</onright>
+					<onup>150</onup>
+					<ondown>150</ondown> 
+					<movement>4</movement>
+					<focusposition>4</focusposition>
+					<pagecontrol>73</pagecontrol>
+					<scrolltime tween="cubic" easing="out">500</scrolltime>
+<!--ListitemLayout-->
+					<itemlayout height="100" infoupdate="5000">
+						<control type="image">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>ListItem.Property(IsSeries)</visible>
+							<texture>icons/filemanager.png</texture>
+						</control>
+						<control type="image">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>ListItem.Property(hasResumepoint)</visible>
+							<texture>overlays/watched/resume.png</texture>
+						</control>
+						<control type="label">
+							<left>120</left>
+							<top>0</top>
+							<right>30</right>
+							<!--<font>font36_title</font>-->
+							<aligny>top</aligny>
+							<visible>true</visible>
+							<label>$INFO[ListItem.Title]</label>
+						</control>
+						<control type="image">
+							<right>20</right>
+							<top>0</top>
+							<width>80</width>
+							<aligny>center</aligny>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>true</visible>
+							<texture>$INFO[ListItem.Art(poster)]</texture>
+						</control>
+					
+<!-- ListItemLayout end -->
+					</itemlayout>
+					<focusedlayout height="100" infoupdate="5000">
+<!-- ListitemLayout -->
+						<control type="image">
+							<left>0</left>
+							<top>0</top>
+							<right>0</right>
+							<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
+							<texture colordiffuse="button_focus">lists/focus.png</texture>
+							<visible>Control.HasFocus(50)</visible>
+						</control>
+						<control type="image">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>ListItem.Property(IsSeries)</visible>
+							<texture>icons/filemanager.png</texture>
+						</control>					
+						<control type="image">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>ListItem.Property(hasResumepoint)</visible>
+							<texture>overlays/watched/resume.png</texture>
+						</control>
+						<control type="label">
+							<left>120</left>
+							<top>0</top>
+							<right>30</right>
+							<!--<font>font36_title</font>-->
+							<aligny>top</aligny>
+							<visible>true</visible>
+							<label>$INFO[ListItem.Title]</label>
+						</control>
+						<control type="image">
+							<right>20</right>
+							<top>0</top>
+							<width>80</width>
+							<aligny>center</aligny>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>true</visible>
+							<texture>$INFO[ListItem.Art(poster)]</texture>
+						</control>
+					</focusedlayout>
+<!-- ListItemLayout end -->
+				</control>
+				<control type="scrollbar" id="73">
+					<left>981</left>
+					<top>0</top>
+					<width>12</width>
+					<height>100%</height>
+					<onleft>50</onleft>
+					<onright>50</onright>
+					<onup>50</onup>
+					<ondown>50</ondown>				
+					<orientation>vertical</orientation>
+				</control>
+				
+			</control>
+				
+			<control type="group" id="60">
+				<top>0</top>
+				<height>100%</height>
+				<left>993</left>
+				<onleft>50</onleft>
+				<onright>9000</onright>
+				<depth>DepthContentPanel</depth>
+				<include>OpenClose_Right</include>
+				<width>870</width>
+				<control type="image">
+					<texture flipx="false" colordiffuse="EDFFFFFF">lists/panel.png</texture>
+					<bordertexture border="21" infill="false">overlays/shadow.png</bordertexture>
+					<bordersize>0</bordersize>
+					<width>1000</width>
+					<left>00</left>
+					<right>0</right>
+					<top>0</top>
+					<height>100%</height>
+				</control>
+<!--InfoPanel-->
+				<control type="group">
+					<left>20</left>
+					<control type="group">
+						<top>10</top>
+						<width>600</width>
+						<control type="image">
+							<top>60</top>
+							<left>100</left>
+							<width>400</width>
+							<height>300</height>
+							<aspectratio align="center" aligny="center">keep</aspectratio>
+							<texture>$INFO[ListItem.Art(poster)]</texture>
+							<visible>true</visible>
+							<fadetime>200</fadetime>
+						</control>
+					</control>
+					<control type="textbox">
+						<top>365</top>
+						<width>830</width>
+						<height>262</height>
+						<font>font36_title</font>
+						<label>$INFO[ListItem.Title]</label>
+						<scroll>true</scroll>
+						<visible>true</visible>
+					</control>
+					<control type="label">
+						<top>460</top>
+						<width>830</width>
+						<height>140</height>
+						<scroll>true</scroll>
+						<label>$INFO[ListItem.Genre(),[COLOR grey]$LOCALIZE[515]: [/COLOR]]</label>
+						<visible>true</visible>
+					</control>
+					<control type="textbox">
+						<top>570</top>
+						<width>830</width>
+						<bottom>list_bottom_offset</bottom>
+						<label>$INFO[ListItem.Plot][CR][CR]$INFO[ListItem.Cast,[COLOR grey]$LOCALIZE[206]:[CR][/COLOR]]</label>
+						<autoscroll delay="5000" time="3000" repeat="10000">true</autoscroll>
+					</control>
+				</control>
+<!--InfoPanel End-->
+				
+			</control>
+			<include content="TopBar">
+				<param name="breadcrumbs_label" value="Ziggo/$ADDON[plugin.video.ziggotv 40030]" />
+			</include>
+
+			<control type="button" id="9001">
+				<onup>50</onup>
+				<ondown>50</ondown>
+				<bottom>20</bottom>
+				<left>12</left>
+				<width>36</width>
+				<height>36</height>
+				<texturefocus colordiffuse="button_focus">frame/menu-nofo.png</texturefocus>
+				<texturenofocus colordiffuse="FFCCCCCC">frame/menu-nofo.png</texturenofocus>
+				<animation effect="fade" time="200">VisibleChange</animation>
+				<onclick></onclick>
+				<visible>!Control.IsVisible(6160)</visible>
+			</control>
+			<control type="button" id="9002">
+				<bottom>16</bottom>
+				<left>64</left>
+				<width>300</width>
+				<height>44</height>
+				<shadowcolor>text_shadow</shadowcolor>
+				<label>$LOCALIZE[33063]</label>
+				<onclick></onclick>
+				<texturefocus />
+				<texturenofocus />
+			</control>
+		</control>
+	</controls>
+</window>

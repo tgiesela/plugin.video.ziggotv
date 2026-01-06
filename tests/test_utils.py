@@ -1,9 +1,11 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 
+import datetime
 import unittest
 from time import sleep
 
 from resources.lib import utils
+from resources.lib.channel import SavedChannelsList
 from resources.lib.recording import SavedStateList
 from tests.test_base import TestBase
 
@@ -27,6 +29,14 @@ class TestVideoPlayer(unittest.TestCase):
         rslt = utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ')
         self.assertEqual(rslt, 1622736076)
         print(rslt)
+        startTime = utils.DatetimeHelper.from_unix(utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
+        self.assertEqual('2021-06-03', startTime.strftime('%Y-%m-%d'))
+        self.assertEqual('18:01', startTime.strftime('%H:%M'))
+        
+        startTime = utils.DatetimeHelper.from_unix(utils.DatetimeHelper.to_unix('2025-12-31T21:20:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
+        newtime = utils.DatetimeHelper.from_utc_to_local(startTime)
+        self.assertEqual('2025-12-31', newtime.strftime('%Y-%m-%d'))
+        self.assertEqual('22:20', newtime.strftime('%H:%M'))
 
     def test_timer(self):
         self.tmr = utils.Timer(50, timer_func)
@@ -59,6 +69,17 @@ class TestSavedStates(TestBase):
         recList.cleanup(0)
         recList = SavedStateList(self.addon)
         recList.cleanup()
+
+    def test_saved_channels(self):
+        savedchannels = SavedChannelsList(self.addon)
+        savedchannels.add('NL_000001_019401', 'NPO-1')
+        savedchannels.add('NL_000003_019405', 'NPO-3')
+        savedchannels.add('NL_000005_019462', 'RTL-5')
+        savedchannels.delete('NL_000005_019462')
+        savedchannels.cleanup(0,1)
+        self.assertEqual(len(savedchannels.getAll()),2)
+        savedchannels = SavedChannelsList(self.addon)
+        savedchannels.cleanup()
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ import datetime
 import http.server
 import json
 import os
+import shutil
 import threading
 from pathlib import Path
 
@@ -13,8 +14,10 @@ import xbmcaddon
 import xbmcgui
 import xbmcvfs
 
+from resources.lib.channel import SavedChannelsList
 from resources.lib.proxyserver import ProxyServer
-from resources.lib.utils import Timer, SharedProperties, ServiceStatus, ProxyHelper, WebException, KodiLock
+from resources.lib.recording import SavedStateList
+from resources.lib.utils import Timer, SharedProperties, ServiceStatus, ProxyHelper, WebException, KodiLock, ZiggoKeyMap
 from resources.lib.webcalls import LoginSession
 
 
@@ -121,12 +124,15 @@ class ServiceMonitor(xbmc.Monitor):
         self.tokenTimer = None
         self.refreshTimer = None
         self.licenseRefreshed = datetime.datetime.now() - datetime.timedelta(days=2)
+        self.savedItemsUpdated = datetime.datetime.now() - datetime.timedelta(days=1)
         self.epg = None
         self.__initialize_session()
 
         #  Set the status of this service to STARTED
         self.home.set_service_status(ServiceStatus.STARTED)
         xbmc.log('SERVICEMONITOR initialized: ', xbmc.LOGDEBUG)
+        self.keymap = ZiggoKeyMap(self.ADDON)
+        self.keymap.install()
 
     def __initialize_session(self):
         addonPath = xbmcvfs.translatePath(self.ADDON.getAddonInfo('profile'))
@@ -154,12 +160,12 @@ class ServiceMonitor(xbmc.Monitor):
                 self.licenseRefreshed = datetime.datetime.now()
                 self.helper.dynamic_call(LoginSession.refresh_widevine_license)
 
-            # channels = self.helper.dynamic_call(LoginSession.get_channels)
-            # if self.epg is None:
-            #     self.epg = ChannelGuide(self.ADDON, channels)
-            # self.epg.load_stored_events()
-            # self.epg.obtain_events()
-            # self.epg.store_events()
+            # Once a day we will cleanup watched channels (keep the most recent 10) and state of recordings
+            if (self.savedItemsUpdated + datetime.timedelta(days=1)) <= datetime.datetime.now():
+                self.savedItemsUpdated = datetime.datetime.now()
+                SavedChannelsList(self.ADDON).cleanup(365,10)
+                SavedStateList(self.ADDON).cleanup(365)
+
             self.helper.dynamic_call(LoginSession.close)
         except ConnectionResetError as exc:
             xbmc.log('Connection reset in __refresh_session, will retry later: {0}'.format(exc), xbmc.LOGERROR)
@@ -183,16 +189,13 @@ class ServiceMonitor(xbmc.Monitor):
             xbmc.log('SERVICEMONITOR ProxyServer not started yet', xbmc.LOGERROR)
             return
         xbmc.log("SERVICEMONITOR Notification: {0},{1},{2}".format(sender, method, data), xbmc.LOGDEBUG)
-        if sender == self.ADDON.getAddonInfo("id"):
-            params = json.loads(data)
-            xbmc.log("SERVICEMONITOR command and params: {0},{1}".format(params['command'],
-                                                                         params['command_params']), xbmc.LOGDEBUG)
 
     def shutdown(self):
         """
         Function to shut down the service
         @return:
         """
+#        self.keymap.deactivate()
         self.proxyService.stop_http_server()
         self.home.set_service_status(ServiceStatus.STOPPING)
         if self.tokenTimer is not None:

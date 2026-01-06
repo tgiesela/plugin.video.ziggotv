@@ -31,9 +31,9 @@ def delete_single_recording(recordingId, recType):
 def delete_season_recording(seasonId, recType, channelId):
     """
     Delete a series/show recording
-    @param channelId: the channel on which the show occurs
     @param seasonId: id of the series/show recordings
     @param recType: type of recording (planned vs recorded)
+    @param channelId: the channel on which the show occurs
     @return: nothing
     """
     helper = ProxyHelper(xbmcaddon.Addon('plugin.video.ziggotv'))

@@ -2,16 +2,16 @@
 <keymap>
   <FullScreenVideo>
     <keyboard>
-      <zero>RunScript(special://home/addons/plugin.video.window/keymapaction.py,0)</zero> 
-      <one>RunScript(special://home/addons/plugin.video.window/keymapaction.py,1)</one>
-      <two>RunScript(special://home/addons/plugin.video.window/keymapaction.py,2)</two>
-      <three>RunScript(special://home/addons/plugin.video.window/keymapaction.py,3)</three>
-      <four>RunScript(special://home/addons/plugin.video.window/keymapaction.py,4)</four>
-      <five>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</five>
-      <six>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</six>
-      <seven>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</seven>
-      <eight>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</eight>
-      <nine>RunScript(special://home/addons/plugin.video.window/keymapaction.py,5)</nine>
-    </keyboard>
+		<zero>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"0"})</zero> 
+		<one>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"1"})</one>
+		<two>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"2"})</two>
+		<three>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"3"})</three>
+		<four>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"4"})</four>
+		<five>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"5"})</five>
+	    <six>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"6"})</six>
+	    <seven>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"7"})</seven>
+	    <eight>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"8"})</eight>
+		<nine>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"9"})</nine>
+	</keyboard>
   </FullScreenVideo>
 </keymap>

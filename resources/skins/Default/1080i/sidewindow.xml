@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window type="dialog">
-	<variable name="PVRAreaVar">
-		<value condition="Control.HasFocus(100)">$LOCALIZE[19019]</value>
-		<value condition="Control.HasFocus(101)">$LOCALIZE[19069]</value>
-		<value condition="Control.HasFocus(102)">$LOCALIZE[19017]</value>
-	</variable>
 	<defaultcontrol always="true">9000</defaultcontrol>
 	<backgroundcolor>default_background</backgroundcolor>
 	<coordinates>
-		<left>200</left>
-		<top>00</top>
+		<left>0</left>
+		<top>0</top>
 	</coordinates>
 	<controls>
 <!--		<include>DefaultBackground</include>-->
@@ -46,6 +41,7 @@
 						<label></label>
 					</control>
 				</control>
+
 				<control type="group" id="9200">
 					<height>95</height>
 					<control type="grouplist" id="9201">
@@ -53,10 +49,10 @@
 						<itemgap>-18</itemgap>
 						<left>0</left>
 						<height>120</height>
-						<onleft>6056</onleft>
-						<onright>50</onright>
-						<onup>14100</onup>
-						<ondown>6051</ondown>
+						<onleft>Close</onleft>
+						<onright>Close</onright>
+						<onup>9400</onup>
+						<ondown>9300</ondown>
 						<width>1000</width>
 						<control type="radiobutton" id="100">
 							<width>92</width>
@@ -77,7 +73,6 @@
 							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/channels.png</textureradiooffdisabled>
 							<enabled>!Window.IsActive(channels.xml)</enabled>
 						</control>
-
 						<control type="radiobutton" id="101">
 							<width>92</width>
 							<height>92</height>
@@ -95,6 +90,7 @@
 							<textureradioofffocus>icons/submenu/guide.png</textureradioofffocus>
 							<textureradiooffnofocus>icons/submenu/guide.png</textureradiooffnofocus>
 							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/guide.png</textureradiooffdisabled>
+							<enabled>!Window.IsActive(recordings.xml)</enabled>
 						</control>
 						<control type="radiobutton" id="102">
 							<width>92</width>
@@ -122,98 +118,132 @@
 				</control>
 				<control type="group" id="9300"> <!--Sort Method Group-->
 					<top>0</top>
+					<left>0</left>
 					<width>470</width>
-					<height>80</height>
-					<control type="button" id="9301">
-						<width>470</width>
-						<textoffsetx>20</textoffsetx>
-						<top>0</top>
-						<height>80</height>
-						<aligny>center</aligny>
-						<invalidcolor>invalid</invalidcolor>
-						<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
-						<texturenofocus />
-						<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
-						<alttexturenofocus></alttexturenofocus>
-						<label>$LOCALIZE[31022]</label>
+					<height>240</height>
+					<onright>Close</onright>
+					<control type="group"> 
+						<control type="button" id="9301"> <!-- Sort by -->
+							<onup>9200</onup>
+							<ondown>9401</ondown>
+							<onright>Close</onright>
+							<left>0</left>
+							<width>470</width>
+							<textoffsetx>20</textoffsetx>
+							<height>80</height>
+							<aligny>center</aligny>
+							<invalidcolor>invalid</invalidcolor>
+							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<texturenofocus />
+							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturenofocus></alttexturenofocus>
+							<label>$LOCALIZE[31022]</label>
+						</control>
+						<control type="label" id="9302">
+							<left>270</left>
+							<width>200</width>
+							<height>80</height>
+							<align>right</align>
+							<aligny>center</aligny>
+							<label></label>
+						</control>
+						<control type="button" id="9401"> <!-- Sort order -->
+							<onup>9301</onup>
+							<ondown>9501</ondown>
+							<onright>Close</onright>
+							<left>0</left>
+							<width>470</width>
+							<textoffsetx>20</textoffsetx>
+							<top>80</top>
+							<height>80</height>
+							<aligny>center</aligny>
+							<invalidcolor>invalid</invalidcolor>
+							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<texturenofocus />
+							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturenofocus></alttexturenofocus>
+							<label>$LOCALIZE[31032]</label>
+							<label2></label2>
+							<onclick></onclick>
+						</control>					
+						<control type="label" id="9402">
+							<top>80</top>
+							<left>270</left>
+							<width>200</width>
+							<height>80</height>
+							<align>right</align>
+							<aligny>center</aligny>
+							<label></label>
+						</control>
 					</control>
-					<control type="label" id="9302">
-						<left>270</left>
-						<width>200</width>
-						<height>80</height>
-						<align>right</align>
-						<aligny>center</aligny>
-						<label></label>
+					<control type="group">
+						<control type="button" id="9501"> <!-- Filter -->
+							<onup>9401</onup>
+							<ondown>9601</ondown>
+							<onright>Close</onright>
+							<left>0</left>
+							<top>160</top>
+							<width>470</width>
+							<textoffsetx>20</textoffsetx>
+							<height>80</height>
+							<aligny>center</aligny>
+							<invalidcolor>invalid</invalidcolor>
+							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<texturenofocus />
+							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturenofocus></alttexturenofocus>
+							<label>$LOCALIZE[587]</label>
+						</control>
+						<control type="label" id="9502">
+							<top>160</top>
+							<left>270</left>
+							<width>200</width>
+							<height>80</height>
+							<align>right</align>
+							<aligny>center</aligny>
+							<label></label>
+						</control>
 					</control>
 				</control>
-				<control type="group" id="9400"> <!--Sort Order Group-->
-					<top>0</top>
-					<width>470</width>
-					<height>80</height>
-					<control type="button" id="9401">
-						<include>MediaMenuItemsCommon</include>
-						<label>$LOCALIZE[31032]</label>
-						<label2></label2>
-						<onclick></onclick>
-					</control>
-					<control type="label" id="9402">
-						<left>270</left>
-						<width>200</width>
-						<height>80</height>
-						<align>right</align>
-						<aligny>center</aligny>
-						<label></label>
-					</control>
-				</control>
-				<control type="button" id="10">
-					<description>Watched Toggle</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[20367]</label>
-					<label2>[B]INFO[Container.NumNonFolderItems][/B]</label2>
-					<visible>Window.IsActive(MyPVRRecordings.xml)</visible>
-				</control>
-				<control type="radiobutton" id="31">
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[587]</label>
-					<selected>Container.Filtered</selected>
-					<onclick>right</onclick>
-					<visible>Window.IsActive(MyPVRChannels.xml)</visible>
-				</control>
-				<control type="radiobutton" id="5">
-					<description>Group recording items by folder structure</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[19270]</label>
-					<visible>Window.IsActive(MyPVRRecordings.xml)</visible>
-				</control>
-				<control type="radiobutton" id="6">
-					<description>Show hidden channels</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[19051]</label>
-					<visible>Window.IsActive(MyPVRChannels.xml)</visible>
-				</control>
-				<control type="radiobutton" id="7">
-					<description>Show deleted recordings</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[19184]</label>
-					<visible>Window.IsActive(MyPVRRecordings.xml)</visible>
-				</control>
-				<control type="radiobutton" id="8">
-					<description>Hide disabled timers</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[19077]</label>
-					<visible>Window.IsActive(MyPVRTimers.xml)</visible>
-				</control>
-				<control type="label" id="301">
+
+				<control type="label" id="300">
 					<include>MediaMenuLabelCommon</include>
-					<label>$LOCALIZE[31020]</label>
-					<visible>Control.IsVisible(302)</visible>
+					<label>$LOCALIZE[36605]</label>
 				</control>
-				<control type="button" id="302">
-					<description>Go to playlist</description>
-					<include>MediaMenuItemsCommon</include>
-					<label>$LOCALIZE[31056]</label>
-					<onclick>ActivateWindow(videoplaylist)</onclick>
-					<visible>Window.IsActive(MyPVRRecordings.xml) + Integer.IsGreater(Playlist.Length(video),0)</visible>
+				<control type="grouplist" id="9600"> <!--Reset-->
+					<top>0</top>
+					<left>0</left>
+					<width>470</width>
+					<height>240</height>
+					<onright>Close</onright>
+					<control type="group">
+						<control type="button" id="9601">
+							<onup>9501</onup>
+							<ondown>9200</ondown>
+							<onright>Close</onright>
+							<left>0</left>
+							<top>0</top>
+							<width>470</width>
+							<textoffsetx>20</textoffsetx>
+							<height>80</height>
+							<aligny>center</aligny>
+							<invalidcolor>invalid</invalidcolor>
+							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<texturenofocus />
+							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturenofocus></alttexturenofocus>
+							<label>$LOCALIZE[19185]</label>
+						</control>
+						<control type="label" id="9602">
+							<top>160</top>
+							<left>270</left>
+							<width>200</width>
+							<height>80</height>
+							<align>right</align>
+							<aligny>center</aligny>
+							<label></label>
+						</control>
+					</control>
 				</control>
 			</control>
 		</control>

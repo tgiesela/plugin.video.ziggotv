@@ -194,3 +194,12 @@ msgstr "HD resolutie niet toegestaan, schakel naar lage resolutie"
 msgctxt "#40030"
 msgid "Movies/Series"
 msgstr "Films/Series"
+
+msgctxt "#40031"
+msgid "Planned"
+msgstr "Gepland"
+
+msgctxt "#40032"
+msgid "Recorded"
+msgstr "Opgenomen"
+

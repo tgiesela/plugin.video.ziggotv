@@ -19,7 +19,7 @@ import xbmcvfs
 from resources.lib.utils import b2ah, WebException
 from resources.lib.channel import Channel
 from resources.lib.globals import G, CONST_BASE_HEADERS, ALLOWED_LICENSE_HEADERS
-from resources.lib.recording import RecordingList
+from resources.lib.recording import RecordingList, RecordingType
 from resources.lib.streaminginfo import StreamingInfo, ReplayStreamingInfo, VodStreamingInfo, RecordingStreamingInfo
 from resources.lib.utils import DatetimeHelper
 
@@ -960,7 +960,7 @@ class LoginSession(Web):
         if not self.__status_code_ok(response):
             raise WebException(response)
         return json.loads(response.content)
-
+   
     def __get_recordings_planned(self, isAdult: bool):
         """
         Obtain list of planned recordings
@@ -979,7 +979,7 @@ class LoginSession(Web):
             raise WebException(response)
         return json.loads(response.content)
 
-    def __get_recordings(self, isAdult: bool):
+    def __get_recordings_recorded(self, isAdult: bool):
         """
         Obtain list of recordings
         @param isAdult:
@@ -997,15 +997,16 @@ class LoginSession(Web):
             raise WebException(response)
         return json.loads(response.content)
 
-    def __get_recordings_season(self, channelId, showId):
+    def __get_recordings_season(self, channelId, showId, sourcetype):
         """
         get a list of recordings in a series/show
         @param channelId:
         @param showId:
+        @param sourcetype: one of 'booking'|'recording'
         @return:
         """
         url = G.RECORDINGS_URL.format(householdid=self.sessionInfo['householdId']) + 'episodes/shows/' + showId
-        response = super().do_get(url, params={'source': 'booking',
+        response = super().do_get(url, params={'source': sourcetype,
                                                'isAdult': 'false',
                                                'offset': 0,
                                                'limit': 100,
@@ -1105,6 +1106,16 @@ class LoginSession(Web):
             raise WebException(response)
         return json.loads(response.content)
 
+    def __update_recording_season(self, recording, rectype):
+        seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'],rectype)
+        # Note after this, there is duplicate info in the SeasonRecording. The 'episodes'
+        #      key contains all info, but we extract some items to make them easier to access
+        recording.update({'episodes': seasonRecordings})
+        recording.update({'genres': seasonRecordings['genres']})
+        recording.update({'images': seasonRecordings['images']})
+        recording.update({'seasons':seasonRecordings['seasons']})
+        recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
+    
     def refresh_recordings(self, includeAdult=False):
         """
         Routine to (re)load the recordings.
@@ -1116,28 +1127,24 @@ class LoginSession(Web):
         recordingsPlanned = self.__get_recordings_planned(isAdult=False)
         for recording in recordingsPlanned['data']:
             if recording['type'] == 'season':
-                seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
-                recording.update({'episodes': seasonRecordings})
+                self.__update_recording_season(recording, 'booking')
         recJson.update({'planned': recordingsPlanned})
         if includeAdult:
             adultRecordingsPlanned = self.__get_recordings_planned(isAdult=True)
             for recording in adultRecordingsPlanned['data']:
                 if recording['type'] == 'season':
-                    seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
-                    recording.update({'episodes': seasonRecordings})
+                    self.__update_recording_season(recording,'booking')
             recJson['planned']['data'].extend(adultRecordingsPlanned['data'])
-        recordings = self.__get_recordings(isAdult=False)
+        recordings = self.__get_recordings_recorded(isAdult=False)
         for recording in recordings['data']:
             if recording['type'] == 'season':
-                seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
-                recording.update({'episodes': seasonRecordings})
+                self.__update_recording_season(recording,'recording')
         recJson.update({'recorded': recordings})
         if includeAdult:
-            adultRecordings = self.__get_recordings(isAdult=True)
+            adultRecordings = self.__get_recordings_recorded(isAdult=True)
             for recording in adultRecordings['data']:
                 if recording['type'] == 'season':
-                    seasonRecordings = self.__get_recordings_season(recording['channelId'], recording['showId'])
-                    recording.update({'episodes': seasonRecordings})
+                    self.__update_recording_season(recording,'recording')
             recJson['recorded']['data'].extend(adultRecordings['data'])
         Path(self.pluginpath(G.RECORDINGS_INFO)).write_text(json.dumps(recJson), encoding='utf-8')
 
@@ -1147,18 +1154,18 @@ class LoginSession(Web):
         """
         if Path(self.pluginpath(G.RECORDINGS_INFO)).exists():
             recordingsInfo = json.loads(Path(self.pluginpath(G.RECORDINGS_INFO)).read_text(encoding='utf-8'))
-            return RecordingList(recordingsInfo['planned'])
+            return RecordingList(recordingsInfo['planned'],RecordingType.PLANNED)
         return RecordingList()
 
-    def get_recordings(self) -> RecordingList:
+    def get_recordings_recorded(self) -> RecordingList:
         """
-        @return: list of planned recordings
+        @return: list of recorded recordings
         """
         if Path(self.pluginpath(G.RECORDINGS_INFO)).exists():
             recordingsInfo = json.loads(Path(self.pluginpath(G.RECORDINGS_INFO)).read_text(encoding='utf-8'))
-            return RecordingList(recordingsInfo['recorded'])
+            return RecordingList(recordingsInfo['recorded'],RecordingType.RECORDED)
         return None
-
+    
     def get_event_details(self, eventId):
         """
         Get the details of an event for the EPG

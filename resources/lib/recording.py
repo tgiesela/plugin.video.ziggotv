@@ -2,6 +2,7 @@
 module containing classes for recordings
 """
 import dataclasses
+from enum import IntEnum
 import json
 import os
 import datetime
@@ -23,6 +24,14 @@ class Poster:
         self.url = posterJson['url']
         self.type = posterJson['type']  # values seen: HighResPortrait
 
+
+
+class RecordingType(IntEnum):
+    """
+    Enum for the service status
+    """
+    PLANNED = 1
+    RECORDED = 2
 
 class Recording:
     """
@@ -57,6 +66,13 @@ class Recording:
         self.duration = 0
         self.bookmark = 0
         self.subtitles = []
+        self.seasonNumber = None
+        self.episodeNumber = None
+        self.type = 'undefined'
+        if 'type' in recordingJson:
+            self.type = recordingJson['type']
+        if 'episodeTitle' in recordingJson:
+            self.episodeTitle = recordingJson['episodeTitle']
         if 'captionLanguages' in recordingJson:
             for subtitle in recordingJson['captionLanguages']:
                 self.subtitles.append(self.Language(subtitle))
@@ -113,6 +129,11 @@ class Recording:
         self.trickPlayControl = []
         if 'trickPlayControl' in recordingJson:
             self.trickPlayControl = recordingJson['trickPlayControl']
+        if 'episodeNumber' in recordingJson:
+            self.episodeNumber = recordingJson['episodeNumber']
+        if 'seasonNumber' in recordingJson:
+            self.seasonNumber = recordingJson['seasonNumber']
+        
 
     @property
     def isRecording(self) -> bool:
@@ -142,17 +163,33 @@ class Recording:
 class SeasonRecording:
     """
     class for season/series recording
+    It is a container for recordings which belong to a series/season. It is not a single recording itself.
+    The recordings itself are stored in the episodes attribute and can be of type PlannedRecording or SingleRecording
     """
 
     # pylint: disable=too-many-instance-attributes, too-few-public-methods
-    def __init__(self, recordingJson):
+    def __init__(self, recordingJson, recordingtype:RecordingType):
         self.poster = Poster(posterJson=recordingJson['poster'])
+        self.recordingtype = recordingtype
         self.title = recordingJson['title']
         self.source = recordingJson['source']
-        self.episodes = recordingJson['noOfEpisodes']
+        self.nrofepisodes = recordingJson['noOfEpisodes']
         self.channelId = recordingJson['channelId']
         self.id = recordingJson['id']
         self.type = recordingJson['type']
+        self.shortSynopsis = None
+        if 'shortSynopsis' in recordingJson:
+            self.shortSynopsis = recordingJson['shortSynopsis']
+        self.genres = []
+        if 'genres' in recordingJson:
+            self.genres = recordingJson['genres']
+        self.images = []
+        if 'images' in recordingJson:
+            self.images = recordingJson['images']
+        self.seasons = []
+        if 'seasons' in recordingJson:
+            self.seasons = recordingJson['seasons']
+
         if self.type == 'season':
             self.seasonTitle = recordingJson['seasonTitle']
             self.showId = recordingJson['showId']
@@ -171,22 +208,16 @@ class SeasonRecording:
             self.episodes = []
             if 'episodes' in recordingJson:
                 episodes = recordingJson['episodes']
-                self.images = episodes['images']
-                self.seasons = episodes['seasons']
-                self.genres = episodes['genres']
-                self.synopsis = ''
-                if 'shortSynopsis' in episodes:
-                    self.synopsis = episodes['shortSynopsis']
                 self.cnt = 0
                 if 'total' in episodes:
                     self.cnt = episodes['total']
                 self.episodes = []
                 for episode in episodes['data']:
                     if episode['recordingState'] == 'planned':
-                        recPlanned = PlannedRecording(episode)
+                        recPlanned = PlannedRecording(episode, self)
                         self.episodes.append(recPlanned)
                     else:
-                        recSingle = SingleRecording(episode)
+                        recSingle = SingleRecording(episode, self)
                         self.episodes.append(recSingle)
         else:
             self.episodes = []
@@ -199,6 +230,7 @@ class SeasonRecording:
         @return: list of requested types
         """
         retList = []
+        episode: Recording = None
         for episode in self.episodes:
             if recType == 'planned':
                 if episode.recordingState == 'planned':
@@ -248,21 +280,28 @@ class PlannedRecording(Recording):
     class for a planned recording (not a season or single recording).
     """
 
-    def __init__(self, recordingJson):
+    def __init__(self, recordingJson, season: SeasonRecording = None):
         super().__init__(recordingJson)
         self.minimumAge = 0
         if 'minimumAge' in recordingJson:
             self.minimumAge = recordingJson['minimumAge']
         self.viewState = 'notWatched'
+        if season is not None:
+            self.season: SeasonRecording = season
+            if self.channelId is None:
+                self.channelId = self.season.channelId
+            if self.showId is None:
+                self.showId = self.season.showId
+            if self.title is None:
+                self.title = self.season.title
 
 
 class RecordingList:
     """
     container class for a list of recordings of any type
     """
-
     # pylint: disable=too-few-public-methods
-    def __init__(self, recordingsJson=None):
+    def __init__(self, recordingsJson=None, recordingtype:RecordingType=None):
         self.recs = []
         if recordingsJson is None:
             self.total = 0
@@ -277,7 +316,7 @@ class RecordingList:
         self.occupied = recordingsJson['quota']['occupied']
         for data in recordingsJson['data']:
             if data['type'] in ['season', 'show']:
-                season = SeasonRecording(data)
+                season = SeasonRecording(data, recordingtype)
                 self.recs.append(season)
             elif data['type'] == 'single':
                 if data['recordingState'] == 'planned':
@@ -287,6 +326,24 @@ class RecordingList:
                     recSingle = SingleRecording(data)
                     self.recs.append(recSingle)
 
+    def append(self, recordingsJson, recordingtype=RecordingType.PLANNED|RecordingType.RECORDED):
+        self.total += recordingsJson['total']
+        self.size += recordingsJson['size']
+        self.quota += recordingsJson['quota']['quota']
+        self.occupied += recordingsJson['quota']['occupied']
+        for data in recordingsJson['data']:
+            if data['type'] in ['season', 'show']:
+                season = SeasonRecording(data, recordingtype)
+                self.recs.append(season)
+            elif data['type'] == 'single':
+                if data['recordingState'] == 'planned':
+                    recPlanned = PlannedRecording(data)
+                    self.recs.append(recPlanned)
+                else:
+                    recSingle = SingleRecording(data)
+                    self.recs.append(recSingle)
+
+    
     def find(self, eventId):
         """
         function to find a recording by its id
@@ -304,8 +361,65 @@ class RecordingList:
                 if recording.id == eventId:
                     return rec
         return None
-
-
+    
+    def getPlannedRecordings(self):
+        """
+        function to get all planned recordings
+        @return: list of planned recordings
+        """
+        plannedRecs = []
+        for rec in self.recs:
+            if isinstance(rec, PlannedRecording):
+                recording: PlannedRecording = rec
+                if recording.isPlanned:
+                    plannedRecs.append(recording)
+        return plannedRecs
+    
+    def getRecordedRecordings(self):
+        """
+        function to get all recorded recordings
+        @return: list of recorded recordings
+        """
+        recordedRecs = []
+        for rec in self.recs:
+            if isinstance(rec, SingleRecording):
+                recording: SingleRecording = rec
+                if recording.isRecorded:
+                    recordedRecs.append(recording)
+        return recordedRecs
+    
+    def getAllRecordings(self):
+        """
+        function to get all recordings
+        @return: list of all recordings
+        """
+        allRecs = []
+        for rec in self.recs:
+            if isinstance(rec, SeasonRecording):
+                season: SeasonRecording = rec
+                for srec in season.episodes:
+                    allRecs.append(srec)
+            elif isinstance(rec, SingleRecording):
+                recording: SingleRecording = rec
+                allRecs.append(recording)
+            elif isinstance(rec, PlannedRecording):
+                recording: PlannedRecording = rec
+                allRecs.append(recording)
+        return allRecs
+    
+    def getSeasonRecordings(self):
+        """
+        function to get all season recordings, i.e. recordings of type SeasonRecording
+        a season recording is a container for multiple recordings of a series/season
+        @return: list of season recordings
+        """
+        seasonRecs = []
+        for rec in self.recs:
+            if isinstance(rec, SeasonRecording):
+                season: SeasonRecording = rec
+                seasonRecs.append(season)
+        return seasonRecs
+    
 class SavedStateList:
     """
     class to keep the state of played recording. This is used to resume a recording at the point where

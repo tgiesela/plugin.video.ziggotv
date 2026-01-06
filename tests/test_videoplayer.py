@@ -2,8 +2,10 @@
 import unittest
 from urllib.parse import unquote
 
-from avstream import AvStream
+from resources.lib.avstream import AvStream
+from resources.lib.channel import SavedChannelsList
 from resources.lib.listitemhelper import ListitemHelper
+from resources.lib.recording import SavedStateList
 from resources.lib.urltools import UrlTools
 from tests.test_base import TestBase
 
@@ -171,7 +173,6 @@ class TestVideoPlayer(TestBase):
         print(defaultUrl)
         stream.stop(timeronly=True)
         self.session.close()
-
 
 if __name__ == '__main__':
     unittest.main()

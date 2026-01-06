@@ -14,7 +14,7 @@ from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import baseWindow
 
-class EpgWindowXml(baseWindow):
+class epgWindow(baseWindow):
     # pylint: disable=too-many-instance-attributes
     """
     Class representing Epg Window defined in screen-epg.xml.
@@ -64,13 +64,11 @@ class EpgWindowXml(baseWindow):
         self.grid.onClick(controlId)
 
     def onInit(self):
-        if self.initDone:
-            return
-
-        self.grid = ProgramEventGrid(self,
-                                     channels=self.channelList,
-                                     mediaFolder=self.mediaFolder,
-                                     addon=self.addon)
+        if not self.initDone:
+            self.grid = ProgramEventGrid(self,
+                                            channels=self.channelList,
+                                            mediaFolder=self.mediaFolder,
+                                            addon=self.addon)
         self.grid.build()
         self.grid.show()
         self.initDone = True
@@ -97,14 +95,13 @@ class EpgWindowXml(baseWindow):
         """
         called when options were selected in the side window
         """
-        self.initDone = False
         self.onInit()
 
 def loadepgWindow(addon:xbmcaddon.Addon):
     from resources.lib.utils import invoke_debugger
     invoke_debugger(False, 'eclipse')
     check_service(addon)
-    window = EpgWindowXml('screen-epg.xml', addon.getAddonInfo('path'), addon)
+    window = epgWindow('screen-epg.xml', addon.getAddonInfo('path'), addon)
     window.doModal()
 
     # epgwindow = epgWindow('test-screen-epg.xml', CWD, defaultRes='1080i',addon=addon)

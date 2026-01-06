@@ -16,7 +16,7 @@ from resources.lib.streaminginfo import ReplayStreamingInfo
 from resources.lib.urltools import UrlTools
 from resources.lib.events import Event
 from resources.lib.globals import S, G
-from resources.lib.utils import ProxyHelper, SharedProperties, WebException
+from resources.lib.utils import ProxyHelper, SharedProperties, WebException, ZiggoKeyMap
 from resources.lib.webcalls import LoginSession
 from resources.lib.ziggoplayer import ZiggoPlayer
 
@@ -72,6 +72,7 @@ class VideoHelpers:
         self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
         self.channels = ChannelList(self.helper.dynamic_call(LoginSession.get_channels), self.entitlements)
         self.uuId = SharedProperties(addon=self.addon).get_uuid()
+        self.keymap = ZiggoKeyMap(self.addon)
         isHelper = Helper(G.PROTOCOL, drm=G.DRM)
         isHelper.check_inputstream()
 
@@ -116,7 +117,15 @@ class VideoHelpers:
     @staticmethod
     def __add_vod_info(playItem, overview):
         tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
-        playItem.setLabel(overview['title'])
+        if 'title' in overview:
+            title = overview['title']
+        else:
+            if 'seriesTitle' in overview:
+                title = overview['seriesTitle']
+                if overview['type'] == 'EPISODE':
+                    title = title + '(S{season}-E{episode})'.format(season=overview['season'], episode=overview['episode'])
+
+        playItem.setLabel(title)
         tag.setPlot(overview['synopsis'])
         tag.setGenres(overview['genres'])
         if 'episode' in overview:
@@ -135,7 +144,7 @@ class VideoHelpers:
         if 'season' in overview:
             tag.setSeason(int(overview['seasonNumber']))
 
-    def __start_play(self, item: VideoItem, startposition=None):
+    def __start_play(self, item: VideoItem, startposition=None,activateKeymap: bool=False):
         self.player = ZiggoPlayer()
         self.helper.dynamic_call(StreamSession.start_stream, token=item.streamInfo.token)
         if startposition is None:
@@ -143,10 +152,12 @@ class VideoHelpers:
         else:
             self.player.set_replay(True, startposition)
         self.player.setItem(item)
+        if activateKeymap:
+            self.player.setKeymap(self.keymap)
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
 
-    def __play_channel(self, channel):
+    def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
             get_token.locator, assetType = channel.get_locator(self.addon, suppressHD)
             if get_token.locator is None:
@@ -170,7 +181,7 @@ class VideoHelpers:
             item = VideoItem(self.addon, streamInfo, locator)
             event = channel.events.get_current_event()
             self.__add_event_info(item.playItem, channel, event)
-            self.__start_play(item)
+            self.__start_play(item, activateKeymap=True)
             return item.playItem
         except WebException as webExc:
             self.__handleWebException(webExc)
@@ -196,7 +207,7 @@ class VideoHelpers:
                 position = int(resumePoint * 1000)
             else:
                 position = streamInfo.prePaddingTime
-            self.__start_play(item, startposition=position)
+            self.__start_play(item, startposition=position,activateKeymap=False)
             self.monitor_state(event.id)
         except WebException as webExc:
             self.__handleWebException(webExc)
@@ -216,8 +227,21 @@ class VideoHelpers:
             return overview['instances'][0]  # return the first one if none was goPlayable
         return None
 
-    def __play_vod(self, overview, resumePoint) -> xbmcgui.ListItem:
-        playableInstance = self.__get_playable_instance(overview)
+    def __play_vod(self, overview, resumePoint, instance=None, offer=None) -> xbmcgui.ListItem:
+        '''
+        Function to play a video on demand item.
+        
+        :param overview: The movieOverview item as received from Ziggo webcall
+        :param resumePoint: point at which the replay should start (0 if not applicable)
+        :param instance: selected 'instance' from the movieOverview, should be 'goPlayable'
+        :param offer: Currently not used, was used to select an item based on the pricing. 
+        :return: The listitem to be used by the videoplayer
+        :rtype: ListItem
+        '''
+        if instance is None:
+            playableInstance = self.__get_playable_instance(overview)
+        else:
+            playableInstance = instance
         if playableInstance is None:
             xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
             return None
@@ -232,7 +256,7 @@ class VideoHelpers:
                 position = int(resumePoint * 1000)
             else:
                 position = 0
-            self.__start_play(item, startposition=position)
+            self.__start_play(item, startposition=position,activateKeymap=False)
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
@@ -252,7 +276,7 @@ class VideoHelpers:
                 position = int(resumePoint * 1000)
             else:
                 position = streamInfo.prePaddingTime
-            self.__start_play(item, startposition=position)
+            self.__start_play(item, startposition=position, activateKeymap=False)
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
@@ -363,7 +387,7 @@ class VideoHelpers:
                 xbmc.executebuiltin('PlayerControl(stop)')
                 del self.player
 
-    def play_movie(self, movieOverview, resumePoint) -> xbmcgui.ListItem:
+    def play_movie(self, movieOverview, resumePoint, instance, offer) -> xbmcgui.ListItem:
         """
         Play a movie
         @param resumePoint: position where to start playing
@@ -371,7 +395,7 @@ class VideoHelpers:
         @return:
         """
         self.stop_player()
-        return self.__play_vod(movieOverview, resumePoint)
+        return self.__play_vod(movieOverview, resumePoint, instance, offer)
 
     def play_recording(self, recording: SingleRecording, resumePoint):
         """

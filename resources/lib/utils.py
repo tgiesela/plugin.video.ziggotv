@@ -1,11 +1,13 @@
 """
 module with utility functions
 """
+import os
+import shutil
 import sys
 import binascii
 import inspect
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 import threading
 import time
@@ -18,6 +20,7 @@ import requests
 import xbmc
 import xbmcaddon
 import xbmcgui
+import xbmcvfs
 from requests import Response
 
 
@@ -77,6 +80,8 @@ class SharedProperties:
     TEXTID_NUMBER=549
     TEXTID_DATE=552
     TEXTID_SIZE=553
+    TEXTID_GEPLAND=40031
+    TEXTID_RECORDED=40032
 
     def __init__(self, addon: xbmcaddon.Addon):
         self.addon: xbmcaddon.Addon = addon
@@ -125,6 +130,16 @@ class SharedProperties:
         sortby = self.window.getProperty('ziggotv.SortMethod')
         sortorder = self.window.getProperty('ziggotv.SortOrder')
         return sortby, sortorder
+    
+    def get_recording_filter(self):
+        """get the current recording filter from kodi"""
+        recordingfilter = self.window.getProperty('ziggotv.RecordingFilter')
+        return recordingfilter
+    
+    def set_recording_filter(self, recordingfilter: str=None):
+        """set the recording filter in kodi"""
+        if recordingfilter is not None:
+            self.window.setProperty('ziggotv.RecordingFilter', recordingfilter)
 
     def set_sort_options(self, sortby: str=None, sortorder: str=None):
         """set the sort options in kodi"""
@@ -211,7 +226,11 @@ class DatetimeHelper:
         @return:
         """
         return int(time.mktime(dt.timetuple()))
-
+    
+    @staticmethod
+    def from_utc_to_local(datetime: datetime) -> datetime:
+        newtime = datetime.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        return newtime
 
 class WebException(Exception):
     """
@@ -381,6 +400,94 @@ def check_service(addon: xbmcaddon.Addon):
     dlg.close()
     if not home.is_service_active():
         raise RuntimeError('Service did not start in time')
+
+
+
+class KeyMapMonitor(xbmc.Monitor):
+    def __init__(self, addon: xbmcaddon.Addon, callback):
+        xbmc.log(f'KEYMAPMONITOR created', xbmc.LOGINFO)
+        super().__init__()
+        self.ADDON = addon
+        self.callback = callback
+        self.keypresses = ''
+        self.firstkeypress = datetime.now() - timedelta(days=1)
+        self.keytimer: Timer = None
+
+    def __keypress_completed(self):
+        self.keytimer.timerRuns.clear()
+        xbmc.log(f'KEYMAPMONITOR KEYPRESS COMPLETED: {self.keypresses}',xbmc.LOGINFO)
+        xbmc.executebuiltin(f'Notification(Channel,{self.keypresses})')
+        self.callback(self.keypresses)
+        self.keypresses = ''
+    
+    def onNotification(self, sender, method, data):
+        xbmc.log(f'KEYMAPMONITOR Notification received', xbmc.LOGINFO)
+        if sender == self.ADDON.getAddonInfo("id"):
+            if method == 'Other.keypressed':
+                # At least
+                params = json.loads(data)
+                xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGINFO)
+                numberkey = params['key']
+                if self.keypresses == '':
+                    self.keypresses = numberkey
+                    self.firstkeypresses = datetime.now()
+                    self.keytimer = Timer(3, self.__keypress_completed)
+                    self.keytimer.start()
+                    xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGINFO)
+                else:
+                    self.keypresses = self.keypresses + numberkey
+                xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-)')
+                #xbmc.executebuiltin(f'Action(Number{numberkey})')
+
+        return super().onNotification(sender, method, data)
+    
+    def __del__(self):
+        xbmc.log(f'KEYMAPMONITOR deleted', xbmc.LOGINFO)
+
+class ZiggoKeyMap:
+    """
+    Class to install, activate and deactivate the keymaps during Playing video to capture numeric key-strokes
+    """
+    SOURCEKEYMAP = 'resources\\keymaps.xml'
+    KEYMAPSFOLDER = 'keymaps\\'
+    TARGETKEYMAPACTIVE = 'ziggokeymaps.xml'
+    TARGETKEYMAPINACTIVE = 'ziggokeymaps.xml.inactive'
+    def __init__(self, addon: xbmcaddon.Addon):
+        self.ADDON = addon
+        self.addonPath = xbmcvfs.translatePath(self.ADDON.getAddonInfo('profile')) # userdata/addon_data/<addon-id>
+        self.userdata = xbmcvfs.translatePath('special://userdata')
+        self.masterprofile = xbmcvfs.translatePath('special://masterprofile')
+        self.path = xbmcvfs.translatePath(self.ADDON.getAddonInfo('path')) # addon/<addon-id>
+        self.inactivefilename = self.userdata + self.KEYMAPSFOLDER + self.TARGETKEYMAPINACTIVE
+        self.activefilename = self.userdata + self.KEYMAPSFOLDER + self.TARGETKEYMAPACTIVE
+        if not os.path.exists(self.userdata + self.KEYMAPSFOLDER):
+            os.makedirs(self.userdata + self.KEYMAPSFOLDER)
+
+    @staticmethod
+    def remove(file):
+        if os.path.exists(file):
+            os.remove(file)
+
+    def install(self):
+        """
+        Typically called from the service when Kodi starts
+        An existing keymap file will be removed and a keymap with an extension will be installed.
+        It is inactive because the extension in not '.xml'        
+        :param self: 
+        """
+        self.remove(self.inactivefilename)     
+        xbmc.log(f'Keymap install: copy {self.path + self.SOURCEKEYMAP} to {self.inactivefilename}', xbmc.LOGDEBUG)
+        shutil.copy(self.path + self.SOURCEKEYMAP, self.inactivefilename)
+    
+    def activate(self):
+        shutil.copy(self.inactivefilename, self.activefilename)
+        xbmc.executebuiltin('Action(reloadkeymaps)', True)
+        xbmc.log(f'Keymap activated and reloaded', xbmc.LOGDEBUG)
+
+    def deactivate(self):
+        self.remove(self.activefilename)
+        xbmc.executebuiltin('Action(reloadkeymaps)', True)
+        xbmc.log(f'Keymap deactivated and reloaded', xbmc.LOGDEBUG)
 
 if __name__ == '__main__':
     pass

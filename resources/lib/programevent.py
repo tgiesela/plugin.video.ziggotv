@@ -61,7 +61,7 @@ class ProgramEventGrid:
     def __set_epg_date(self, date: datetime.datetime):
         # 1011 EPG Date
         lbl: xbmcgui.ControlLabel = self.__get_control(1011)
-        lbl.setLabel(date.strftime('%x'))
+        lbl.setLabel(date.strftime(xbmc.getRegion('dateshort')))
 
     def __set_epg_time(self, date: datetime.datetime):
         # 1012-1015 half hour time
@@ -401,7 +401,8 @@ class ProgramEventGrid:
         times: xbmcgui.ControlLabel = self.__get_control(1202)
         startTime = utils.DatetimeHelper.from_unix(event.startTime)
         endTime = utils.DatetimeHelper.from_unix(event.endTime)
-        times.setLabel(f'[I]{startTime.strftime("%x %H:%M")} - {endTime.strftime("%H:%M")}[/I]')
+        dateformatshort = xbmc.getRegion('dateshort')
+        times.setLabel(f'[I]{startTime.strftime(dateformatshort + " %H:%M")} - {endTime.strftime("%H:%M")}[/I]')
 
         seasoninfo: xbmcgui.ControlLabel = self.__get_control(1204)
         if event.details.isSeries:

@@ -5,8 +5,13 @@ import dataclasses
 from typing import List, Tuple
 from collections import UserList
 import xbmcaddon
+from resources.lib import utils
 from resources.lib.events import EventList
-
+import xbmcvfs
+import os
+from resources.lib.globals import G
+import json
+import datetime
 
 class Channel:
     """
@@ -237,3 +242,85 @@ class ChannelList(UserList):
         """
         self.channels.sort(key=lambda x: x.name, reverse=reverse)
         return self.channels
+
+class SavedChannelsList:
+    """
+    class to keep the state of played channels. This is used to present a list of recently played channels
+    in the home screen.
+    """
+
+    def __init__(self, addon: xbmcaddon.Addon):
+        self.addon = addon
+        self.addonPath = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+        self.states = {}
+        self.fileName = self.addonPath + G.RECENTCHANNELS_INFO
+        targetdir = os.path.dirname(self.fileName)
+        if targetdir == '':
+            targetdir = os.getcwd()
+        if not os.path.exists(targetdir):
+            os.makedirs(targetdir)
+        if not os.path.exists(self.fileName):
+            with open(self.fileName, 'w', encoding='utf-8') as file:
+                json.dump(self.states, file)
+        self.__load()
+
+    def __load(self):
+        with open(self.fileName, 'r+', encoding='utf-8') as file:
+            self.states = json.load(file)
+
+    def add(self, itemId, name):
+        """
+        function to add/update the position of a channel
+        @param itemId:
+        @param position:
+        @return:
+        """
+        self.states.update({itemId: {'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now()), 'name': name}})
+        with open(self.fileName, 'w', encoding='utf-8') as file:
+            json.dump(self.states, file)
+
+    def delete(self, itemId):
+        """
+        function to delete the channel from the state list
+        @param itemId:
+        @return:
+        """
+        if itemId in self.states:
+            self.states.pop(itemId)
+
+    def get(self, itemId):
+        """
+       function to find a channel by its id
+       @param itemId:
+       @return:
+        """
+        for item in self.states:
+            if item == itemId:
+                return self.states[item]['datePlayed']
+        return None
+
+    def cleanup(self, daysToKeep=365, itemsToKeep=0):
+        """
+        function to clean up saved channels
+        @param daysToKeep: 
+        @return: 
+        """
+        expDate = datetime.datetime.now() - datetime.timedelta(days=daysToKeep)
+        sortedStates = dict(sorted(self.states.items(), key=lambda x: x[1]['datePlayed'], reverse=True))
+        itemsKept = 0
+        for item in list(sortedStates):
+            if sortedStates[item]['datePlayed'] < utils.DatetimeHelper.unix_datetime(expDate):
+                if itemsKept < itemsToKeep:
+                    itemsKept += 1
+                else:
+                    self.delete(item)
+        with open(self.fileName, 'w', encoding='utf-8') as file:
+            json.dump(self.states, file)
+
+    def getAll(self):
+        """
+        function to get all saved channels, ordered by date played
+        @return:
+        """
+        sortedStates = dict(sorted(self.states.items(), key=lambda x: x[1]['datePlayed'], reverse=True))
+        return sortedStates

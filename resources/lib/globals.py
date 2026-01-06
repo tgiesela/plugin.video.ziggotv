@@ -83,6 +83,7 @@ class GlobalVariables:
     GUIDE_INFO = 'epg.json'
     RECORDINGS_INFO = 'recordings.json'
     PLAYBACK_INFO = 'playbackstates.json'
+    RECENTCHANNELS_INFO = 'recentchannels.json'
 
     SERIES = 'Series'
     MOVIES = 'Movies'
