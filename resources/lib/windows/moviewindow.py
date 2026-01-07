@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import threading
 import time
+import traceback
 import typing
 import xbmc
 import xbmcgui
@@ -14,7 +15,7 @@ from resources.lib import utils
 from resources.lib.channel import Channel
 from resources.lib.globals import G, S
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.utils import KeyMapMonitor, ProxyHelper, check_service
+from resources.lib.utils import ProxyHelper, WebException, check_service
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import baseWindow
@@ -35,8 +36,7 @@ class movieWindow(baseWindow):
     def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon=''):
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
         self.ADDON = addon
-        self.savedchannelslist = None
-        self.recentchannels = None
+        self.movieList = None
         self.helper = ProxyHelper(self.ADDON)
         self.screens = None
         self.listitemHelper = ListitemHelper(self.ADDON)
@@ -103,7 +103,7 @@ class movieWindow(baseWindow):
         moviecategorieslist.reset()
         moviecategorieslist.addItems(listing)
         moviecategorieslist.selectItem(0)
-#        self.setFocusId(5)
+        self.setFocusId(self.MOVIECATEGORIESLIST)
     
     def __load_movie_overviews(self):
         """
@@ -142,7 +142,7 @@ class movieWindow(baseWindow):
         """
         Path(self.__plugin_path(G.SERIES_INFO)).write_text(json.dumps(self.seriesOverviews), encoding='utf-8')
 
-    def __get_series_overview(self, itemId):
+    def __get_series_details(self, itemId):
         for overview in self.seriesOverviews:
             if overview['id'] == itemId:
                 return overview
@@ -150,6 +150,15 @@ class movieWindow(baseWindow):
         overview = self.helper.dynamic_call(LoginSession.obtain_series_overview, seriesId=itemId)
         self.seriesOverviews.append(overview)
         return overview
+
+    def __update_asset_details(self, item):
+        self.movieOverviews.remove(item)
+        if 'brandingProviderId' in item:
+            overview = self.helper.dynamic_call(LoginSession.obtain_asset_details, assetId=item['id'],
+                                                brandingProviderId=item['brandingProviderId'])
+        else:
+            overview = self.helper.dynamic_call(LoginSession.obtain_asset_details, assetId=item['id'])
+        self.movieOverviews.append(overview)
 
     def __get_asset_details(self,item):
         for overview in self.movieOverviews:
@@ -174,7 +183,7 @@ class movieWindow(baseWindow):
         return None
 
     def start_monitor(self, movie):
-        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(movie['id']))
+        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(movie['id'],))
         self.thread.start()
     
     def stop_monitor(self):
@@ -182,82 +191,25 @@ class movieWindow(baseWindow):
             self.videoHelper.stop_player()
             self.thread.join()
             self.thread = None
-
-    def __showmovies(self,categoryId):
-        def process_items(items):
-            for item in items:
-                if item['id'] in itemsSeen:
-                    itemid = item['id']
-                    continue
-                if item['type'] == 'ASSET':
-                    details = self.__get_asset_details(item)
-                    playableInstance = self.__get_playable_instance(details)
-                    if playableInstance is not None:
-                        li = self.listitemHelper.listitem_from_movie(item, details, playableInstance)
-                        itemsSeen.append((item['id']))
-                        listing.append(li)
-                elif item['type'] == 'SERIES':
-                    overview = self.__get_series_overview(item['id'])
-                    li = self.listitemHelper.listitem_from_seriesitem(item, overview)
-                    itemsSeen.append((item['id']))
-                    listing.append(li)
-                else:
-                    xbmc.log('Ignoring {0} with id {1}'.format(item['type'], item['id']), xbmc.LOGDEBUG)
-
-        listing = []
-        itemsSeen = []
-        movielist: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
+   
+    def __play_movie(self, li: xbmcgui.ListItem):
         self.__load_movie_overviews()
-        self.__load_series_overviews()
-        movieList = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=categoryId)
-        if 'collections' in movieList:
-            # Note: There are multiple collections, so we can expect duplicates. Collections can be for example:
-            #       Editorial, PromoTiles, Muziek, Alles
-            #       We don't group like that an simply show all items presented
-            for collection in movieList['collections']:
-                process_items(collection['items'])
-        self.__save_series_overviews()
-        self.__save_movie_overviews()
-        movielist.reset()
-        movielist.addItems(listing)
-        movielist.selectItem(0)
-        self.screenstate = self.screenState.OVERVIEW
-
-    def __play_episode(self, li: xbmcgui.ListItem):
-        self.__load_series_overviews()
-        _episode = None
-        _season = None
         _overview = None
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        episodeid = tag.getUniqueID('ziggomovieid')
+        movieid = tag.getUniqueID('ziggomovieid')
         instanceid = tag.getUniqueID('ziggoinstanceid')
         offerid = tag.getUniqueID('ziggoofferid')
-        for overview in self.seriesOverviews:
-            if overview['id'] == self.currentseriesId:
+        for overview in self.movieOverviews:
+            if overview['id'] == movieid:
                 _overview = overview
-                break
         if _overview is None:
-            raise RuntimeError('SeriesId no longer found!!')
-                
-        for season in _overview['seasons']:
-            if season['id'] == self.currentseasonId:
-                _season = season
-                break
-        if _season is None:
-            raise RuntimeError('Season not found in series!!')
+            raise RuntimeError('MovieId no longer found!!')
 
-        for episode in _season['episodes']:
-            if episode['id'] == episodeid: # Found the correct episode
-                _episode = episode
-                break
-        if _episode is None:
-            raise RuntimeError('Episode not found in season!!')
-
-        details = _episode['overview']
-        for instance in details['instances']:
+        for instance in _overview['instances']:
             if instance['id'] == instanceid:
                 _instance = instance
                 break
+
         if _instance is None:
             raise RuntimeError('Instance not found in episode overviews!!')
 
@@ -265,42 +217,15 @@ class movieWindow(baseWindow):
             if offer['id'] == offerid:
                 _offer = offer
                 break
-
+           
         if _offer is None:
             raise RuntimeError('Offer not found in episode overviews instances!!')
-
-        resumePoint = self.videoHelper.get_resume_point(episodeid)
-        self.videoHelper.play_movie(details, resumePoint, _instance, offerid)
-        self.videoHelper.monitor_state(episodeid)
-
-    def __play_movie(self, li: xbmcgui.ListItem):
-        self.__load_movie_overviews()
-        movieOverview = None
-        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        movieid = tag.getUniqueID('ziggomovieid')
-        instanceid = tag.getUniqueID('ziggoinstanceid')
-        offerid = tag.getUniqueID('ziggoofferid')
-        for overview in self.movieOverviews:
-            if overview['id'] == movieid:
-                movieOverview = overview
-                for instance in overview['instances']:
-                    if instance['id'] == instanceid:
-                        _instance = instance
-                        for offer in instance['offers']:
-                            if offer['id'] == offerid:
-                                _offer = offer
-                                break
-                        break
-                break
-           
-        if movieOverview is None or _instance is None or _offer is None:
-            raise RuntimeError('Movie no longer found in stored movies!!')
 
         self.videoHelper = VideoHelpers(self.ADDON)
         resumePoint = self.videoHelper.get_resume_point(movieid)
         self.stop_monitor()
-        self.videoHelper.play_movie(movieOverview, resumePoint, _instance, _offer)
-        self.start_monitor(movieOverview)
+        self.videoHelper.play_movie(_overview, resumePoint, _instance, _offer)
+        self.start_monitor(_overview)
 
     def __list_seasons(self, seriesId: str):
         movielist: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
@@ -308,12 +233,18 @@ class movieWindow(baseWindow):
 
         listing = []
         self.__load_series_overviews()
-        overview = self.__get_series_overview(seriesId)
-        episodes = self.helper.dynamic_call(LoginSession.get_episode_list, item=seriesId)
-        if episodes is not None:
-            overview.update({'seasons': episodes['seasons']})
-        for season in episodes['seasons']:
-            li = self.listitemHelper.listitem_from_season(season, episodes)
+        serie_overview = self.__get_series_details(seriesId)
+        if not 'seasons' in serie_overview:
+            seasons = self.helper.dynamic_call(LoginSession.get_episode_list, item=seriesId)
+            if seasons is not None:
+                serie_overview.update({'seasons': seasons['seasons']})
+            else:
+                raise RuntimeError('Cannor obtain seasons/episodes!!')
+
+        seasons = serie_overview['seasons']
+        
+        for season in seasons:
+            li = self.listitemHelper.listitem_from_season(season, serie_overview)
             listing.append(li)
 
         self.__save_series_overviews()
@@ -326,6 +257,7 @@ class movieWindow(baseWindow):
         movielist: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
         listing = []
         self.__load_series_overviews()
+        self.__load_movie_overviews()
         _serie = None
         _season = None
         for serie in self.seriesOverviews:
@@ -348,10 +280,68 @@ class movieWindow(baseWindow):
             listing.append(li)
 
         self.__save_series_overviews()
+        self.__save_movie_overviews()
         movielist.reset()
         movielist.addItems(listing)
         movielist.selectItem(0)
         self.screenstate = self.screenState.EPISODES
+
+    def __list_overview(self,categoryId):
+        def process_items(items):
+            for item in items:
+                if item['id'] in itemsSeen:
+                    itemid = item['id']
+                    continue
+                if item['type'] == 'ASSET':
+                    details = self.__get_asset_details(item)
+                    playableInstance = self.__get_playable_instance(details)
+                    if playableInstance is not None:
+                        li = self.listitemHelper.listitem_from_movie(item, details, playableInstance)
+                        itemsSeen.append(item['id'])
+                        listing.append(li)
+                elif item['type'] == 'SERIES':
+                    overview = self.__get_series_details(item['id'])
+                    li = self.listitemHelper.listitem_from_movieoverview(item, overview)
+                    itemsSeen.append(item['id'])
+                    listing.append(li)
+                else:
+                    xbmc.log('Ignoring {0} with id {1}'.format(item['type'], item['id']), xbmc.LOGDEBUG)
+
+        listing = []
+        itemsSeen = []
+        movielistctrl: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
+        self.__load_movie_overviews()
+        self.__load_series_overviews()
+        self.movieList = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=categoryId)
+        if 'collections' in self.movieList:
+            # Note: There are multiple collections, so we can expect duplicates. Collections can be for example:
+            #       Editorial, PromoTiles, Muziek, Alles
+            #       We don't group like that an simply show all items presented
+            for collection in self.movieList['collections']:
+                process_items(collection['items'])
+        self.__save_series_overviews()
+        self.__save_movie_overviews()
+        movielistctrl.reset()
+        movielistctrl.addItems(listing)
+        movielistctrl.selectItem(0)
+        self.screenstate = self.screenState.OVERVIEW
+
+    def update_movie_details(self,li:xbmcgui.ListItem):
+        self.__load_movie_overviews()
+        _overview = None
+        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+        movieid = tag.getUniqueID('ziggomovieid')
+        for overview in self.movieOverviews:
+            if overview['id'] == movieid:
+                self.__update_asset_details(overview)
+                break
+        self.__save_movie_overviews()
+
+    def update_series_details(self,li:xbmcgui.ListItem):
+        pass
+
+    def update_season_details(self,li:xbmcgui.ListItem):
+        pass
 
     def onInit(self):
         # give kodi a bit of (processing) time to add all items to the container
@@ -360,6 +350,17 @@ class movieWindow(baseWindow):
         # self.__showrecentrecordings()
 
     def onFocus(self, controlId):
+        if controlId == self.MOVIELIST:
+            list: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
+            li = list.getSelectedItem()
+            tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+            if li.getProperty('ismovie'):
+                self.update_movie_details(li)
+            elif li.getProperty('IsSeries'):
+                self.update_series_details(li)
+            elif li.getProperty('IsSeason'):
+                self.update_season_details(li)
+
         super().onFocus(controlId)
     
     def onAction(self, action: xbmcgui.Action):
@@ -371,7 +372,7 @@ class movieWindow(baseWindow):
         if action.getId() == xbmcgui.ACTION_PREVIOUS_MENU or action.getId() == xbmcgui.ACTION_NAV_BACK:
             xbmc.log(f'Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
             if self.screenstate == self.screenState.SEASONS:
-                self.__showmovies(self.currentcategoryId)
+                self.__list_overview(self.currentcategoryId)
                 return
             if self.screenstate == self.screenState.EPISODES:
                 self.inepisodes = False
@@ -386,7 +387,7 @@ class movieWindow(baseWindow):
             li = list.getSelectedItem()
             tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
             self.currentcategoryId = tag.getUniqueID('ziggoCategoryId')
-            self.__showmovies(self.currentcategoryId)
+            self.__list_overview(self.currentcategoryId)
             return
         
         if controlId == self.MOVIELIST:
@@ -407,17 +408,23 @@ class movieWindow(baseWindow):
                 if li.getProperty('isPlayable') == 'false':
                     xbmcgui.Dialog().ok('Error', self.ADDON.getLocalizedString(S.MSG_CANNOTWATCH))
                     return
-                if self.screenstate == self.screenState.EPISODES:
-                    self.__play_episode(li)
-                else:                    
-                    self.__play_movie(li)
+                self.__play_movie(li)
             return
 
         super().onClick(controlId)
 
 def loadmovieWindow(addon: xbmcaddon.Addon):
-    from resources.lib.utils import invoke_debugger
-    invoke_debugger(True, 'vscode')
-    check_service(addon)
-    window = movieWindow('movies.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
-    window.doModal()
+    try:
+        from resources.lib.utils import invoke_debugger
+        invoke_debugger(True, 'vscode')
+        check_service(addon)
+        window = movieWindow('movies.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
+        window.doModal()
+
+    except WebException as exc:
+        xbmcgui.Dialog().ok('Error', '{0}'.format(exc.response))
+        xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
+    # pylint: disable=broad-exception-caught
+    except Exception as exc:
+        xbmcgui.Dialog().ok('Error', f'{exc}')
+        xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)

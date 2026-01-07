@@ -10,20 +10,21 @@ from resources.lib.recording import SavedStateList
 from tests.test_base import TestBase
 
 
-def timer_func():
-    print("Timer_expired")
-
-
-class TestVideoPlayer(unittest.TestCase):
+class TestUtils(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tmr: utils.Timer
+        self.tmr: utils.TimeSignal
         self.tmrRuns = False
+        self.timercount = 0
 
     def timer_stopit(self):
         self.tmr.stop()
         print("Other timer stopped")
         self.tmrRuns = False
+
+    def timer_func(self):
+        print(f"Timer_expired: count={self.timercount}")
+        self.timercount += 1
 
     def test_times(self):
         rslt = utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -39,15 +40,22 @@ class TestVideoPlayer(unittest.TestCase):
         self.assertEqual('22:20', newtime.strftime('%H:%M'))
 
     def test_timer(self):
-        self.tmr = utils.Timer(50, timer_func)
+        self.tmr = utils.TimeSignal(5, self.timer_func)
         self.tmr.start()
-        self.tmrRuns = True
+        #self.tmrRuns = True
+        sleep(12)
+        self.tmr.stop()
+        self.tmr = utils.TimeSignal(10, self.timer_func)
+        self.tmr.start()
+        #self.tmrRuns = True
+        sleep(2)
+        self.tmr.stop()
 
-        stopTmr = utils.Timer(5, self.timer_stopit)
-        stopTmr.start()
-        while self.tmrRuns:
-            sleep(1)
-        stopTmr.stop()
+        # stopTmr = utils.Timer(20, self.timer_stopit)
+        # stopTmr.start()
+        # while self.tmrRuns:
+        #     sleep(1)
+        # stopTmr.stop()
 
 
 class TestSavedStates(TestBase):

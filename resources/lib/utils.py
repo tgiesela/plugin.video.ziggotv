@@ -148,6 +148,30 @@ class SharedProperties:
         if sortorder is not None:
             self.window.setProperty('ziggotv.SortOrder', sortorder)
 
+class TimeSignal(threading.Thread):
+    """
+    timer class
+    """
+    def __init__(self, timeout, callback_function):
+        self.stopEvent = threading.Event()
+        self.timeout = timeout
+        self.callbackfunction = callback_function
+        print('Timer created')
+        super().__init__()
+
+    def run(self):
+        print(f'Timer started for {self.timeout} seconds')
+        result = self.stopEvent.wait(self.timeout)
+        if result:
+            print('wait completed because external stop request')
+            return
+        self.callbackfunction()
+        print(f'Callback invoked and timer for {self.timeout} ended ')
+    
+    def stop(self):
+        self.stopEvent.set()
+        print(f'Timer Thread for {self.timeout} stopped')
+
 class Timer(threading.Thread):
     """
     timer class
@@ -424,7 +448,6 @@ class KeyMapMonitor(xbmc.Monitor):
         xbmc.log(f'KEYMAPMONITOR Notification received', xbmc.LOGINFO)
         if sender == self.ADDON.getAddonInfo("id"):
             if method == 'Other.keypressed':
-                # At least
                 params = json.loads(data)
                 xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGINFO)
                 numberkey = params['key']
@@ -436,7 +459,7 @@ class KeyMapMonitor(xbmc.Monitor):
                     xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGINFO)
                 else:
                     self.keypresses = self.keypresses + numberkey
-                xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-)')
+                xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-),1000')
                 #xbmc.executebuiltin(f'Action(Number{numberkey})')
 
         return super().onNotification(sender, method, data)

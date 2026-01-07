@@ -1,13 +1,9 @@
-import time
 import xbmc
 import xbmcgui
 import xbmcaddon
 
-from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList, SavedChannelsList
-from resources.lib.channelguide import ChannelGuide
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import Recording, RecordingList, SeasonRecording
 from resources.lib.utils import KeyMapMonitor, ProxyHelper, check_service
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession

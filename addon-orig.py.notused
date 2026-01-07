@@ -649,7 +649,7 @@ class ZiggoPlugin:
                 listing.append((callbackUrl, li, False))
             elif item['type'] == 'SERIES':
                 overview = self.__get_series_overview(item['id'])
-                li = self.listitemHelper.listitem_from_seriesitem(item, overview)
+                li = self.listitemHelper.listitem_from_movieoverview(item, overview)
                 callbackUrl = '{0}?action=sublist&type=series&seriesId={1}'.format(self.url, item['id'])
                 isFolder = True
                 listing.append((callbackUrl, li, isFolder))
@@ -711,7 +711,7 @@ class ZiggoPlugin:
                         continue
                     if item['type'] == 'SERIES':
                         overview = self.__get_series_overview(item['id'])
-                        li = self.listitemHelper.listitem_from_seriesitem(item, overview)
+                        li = self.listitemHelper.listitem_from_movieoverview(item, overview)
                         itemsSeen.append((item['id']))
                         callbackUrl = '{0}?action=sublist&type=series&seriesId={1}'.format(self.url, item['id'])
                         isFolder = True

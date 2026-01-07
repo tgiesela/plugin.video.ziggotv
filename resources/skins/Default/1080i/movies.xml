@@ -2,7 +2,7 @@
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
 	<backgroundcolor>background</backgroundcolor>
-	<menucontrol>9000</menucontrol>
+	<menucontrol>150</menucontrol>
 	<controls>
 		<include>DefaultBackground</include>
 		<control type="group">
@@ -27,8 +27,10 @@
 						<orientation>horizontal</orientation>
 						<focusposition>0</focusposition>
 						<movement>1</movement>
-						<ondown>9001</ondown>
+						<ondown>74</ondown>
 						<onup>50</onup>
+						<onleft>SendClick(9001)</onleft>
+						<pagecontrol>74</pagecontrol>
 						<itemlayout height="200" width="200" infoupdate="5000">
 							<control type="image">
 								<top>0</top>
@@ -77,6 +79,17 @@
 								<label>$INFO[ListItem.Label]</label>
 							</control>
 						</focusedlayout>
+					</control>
+					<control type="scrollbar" id="74">
+						<left>0</left>
+						<top>220</top>
+						<width>980</width>
+						<height>12</height>
+						<onleft>50</onleft>
+						<onright>50</onright>
+						<onup>50</onup>
+						<ondown>50</ondown>				
+						<orientation>horizontal</orientation>
 					</control>
 
 				</control>

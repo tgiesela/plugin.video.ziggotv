@@ -2,8 +2,7 @@
 Listitem helpers
 """
 import os
-import json
-from datetime import datetime, timezone
+from datetime import datetime
 import time
 from urllib.parse import quote, urlencode
 
@@ -26,22 +25,6 @@ try:
 except Exception as excpt:
     from tests.testinputstreamhelper import Helper
 
-class myListItem(xbmcgui.ListItem):
-    def __init__(self, label = "", label2 = "", path = "", offscreen = False):
-        super().__init__(label, label2, path, offscreen)
-        self.__channelnr = 0
-        self.__hasepg = True
-
-    @property
-    def hasepg(self) -> bool:
-        return self.__hasepg
-
-    @property
-    def channelNumber(self) -> str:
-        return self.__channelnr
-    @channelNumber.setter
-    def channelNumber(self, value):
-        self.__channelnr = value
 
 
 class ListitemHelper:
@@ -93,7 +76,7 @@ class ListitemHelper:
     #                           })
     #     xbmc.executeJSONRPC(command)
 
-    def listitem_from_url(self, requesturl, streamingToken, drmContentId) -> myListItem:
+    def listitem_from_url(self, requesturl, streamingToken, drmContentId) -> xbmcgui.ListItem:
         """
         create a listitem from an url
         @param requesturl:
@@ -105,7 +88,7 @@ class ListitemHelper:
         isHelper = Helper(G.PROTOCOL, drm=G.DRM)
         isHelper.check_inputstream()
 
-        li = myListItem(path=requesturl)
+        li = xbmcgui.ListItem(path=requesturl)
         li.setProperty('IsPlayable', 'true')
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         tag.setMediaType('video')
@@ -187,7 +170,7 @@ class ListitemHelper:
 
         return li
 
-    def __addrecordingproperties(self, li: myListItem, recording: Recording):
+    def __addrecordingproperties(self, li: xbmcgui.ListItem, recording: Recording):
         li.setProperty('isrecording','true')
         li.setProperty('typeofrecording',recording.recordingState)
 
@@ -207,7 +190,7 @@ class ListitemHelper:
         else:
             li.setProperty('hasResumepoint','false')
 
-    def listitem_from_recording(self, recording: Recording, season: SeasonRecording = None) -> myListItem:
+    def listitem_from_recording(self, recording: Recording, season: SeasonRecording = None) -> xbmcgui.ListItem:
         """
         Creates a ListItem from a SingleRecording
         @param season: the information of the season to which the recording belongs
@@ -235,7 +218,7 @@ class ListitemHelper:
             start = utils.DatetimeHelper.from_utc_to_local(start)
             episode = start.strftime('%Y-%m-%d %H:%M')
         title = "{0} ({1})".format(recording.title, episode)
-        li = myListItem(label=title)
+        li = xbmcgui.ListItem(label=title)
         if recording.poster is not None:
             thumbname = xbmc.getCacheThumbName(recording.poster.url)
             thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
@@ -294,7 +277,7 @@ class ListitemHelper:
 
         return li
 
-    def listitem_from_recording_season(self, recording: SeasonRecording) -> myListItem:
+    def listitem_from_recording_season(self, recording: SeasonRecording) -> xbmcgui.ListItem:
         """
         Creates a ListItem from a SeasonRecording
         @param recording: the recording to use
@@ -303,7 +286,7 @@ class ListitemHelper:
         """
         description = self.ADDON.getLocalizedString(S.MSG_EPISODES).format(len(recording.episodes))
         title = "{0} ({1})".format(recording.title, description)
-        li = myListItem(label=title)
+        li = xbmcgui.ListItem(label=title)
         thumbname = xbmc.getCacheThumbName(recording.poster.url)
         thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
         if os.path.exists(thumbfile):
@@ -479,7 +462,7 @@ class ListitemHelper:
         self.epg = ChannelGuide(self.ADDON, self.channelList.channels)
         self.epg.obtain_events()
 
-    def listitem_from_channel(self, channel: Channel) -> myListItem:
+    def listitem_from_channel(self, channel: Channel) -> xbmcgui.ListItem:
         """
         Creates a ListItem from a Channel
         To select only channels that are entitled use the channelList property to supply the ChannelList, 
@@ -497,8 +480,7 @@ class ListitemHelper:
         if self.epg is None:
             self.refreshepg()
 
-        li = myListItem(label="{0}".format(channel.name))
-        li.channelNumber = channel.logicalChannelNumber
+        li = xbmcgui.ListItem(label="{0}".format(channel.name))
         thumbname = xbmc.getCacheThumbName(channel.logo['focused'])
         thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
         if os.path.exists(thumbfile):
@@ -560,7 +542,7 @@ class ListitemHelper:
                 return offer
         return None
 
-    def __addmovieproperties(self, li: myListItem, movie):
+    def __addmovieproperties(self, li: xbmcgui.ListItem, movie):
         li.setProperty('ismovie','true')
 
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
@@ -579,7 +561,7 @@ class ListitemHelper:
         @return: listitem
         """
 
-        li = myListItem(label=item['id'])
+        li = xbmcgui.ListItem(label=item['id'])
         if 'image' in item:
             li.setArt({'poster': item['image']})
         else:
@@ -623,14 +605,14 @@ class ListitemHelper:
         return li
 
     @staticmethod
-    def listitem_from_seriesitem(item, overview):
+    def listitem_from_movieoverview(item, overview):
         """
         Creates a ListItem from a Series/Show
         @param item: the series/show information
-        @param overview: addition info for the show
         @return: ListItem
         """
-        li = myListItem(label=item['id'])
+        li = xbmcgui.ListItem(label=item['id'])
+        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         if 'image' in item:
             li.setArt({'poster': item['image']})
         else:
@@ -665,7 +647,7 @@ class ListitemHelper:
         @param genre: the genre information
         @return: ListItem
         """
-        li = myListItem(label=genre['id'])
+        li = xbmcgui.ListItem(label=genre['id'])
         if 'image' in genre:
             li.setArt({'poster': genre['image']})
         else:
@@ -688,7 +670,7 @@ class ListitemHelper:
         @param episodes: episode information
         @return: ListItem
         """
-        li = myListItem(label=season['id'])
+        li = xbmcgui.ListItem(label=season['id'])
         if 'image' in season:
             li.setArt({'poster': season['image']})
         else:
@@ -704,7 +686,7 @@ class ListitemHelper:
             tag.setPlot(episodes['synopsis'])
         tag.setMediaType('season')
         tag.setSeason(len(episodes['seasons']))
-        tag.setYear(episodes['startYear'])
+        tag.setYear(int(episodes['startYear']))
         if 'genres' in episodes:
             tag.setGenres(episodes['genres'])
 
@@ -720,7 +702,7 @@ class ListitemHelper:
         @param instance: list of instances that can be played
         @return: ListItem
         """
-        li = myListItem(label=item['id'])
+        li = xbmcgui.ListItem(label=item['id'])
         if 'image' in item:
             li.setArt({'poster': item['image']})
         else:
@@ -752,27 +734,34 @@ class ListitemHelper:
                 cast.append(xbmc.Actor(name=person['name'], role=person['role']))
             tag.setCast(cast)
 
-        if instance is not None:
-            offer = self.find_entitled_offer(instance)
-            if offer is None:
-                title = tag.getTitle()
-                tag.setTitle('[COLOR red]' + title + self.__get_pricing_from_offer(instance) + '[/COLOR]')
-                li.setProperty('IsPlayable', 'false')
-            else:
-                tag.setUniqueIDs({'ziggomovieid': item['id'],
-                                  'ziggoinstanceid':instance['id'],
-                                  'ziggoofferid': offer['id']})
-                entitled = True
-        else:
-            tag.setTitle('[COLOR red]' + tag.getTitle() + '[/COLOR]')
-        if not entitled:
-            li.setProperty('IsPlayable', 'false')
-
-        tag.setSeason(season['season'])
-        tag.setEpisode(item['episode'])
         tag.setMediaType('episode')
         li.setMimeType('application/dash+xml')
+        tag.setSeason(season['season'])
+        tag.setEpisode(item['episode'])
 
+        offer = self.find_entitled_offer(instance)
+        if offer is None:
+            title = tag.getTitle()
+            tag.setTitle('[COLOR red]' + title + self.__get_pricing_from_offer(instance) + '[/COLOR]')
+            li.setProperty('IsPlayable', 'false')
+        else:
+            tag.setUniqueIDs({'ziggomovieid': item['id'],'ziggoinstanceid':instance['id'],'ziggoofferid': offer['id']})
+        # if instance is not None:
+        #     offer = self.find_entitled_offer(instance)
+        #     if offer is None:
+        #         title = tag.getTitle()
+        #         tag.setTitle('[COLOR red]' + title + self.__get_pricing_from_offer(instance) + '[/COLOR]')
+        #         li.setProperty('IsPlayable', 'false')
+        #     else:
+        #         tag.setUniqueIDs({'ziggomovieid': item['id'],
+        #                           'ziggoinstanceid':instance['id'],
+        #                           'ziggoofferid': offer['id']})
+        #         entitled = True
+        # else:
+        #     tag.setTitle('[COLOR red]' + tag.getTitle() + '[/COLOR]')
+        if not entitled:
+            li.setProperty('IsPlayable', 'false')
+        self.__addmovieproperties(li, item)
         li.setContentLookup(False)
 
         return li

@@ -8,6 +8,7 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 
+from resources.lib import utils
 from resources.lib.avstream import StreamSession
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
@@ -75,7 +76,9 @@ class VideoHelpers:
         self.keymap = ZiggoKeyMap(self.addon)
         isHelper = Helper(G.PROTOCOL, drm=G.DRM)
         isHelper.check_inputstream()
-
+        # Used for updating events when playing a live channel
+        self.updateeventsignal: utils.TimeSignal = None
+        self.currentchannel = None
 
     def user_wants_switch(self):
         """
@@ -89,30 +92,6 @@ class VideoHelpers:
                                         False,
                                         xbmcgui.DLG_YESNO_NO_BTN)
         return choice
-
-    def __add_event_info(self, playItem, channel: Channel, event):
-        if event is not None:
-            title = '{0}. {1}: {2}'.format(channel.logicalChannelNumber, channel.name, event.title)
-            if not event.hasDetails:
-                event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
-        else:
-            title = '{0}. {1}'.format(channel.logicalChannelNumber, channel.name)
-        tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
-        playItem.setLabel(title)
-        if event is not None:
-            tag.setPlot(event.details.description)
-            if event.details.isSeries:
-                tag.setEpisode(event.details.episode)
-                tag.setSeason(event.details.season)
-            tag.setArtists(event.details.actors)
-            genres = []
-            for genre in event.details.genres:
-                genres.append(genre)
-        else:
-            genres = []
-        for genre in channel.genre:
-            genres.append(genre)
-        tag.setGenres(genres)
 
     @staticmethod
     def __add_vod_info(playItem, overview):
@@ -157,6 +136,62 @@ class VideoHelpers:
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
 
+    def __add_event_info(self, playItem: xbmcgui.ListItem, channel: Channel, event: Event):
+        if event is not None:
+            title = '{0}. {1}: {2}'.format(channel.logicalChannelNumber, channel.name, event.title)
+            if not event.hasDetails:
+                event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
+        else:
+            title = '{0}. {1}'.format(channel.logicalChannelNumber, channel.name)
+        tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
+        playItem.setLabel(title)
+        if event is not None:
+            tag.setPlot(event.details.description)
+            if event.details.isSeries:
+                tag.setEpisode(event.details.episode)
+                tag.setSeason(event.details.season)
+            tag.setArtists(event.details.actors)
+            genres = []
+            for genre in event.details.genres:
+                genres.append(genre)
+        else:
+            genres = []
+        for genre in channel.genre:
+            genres.append(genre)
+        tag.setGenres(genres)
+        self.player.updateInfoTag(playItem)
+
+    def update_event(self, channel: Channel, event: Event):
+        """
+        update the event information in the player to reflect the current event
+        @param channel:
+        @param event:
+        @return:
+        """
+        # if event is not None:
+        #     title = event.title
+        # else:
+        #     title = ''
+
+        # if self.player is None:
+        #     return
+
+        item: xbmcgui.ListItem = self.player.getPlayingItem()
+        self.__add_event_info(item, channel, event)
+
+    def __update_event_signal(self):
+        xbmc.log(f'UPDATE EVENT TIMER EXPIRED', xbmc.LOGINFO)
+        self.updateeventsignal = None
+        if xbmc.Player().isPlaying() and self.currentchannel is not None:
+            channel: Channel = self.currentchannel
+            event: Event = channel.events.get_current_event()
+            now = utils.DatetimeHelper.unix_datetime(datetime.now())
+            secondstogo = event.endTime - now
+            self.update_event(channel, channel.events.get_current_event())
+            self.updateeventsignal = utils.TimeSignal(secondstogo, self.__update_event_signal)
+            self.updateeventsignal.start()
+            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED', xbmc.LOGINFO)      
+
     def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
             get_token.locator, assetType = channel.get_locator(self.addon, suppressHD)
@@ -179,9 +214,12 @@ class VideoHelpers:
             if streamInfo is None:
                 return None
             item = VideoItem(self.addon, streamInfo, locator)
-            event = channel.events.get_current_event()
-            self.__add_event_info(item.playItem, channel, event)
+#            event = channel.events.get_current_event()
+#            self.__add_event_info(item.playItem, channel, event)
             self.__start_play(item, activateKeymap=True)
+            self.currentchannel = channel
+            self.updateeventsignal = utils.TimeSignal(0,self.__update_event_signal)
+            self.updateeventsignal.start()
             return item.playItem
         except WebException as webExc:
             self.__handleWebException(webExc)
@@ -299,35 +337,6 @@ class VideoHelpers:
                                       xbmcgui.NOTIFICATION_INFO,
                                       2000)
 
-    def update_event(self, channel: Channel, event):
-        """
-        update the event information in the player to reflect the current event
-        @param channel:
-        @param event:
-        @return:
-        """
-        if event is not None:
-            title = event.title
-        else:
-            title = ''
-
-        if self.player is None:
-            return
-
-        item = self.player.getPlayingItem()
-        item.setLabel('{0}. {1}: {2}'.format(channel.logicalChannelNumber, channel.name, title))
-        if event is not None:
-            if not event.hasDetails:
-                event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
-            tag = item.getVideoInfoTag()
-            tag.setPlot(event.details.description)
-            tag.setTitle(event.title)
-            if event.details.isSeries:
-                tag.setEpisode(event.details.episode)
-                tag.setSeason(event.details.season)
-            tag.setArtists(event.details.actors)
-        self.player.updateInfoTag(item)
-
     # pylint: disable=too-many-branches
     def play_epg(self, event: Event, channel: Channel):
         """
@@ -386,6 +395,10 @@ class VideoHelpers:
                 xbmc.log("VIDEOHELPER executebuiltin(Playercontrol(stop))", xbmc.LOGDEBUG)
                 xbmc.executebuiltin('PlayerControl(stop)')
                 del self.player
+        if self.updateeventsignal is not None:
+            self.updateeventsignal.stop()
+        self.updateeventsignal = None
+        self.currentchannel = None
 
     def play_movie(self, movieOverview, resumePoint, instance, offer) -> xbmcgui.ListItem:
         """
@@ -437,7 +450,6 @@ class VideoHelpers:
             savedTime = xbmc.Player().getTime()
             xbmc.sleep(500)
         recList.add(path, savedTime)
-        xbmc.log('PLAYING ITEM STOPPED: {0} at {1}'.format(path, savedTime), xbmc.LOGDEBUG)
 
     def get_resume_point(self, path) -> float:
         """
