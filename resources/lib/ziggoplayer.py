@@ -37,7 +37,7 @@ class ZiggoPlayer(xbmc.Player):
                 self.item.stop()
             except WebException as exc:
                 xbmc.log("ZIGGOPLAYER WEBEXC {0}".format(exc))
-            xbmc.log("ZIGGOPLAYER STOPPED item " + self.item.url, xbmc.LOGDEBUG)
+            xbmc.log("ZIGGOPLAYER STOPPED item ", xbmc.LOGDEBUG)
             self.item = None
 
         if self.keymap is not None:

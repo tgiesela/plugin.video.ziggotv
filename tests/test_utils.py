@@ -45,11 +45,13 @@ class TestUtils(unittest.TestCase):
         #self.tmrRuns = True
         sleep(12)
         self.tmr.stop()
+        self.tmr.join()
         self.tmr = utils.TimeSignal(10, self.timer_func)
         self.tmr.start()
         #self.tmrRuns = True
         sleep(2)
         self.tmr.stop()
+        self.tmr.join()
 
         # stopTmr = utils.Timer(20, self.timer_stopit)
         # stopTmr.start()

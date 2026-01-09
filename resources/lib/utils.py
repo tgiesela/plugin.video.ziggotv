@@ -125,12 +125,36 @@ class SharedProperties:
         """return the minor version number of Kodi"""
         return int(self.kodiVersionMinor)
     
-    def get_sort_options(self):
-        """get the current sort options from kodi"""
-        sortby = self.window.getProperty('ziggotv.SortMethod')
-        sortorder = self.window.getProperty('ziggotv.SortOrder')
+    def get_sort_options_channels(self):
+        """get the current sort options for channels from kodi"""
+        sortby = self.window.getProperty('ziggotv.SortMethodChannels')
+        if sortby == '':
+            sortby = str(SharedProperties.TEXTID_NUMBER)
+        sortorder = self.window.getProperty('ziggotv.SortOrderChannels')
+        if sortorder == '':
+            sortorder = str(SharedProperties.TEXTID_ASCENDING)
         return sortby, sortorder
     
+    def get_sort_options_recordings(self):
+        """get the current sort options for recordings from kodi"""
+        sortby = self.window.getProperty('ziggotv.SortMethodRecordings')
+        if sortby == '':
+            sortby = str(SharedProperties.TEXTID_NAME)
+        sortorder = self.window.getProperty('ziggotv.SortOrderRecordings')
+        if sortorder == '':
+            sortorder = str(SharedProperties.TEXTID_ASCENDING)
+        return sortby, sortorder
+
+    def get_sort_options_movies(self):
+        """get the current sort options for movies from kodi"""
+        sortby = self.window.getProperty('ziggotv.SortMethodMovies')
+        if sortby == '':
+            sortby = str(SharedProperties.TEXTID_NAME)
+        sortorder = self.window.getProperty('ziggotv.SortOrderMovies')
+        if sortorder == '':
+            sortorder = str(SharedProperties.TEXTID_ASCENDING)
+        return sortby, sortorder
+
     def get_recording_filter(self):
         """get the current recording filter from kodi"""
         recordingfilter = self.window.getProperty('ziggotv.RecordingFilter')
@@ -141,12 +165,26 @@ class SharedProperties:
         if recordingfilter is not None:
             self.window.setProperty('ziggotv.RecordingFilter', recordingfilter)
 
-    def set_sort_options(self, sortby: str=None, sortorder: str=None):
-        """set the sort options in kodi"""
+    def set_sort_options_channels(self, sortby: str=None, sortorder: str=None):
+        """set the sort options for channels in kodi"""
         if sortby is not None:
-            self.window.setProperty('ziggotv.SortMethod', sortby)
+            self.window.setProperty('ziggotv.SortMethodChannels', sortby)
         if sortorder is not None:
-            self.window.setProperty('ziggotv.SortOrder', sortorder)
+            self.window.setProperty('ziggotv.SortOrderChannels', sortorder)
+
+    def set_sort_options_recordings(self, sortby: str=None, sortorder: str=None):
+        """set the sort options for recordings in kodi"""
+        if sortby is not None:
+            self.window.setProperty('ziggotv.SortMethodRecordings', sortby)
+        if sortorder is not None:
+            self.window.setProperty('ziggotv.SortOrderRecordings', sortorder)
+
+    def set_sort_options_movies(self, sortby: str=None, sortorder: str=None):
+        """set the sort options for movies in kodi"""
+        if sortby is not None:
+            self.window.setProperty('ziggotv.SortMethodMovies', sortby)
+        if sortorder is not None:
+            self.window.setProperty('ziggotv.SortOrderMovies', sortorder)
 
 class TimeSignal(threading.Thread):
     """
@@ -156,21 +194,19 @@ class TimeSignal(threading.Thread):
         self.stopEvent = threading.Event()
         self.timeout = timeout
         self.callbackfunction = callback_function
-        print('Timer created')
+        xbmc.log('Timer created',xbmc.LOGDEBUG)
         super().__init__()
 
     def run(self):
-        print(f'Timer started for {self.timeout} seconds')
+        xbmc.log(f'Timer started for {self.timeout} seconds',xbmc.LOGDEBUG)
         result = self.stopEvent.wait(self.timeout)
         if result:
-            print('wait completed because external stop request')
             return
         self.callbackfunction()
-        print(f'Callback invoked and timer for {self.timeout} ended ')
     
     def stop(self):
         self.stopEvent.set()
-        print(f'Timer Thread for {self.timeout} stopped')
+        xbmc.log(f'Timer for {self.timeout} stopped by owner',xbmc.LOGDEBUG)
 
 class Timer(threading.Thread):
     """
@@ -252,8 +288,8 @@ class DatetimeHelper:
         return int(time.mktime(dt.timetuple()))
     
     @staticmethod
-    def from_utc_to_local(datetime: datetime) -> datetime:
-        newtime = datetime.replace(tzinfo=timezone.utc).astimezone(tz=None)
+    def from_utc_to_local(date_time: datetime) -> datetime:
+        newtime = date_time.replace(tzinfo=timezone.utc).astimezone(tz=None)
         return newtime
 
 class WebException(Exception):
@@ -376,13 +412,14 @@ def invoke_debugger(enable_debug: bool, debug_type:str):
     """
     if enable_debug:
         try:
+            # pylint: disable=import-error, import-outside-toplevel
             if debug_type == 'eclipse':
                 try:
                     # sys.path.append('E:\Eclipse IDE\eclipse\plugins\org.python.pydev.core_10.2.1.202307021217\pysrc')
                     # or add pydevd as a dependency (update addon.xml and install the script.module.pydevd)
                     import pydevd
                     pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
-                except:
+                except Exception:
                     sys.stderr.write("Error: " + "You must add org.python.pydev.debug.pysrc to your PYTHONPATH")
                     sys.stderr.write("Error: " + "Debug not available")
             elif debug_type == 'vscode': # debugpy
@@ -393,7 +430,7 @@ def invoke_debugger(enable_debug: bool, debug_type:str):
                     if not debugpy.is_client_connected():
                         debugpy.connect(('localhost', 5678))
                     debugpy.breakpoint()
-                except:
+                except Exception:
                     sys.stderr.write("Error: " + "You must add debugpy to your PYTHONPATH or install the addon script.module.debugpy")
                     sys.stderr.write("Error: " + "Debug not available")
             elif debug_type == 'web':
@@ -425,47 +462,50 @@ def check_service(addon: xbmcaddon.Addon):
     if not home.is_service_active():
         raise RuntimeError('Service did not start in time')
 
-
-
 class KeyMapMonitor(xbmc.Monitor):
     def __init__(self, addon: xbmcaddon.Addon, callback):
-        xbmc.log(f'KEYMAPMONITOR created', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR created', xbmc.LOGINFO)
         super().__init__()
         self.ADDON = addon
         self.callback = callback
         self.keypresses = ''
         self.firstkeypress = datetime.now() - timedelta(days=1)
-        self.keytimer: Timer = None
+        self.keytimer: TimeSignal = None
 
     def __keypress_completed(self):
-        self.keytimer.timerRuns.clear()
         xbmc.log(f'KEYMAPMONITOR KEYPRESS COMPLETED: {self.keypresses}',xbmc.LOGINFO)
         xbmc.executebuiltin(f'Notification(Channel,{self.keypresses})')
         self.callback(self.keypresses)
         self.keypresses = ''
+        self.keytimer.stop()
+        self.keytimer.join()
     
     def onNotification(self, sender, method, data):
-        xbmc.log(f'KEYMAPMONITOR Notification received', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR Notification received', xbmc.LOGINFO)
         if sender == self.ADDON.getAddonInfo("id"):
             if method == 'Other.keypressed':
                 params = json.loads(data)
                 xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGINFO)
-                numberkey = params['key']
-                if self.keypresses == '':
-                    self.keypresses = numberkey
-                    self.firstkeypresses = datetime.now()
-                    self.keytimer = Timer(3, self.__keypress_completed)
-                    self.keytimer.start()
-                    xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGINFO)
-                else:
-                    self.keypresses = self.keypresses + numberkey
-                xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-),1000')
+                key = str(params['key'])
+                if key.isnumeric():
+                    numberkey = params['key']
+                    if self.keypresses == '':
+                        self.keypresses = numberkey
+                        self.firstkeypress = datetime.now()
+                        self.keytimer = TimeSignal(3, self.__keypress_completed)
+                        self.keytimer.start()
+                        xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGINFO)
+                    else:
+                        self.keypresses = self.keypresses + numberkey
+                    xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-),1000')
+                elif key in ['pageup','pagedown']:
+                    self.callback(key)
                 #xbmc.executebuiltin(f'Action(Number{numberkey})')
 
         return super().onNotification(sender, method, data)
     
     def __del__(self):
-        xbmc.log(f'KEYMAPMONITOR deleted', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR deleted', xbmc.LOGINFO)
 
 class ZiggoKeyMap:
     """
@@ -476,11 +516,11 @@ class ZiggoKeyMap:
     TARGETKEYMAPACTIVE = 'ziggokeymaps.xml'
     TARGETKEYMAPINACTIVE = 'ziggokeymaps.xml.inactive'
     def __init__(self, addon: xbmcaddon.Addon):
-        self.ADDON = addon
-        self.addonPath = xbmcvfs.translatePath(self.ADDON.getAddonInfo('profile')) # userdata/addon_data/<addon-id>
+        self.addon = addon
+        self.addonPath = xbmcvfs.translatePath(self.addon.getAddonInfo('profile')) # userdata/addon_data/<addon-id>
         self.userdata = xbmcvfs.translatePath('special://userdata')
         self.masterprofile = xbmcvfs.translatePath('special://masterprofile')
-        self.path = xbmcvfs.translatePath(self.ADDON.getAddonInfo('path')) # addon/<addon-id>
+        self.path = xbmcvfs.translatePath(self.addon.getAddonInfo('path')) # addon/<addon-id>
         self.inactivefilename = self.userdata + self.KEYMAPSFOLDER + self.TARGETKEYMAPINACTIVE
         self.activefilename = self.userdata + self.KEYMAPSFOLDER + self.TARGETKEYMAPACTIVE
         if not os.path.exists(self.userdata + self.KEYMAPSFOLDER):
@@ -488,6 +528,11 @@ class ZiggoKeyMap:
 
     @staticmethod
     def remove(file):
+        """
+        Remove a file
+        
+        :param file: name of the file
+        """
         if os.path.exists(file):
             os.remove(file)
 
@@ -503,14 +548,22 @@ class ZiggoKeyMap:
         shutil.copy(self.path + self.SOURCEKEYMAP, self.inactivefilename)
     
     def activate(self):
+        """
+        Function to activate the keymap for our plugin
+        :param self: 
+        """
         shutil.copy(self.inactivefilename, self.activefilename)
         xbmc.executebuiltin('Action(reloadkeymaps)', True)
-        xbmc.log(f'Keymap activated and reloaded', xbmc.LOGDEBUG)
+        xbmc.log('Keymap activated and reloaded', xbmc.LOGDEBUG)
 
     def deactivate(self):
+        """
+        Function to deactivate the keymap for our plugin
+        :param self: 
+        """
         self.remove(self.activefilename)
         xbmc.executebuiltin('Action(reloadkeymaps)', True)
-        xbmc.log(f'Keymap deactivated and reloaded', xbmc.LOGDEBUG)
+        xbmc.log('Keymap deactivated and reloaded', xbmc.LOGDEBUG)
 
 if __name__ == '__main__':
     pass

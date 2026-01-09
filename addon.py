@@ -3,11 +3,9 @@ The actual addon implementation. From here the ziggo plugin menus are constructe
 """
 
 import traceback
-import sys
 
 import xbmc
 import xbmcaddon
-import xbmcplugin
 import xbmcgui
 
 from resources.lib.utils import WebException
@@ -28,4 +26,3 @@ if __name__ == '__main__':
     except Exception as exc:
         xbmcgui.Dialog().ok('Error', f'{exc}')
         xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
-

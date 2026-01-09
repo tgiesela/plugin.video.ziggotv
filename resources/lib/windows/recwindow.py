@@ -1,22 +1,20 @@
+"""
+Module to display window with recordings
+"""
 from datetime import datetime, timedelta
-from threading import Thread
 import threading
-import time
 import xbmc
 import xbmcgui
 import xbmcaddon
 
-from resources.lib import utils
-from resources.lib.channel import Channel, ChannelList, SavedChannelsList
-from resources.lib.channelguide import ChannelGuide
+from resources.lib.channel import ChannelList, SavedChannelsList
 from resources.lib.globals import S
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import PlannedRecording, Recording, RecordingList, RecordingType, SavedStateList, SeasonRecording, SingleRecording
+from resources.lib.recording import PlannedRecording, Recording, RecordingList, SavedStateList, SeasonRecording, SingleRecording
 from resources.lib.utils import ProxyHelper, SharedProperties
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import baseWindow
-from resources.lib.windows.sidewindow import sideWindow
 
 class recordingWindow(baseWindow):
     LISTBOX =50
@@ -33,23 +31,25 @@ class recordingWindow(baseWindow):
         self.recordings: RecordingList = None
         self.inseason = False
         self.thread: threading.Thread = None
+        self.recordingfilter = None
 
     def onInit(self):
         xbmc.sleep(100)
 
     def onAction(self, action: xbmcgui.Action):
-        list: xbmcgui.ControlList = self.getControl(self.LISTBOX)
-        pos = list.getSelectedPosition()
+        listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX)
+        # pylint: disable=no-member
+        pos = listbox.getSelectedPosition()
         if pos != self.pos:
-            self.listitemHelper.updateRecordingDetails(list.getSelectedItem(), self.recordings, self.recordingfilter)
+            self.listitemHelper.updateRecordingDetails(listbox.getSelectedItem(), self.recordings, self.recordingfilter)
             self.pos = pos
 
         if action.getId() == xbmcgui.ACTION_STOP:
-            xbmc.log(f'Window onAction STOP', xbmc.LOGDEBUG)
+            xbmc.log('Window onAction STOP', xbmc.LOGDEBUG)
             return
         
         if action.getId() == xbmcgui.ACTION_PREVIOUS_MENU or action.getId() == xbmcgui.ACTION_NAV_BACK:
-            xbmc.log(f'Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
+            xbmc.log('Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
             if self.inseason:
                 self.showrecordings()
                 return
@@ -66,10 +66,11 @@ class recordingWindow(baseWindow):
             self.thread = None
 
     def onClick(self, controlId):
+        # pylint: disable=no-member
         super().onClick(controlId)
         if controlId == self.LISTBOX:
-            list: xbmcgui.ControlList = self.getControl(self.LISTBOX)
-            li = list.getSelectedItem()
+            listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX)
+            li = listbox.getSelectedItem()
             recording = self.listitemHelper.findrecording(li, self.recordings, self.recordingfilter)
             if recording is not None:
                 if isinstance(recording, SingleRecording):
@@ -90,10 +91,10 @@ class recordingWindow(baseWindow):
     def showseasonrecordings(self, seasonrecording: SeasonRecording):
         self.inseason = True
         self.pos = -1
-        list: xbmcgui.ControlList = self.getControl(self.LISTBOX) # Fixedlist
-
+        listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX) # Fixedlist
+        # pylint: disable=no-member
         # Create a list for our items.
-        list.reset()
+        listbox.reset()
         listing = []
 
         # Iterate through recordings
@@ -108,18 +109,21 @@ class recordingWindow(baseWindow):
             listing.append(li)
         
         # Apply sorting
-        self.listitemHelper.sort_recordinglistitems(listing, self.sortby, self.sortorder)
-        list.addItems(listing)
-        list.selectItem(0)
+        sortby, sortorder = self.sharedproperties.get_sort_options_recordings()
+        self.recordings.sort_listitems(listing, sortby, sortorder)
+        listbox.addItems(listing)
+        listbox.selectItem(0)
         self.setFocusId(self.LISTBOX)
 
     def showrecordings(self):
+        self.recordingfilter = self.sharedproperties.get_recording_filter()
         self.inseason = False
         self.pos = -1
-        list: xbmcgui.ControlList = self.getControl(self.LISTBOX) # Fixedlist
+        listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX) # Fixedlist
+        # pylint: disable=no-member
 
         # Create a list for our items.
-        list.reset()
+        listbox.reset()
         listing = []
         self.helper.dynamic_call(LoginSession.refresh_recordings,
                                  includeAdult=self.ADDON.getSettingBool('adult-allowed'))
@@ -131,7 +135,6 @@ class recordingWindow(baseWindow):
         # Iterate through recoordings
         recording: SeasonRecording = None
         for recording in self.recordings.getSeasonRecordings():
-            # TODO: check if 'recorded' is still required, it is used in context menu??
             li = self.listitemHelper.listitem_from_recording_season(recording)
             listing.append(li)
         recording: SingleRecording = None
@@ -147,14 +150,16 @@ class recordingWindow(baseWindow):
                     listing.append(li)
         
         # Apply sorting
-        self.listitemHelper.sort_recordinglistitems(listing, self.sortby, self.sortorder)
-        list.addItems(listing)
-        list.selectItem(0)
+        sortby, sortorder = self.sharedproperties.get_sort_options_recordings()
+        self.recordings.sort_listitems(listing, sortby, sortorder)
+        listbox.addItems(listing)
+        listbox.selectItem(0)
         self.setFocusId(self.LISTBOX)
 
     def showContextMenu(self):
         listctrl: xbmcgui.ControlList = self.getControl(self.LISTBOX)
-        li = listctrl.getSelectedItem()
+        # pylint: disable=no-member
+        li: xbmcgui.ListItem = listctrl.getSelectedItem()
         if li is None:
             return
         
@@ -209,6 +214,10 @@ class recordingWindow(baseWindow):
                                     show=None,
                                     channelId=recording.channelId)
             li.setLabel(f'[COLOR red]{li.getLabel()}[COLOR]')
+            xbmcgui.Dialog().notification('Info',
+                                          self.addon.getLocalizedString(S.MSG_DELETE_RECORDING_COMPLETE),
+                                          xbmcgui.NOTIFICATION_INFO,
+                                          2000)
             xbmc.log("Recording with id {0} deleted".format(id), xbmc.LOGDEBUG)
         elif action == 'deleteseason':
             if recording.showId is not None:
@@ -221,6 +230,10 @@ class recordingWindow(baseWindow):
                                         show=recording.showId,
                                         channelId=recording.channelId)
                 li.setLabel(f'[COLOR red]{li.getLabel()}[COLOR]')
+                xbmcgui.Dialog().notification('Info',
+                                      self.addon.getLocalizedString(S.MSG_DELETE_SEASON_COMPLETE),
+                                      xbmcgui.NOTIFICATION_INFO,
+                                      2000)
                 xbmc.log("Recording of complete show with id {0} deleted".format(recording.showId), xbmc.LOGDEBUG)
         elif action == 'cancel':
             pass

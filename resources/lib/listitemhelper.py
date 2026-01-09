@@ -15,7 +15,7 @@ from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.globals import S, G, CONST_BASE_HEADERS
-from resources.lib.recording import Poster, Recording, RecordingList, SavedStateList, SingleRecording, SeasonRecording, PlannedRecording
+from resources.lib.recording import Recording, RecordingList, SavedStateList, SingleRecording, SeasonRecording, PlannedRecording
 from resources.lib.utils import ProxyHelper, SharedProperties
 from resources.lib.webcalls import LoginSession
 
@@ -25,11 +25,10 @@ try:
 except Exception as excpt:
     from tests.testinputstreamhelper import Helper
 
-
-
 class ListitemHelper:
     """
     Class holding several methods to create listitems for a specific purpose
+    When used for channels, the caller must set the channelList property.
     """
 
     def __init__(self, addon):
@@ -42,6 +41,7 @@ class ListitemHelper:
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
         self.channelList: ChannelList = None
         self.savedStateList: SavedStateList = SavedStateList(self.ADDON)
+        self.epg = None
 
     @staticmethod
     def __get_pricing_from_offer(instance):
@@ -202,8 +202,8 @@ class ListitemHelper:
                                       '%Y-%m-%dT%H:%M:%S.%fZ').astimezone()
         except TypeError:
             # Due to a bug in datetime see https://bugs.python.org/issue27400
-            # pylint: disable=import-outside-toplevel
-            import time
+            # pylint: disable=import-outside-toplevel, redefined-outer-name
+            # import time
             start = datetime.fromtimestamp(time.mktime(time.strptime(recording.startTime,
                                                                      '%Y-%m-%dT%H:%M:%S.%fZ')))
         if recording.source == 'show':
@@ -212,7 +212,7 @@ class ListitemHelper:
                     episode = f'S{recording.seasonNumber}-{recording.episodeTitle}'
                 else:
                     episode = f'S{recording.seasonNumber}-E?'
-            else:    
+            else:
                 episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
         else:
             start = utils.DatetimeHelper.from_utc_to_local(start)
@@ -234,6 +234,7 @@ class ListitemHelper:
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         if recording.isPlanned:
             tag.setTitle('[COLOR red]' + title + '[/COLOR]')
+            li.setLabel('[COLOR red]' + li.getLabel() + '[/COLOR]')
         else:
             tag.setTitle(title)
         tag.setMediaType('video')
@@ -319,53 +320,17 @@ class ListitemHelper:
             li.addContextMenuItems(items, True)
         return li
 
-    def findchannel(self,li: xbmcgui.ListItem, channels) -> Channel:
-        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        id = tag.getUniqueID('ziggochannelid')
-        channel: Channel = None
-        for channel in channels:
-            if id == channel.id:
-                return channel
-        return None   
-
-    def sort_channellistitems(self, listing: list, sortby: int, sortorder: int):
-        if int(sortby) == SharedProperties.TEXTID_NAME:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                listing.sort(key=lambda x: x.getLabel().lower())
-            else:
-                listing.sort(key=lambda x: x.getLabel().lower(), reverse=True)
-        elif int(sortby) == SharedProperties.TEXTID_NUMBER:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')))
-            else:
-                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')), reverse=True)
-
-    def sort_recordinglistitems(self, listing: list, sortby: int, sortorder: int):
-        if int(sortby) == SharedProperties.TEXTID_NAME:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                listing.sort(key=lambda x: x.getLabel().lower())
-            else:
-                listing.sort(key=lambda x: x.getLabel().lower(), reverse=True)
-        elif int(sortby) == SharedProperties.TEXTID_NUMBER:
-            # We do not sort on number for recordings
-            pass
-        elif int(sortby) == SharedProperties.TEXTID_DATE:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')))
-            else:
-                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')), reverse=True)
-
-    def updateEventDetails(self, li: xbmcgui.ListItem, channels):
-        channel = self.findchannel(li, channels)
+    def updateEventDetails(self, li: xbmcgui.ListItem):
+        if self.channelList is None:
+            # pylint: disable=broad-exception-raised
+            raise Exception('channelList property not set!!')
+        channel = self.channelList.find_channel_by_listitem(li)
         if channel is not None:
             event = self.__updateEvent(channel, li)
             if event is not None:
                 if not event.hasDetails:
                     event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
                 details = event.details
-#                genres = ', '.join(details.genres)
-#                li.setProperty('epgEventGenres',genres)
-#                li.setProperty('epgEventDescription', details.description)
                 tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
                 cast = []
                 for person in event.details.actors:
@@ -386,7 +351,7 @@ class ListitemHelper:
 
     def findrecording(self, li: xbmcgui.ListItem, recordings: RecordingList, recfilter):
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        id = tag.getUniqueID('ziggoRecordingId')
+        ziggoid = tag.getUniqueID('ziggoRecordingId')
         recording: Recording = None
         if recfilter == str(SharedProperties.TEXTID_RECORDED):
             rectype = 'recorded'
@@ -394,12 +359,12 @@ class ListitemHelper:
             rectype = 'planned'
 
         for recording in recordings.recs:
-            if id == recording.id:
+            if ziggoid == recording.id:
                 return recording
             elif isinstance(recording, SeasonRecording):
                 episode: Recording
                 for episode in recording.get_episodes(rectype):
-                    if id == episode.id:
+                    if ziggoid == episode.id:
                         return episode
         return None   
 
@@ -471,10 +436,7 @@ class ListitemHelper:
         @param channel: the channel
         @return: listitem
         """
-        if self.channelList is not None:
-            subscribed = self.channelList.is_entitled(channel)
-        else:
-            subscribed = True
+        subscribed = self.channelList.is_playable(channel)
 
         # Obtain events
         if self.epg is None:
@@ -499,9 +461,8 @@ class ListitemHelper:
             li.setArt({'icon': channel.logo['focused'],
                        'thumb': channel.logo['focused']})
         # set the list item to playable
-        li.setProperty('IsPlayable', 'true')
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        tag.setTitle("{0}. {1}".format(channel.logicalChannelNumber, channel.name))
+        tag.setTitle("{0}".format(channel.name))
         tag.setGenres(channel.genre)
         tag.setSetId(channel.logicalChannelNumber)
         tag.setMediaType('video')
@@ -520,17 +481,12 @@ class ListitemHelper:
             #  see https://alwinesch.github.io/group__python___info_tag_video.html#gaabca7bfa2754c91183000f0d152426dd
             #  for more tags
 
-        li.setProperty('IsPlayable', 'true')
-        if not subscribed:
+        if self.channelList.is_playable(channel):
+            li.setProperty('IsPlayable', 'true')
+        else:
             li.setProperty('IsPlayable', 'false')
-        if channel.locators['Default'] is None:
-            li.setProperty('IsPlayable', 'false')
-        # if li.getProperty('IsPlayable') == 'true':
-        #     callbackUrl = '{0}?action=play&type=channel&id={1}'.format(self.url, channel.id)
-        # else:
-        #     tag.setTitle(title[0:title.find('.') + 1] + '[COLOR red]' + title[title.find('.') + 1:] + '[/COLOR]')
-        #     callbackUrl = '{0}?action=cantplay&video={1}'.format(self.url, channel.id)
-        li.setProperty('IsPlayable', 'false')  # Turn off to avoid kodi complaining about item not playing
+            tag.setTitle('[COLOR red]' + tag.getTitle() + '[/COLOR]')
+
         li.setMimeType('application/dash+xml')
         li.setContentLookup(False)
 
@@ -545,7 +501,6 @@ class ListitemHelper:
     def __addmovieproperties(self, li: xbmcgui.ListItem, movie):
         li.setProperty('ismovie','true')
 
-        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         resumePoint = self.savedStateList.get(movie['id'])
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')

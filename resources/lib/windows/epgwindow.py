@@ -99,7 +99,7 @@ class epgWindow(baseWindow):
 
 def loadepgWindow(addon:xbmcaddon.Addon):
     from resources.lib.utils import invoke_debugger
-    invoke_debugger(False, 'eclipse')
+    invoke_debugger(False, 'vscode')
     check_service(addon)
     window = epgWindow('screen-epg.xml', addon.getAddonInfo('path'), addon)
     window.doModal()

@@ -167,22 +167,12 @@ class ProgramEventGrid:
         @return:
         """
         sharedprops = SharedProperties(self.addon)
-        sortby, sortorder = sharedprops.get_sort_options()
-        if sortby == '' or sortorder == '':
-            sortby = str(SharedProperties.TEXTID_NUMBER)
-            sortorder = str(SharedProperties.TEXTID_ASCENDING)
-            sharedprops.set_sort_options(sortby=sortby, sortorder=sortorder)
-
+        sortby, sortorder = sharedprops.get_sort_options_channels()
+        reverse = int(sortorder) == SharedProperties.TEXTID_DESCENDING
         if int(sortby) == SharedProperties.TEXTID_NAME:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                self.sortedchannels = self.channels.channels_by_name(reverse=False)
-            else:
-                self.sortedchannels = self.channels.channels_by_name(reverse=True)
+            self.sortedchannels = self.channels.channels_by_name(reverse=reverse)
         elif int(sortby) == SharedProperties.TEXTID_NUMBER:
-            if int(sortorder) == SharedProperties.TEXTID_ASCENDING:
-                self.sortedchannels = self.channels.channels_by_lcn(reverse=False)
-            else:
-                self.sortedchannels = self.channels.channels_by_lcn(reverse=True)
+            self.sortedchannels = self.channels.channels_by_lcn(reverse=reverse)
 
     def build(self, stayOnRow=False):
         """

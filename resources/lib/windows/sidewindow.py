@@ -23,31 +23,94 @@ class sideWindow(xbmcgui.WindowXMLDialog):
     CLEARDATABUTTON=9601
     CLEARDATALABEL=9602
     def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon:xbmcaddon.Addon=None,currentWindow=None):
+        # pylint: disable=too-many-function-args
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
+        self.sortoptions = {}
+        self.allowedsortmethods = {'channel': [SharedProperties.TEXTID_NAME, SharedProperties.TEXTID_NUMBER],
+                                   'recording': [SharedProperties.TEXTID_NAME, SharedProperties.TEXTID_DATE],
+                                   'movies': [SharedProperties.TEXTID_NAME]}
         self.ADDON = addon
         self.currentWindow = currentWindow
         self.sharedproperties = SharedProperties(addon)
-        self.sortmethod, self.sortorder = self.sharedproperties.get_sort_options()
-        if self.sortorder == '':    
-            self.sortorder = SharedProperties.TEXTID_ASCENDING
-        if self.sortmethod == '':
-            self.sortmethod = SharedProperties.TEXTID_NAME
+        self.__get_sort_options()
         self.recordingfilter = self.sharedproperties.get_recording_filter()
         if self.recordingfilter == '':    
             self.recordingfilter = str(SharedProperties.TEXTID_RECORDED)  # All Recordings with state "Recorded"
         self.show()
 
+    def __get_sort_options(self):
+        sortmethod, sortorder = self.sharedproperties.get_sort_options_channels()
+        if sortorder == '':    
+            sortorder = SharedProperties.TEXTID_ASCENDING
+        if sortmethod == '':
+            sortmethod = SharedProperties.TEXTID_NAME
+        self.sortoptions.update({'channel': {'method': sortmethod, 'order': sortorder}})
+
+        sortmethod, sortorder = self.sharedproperties.get_sort_options_recordings()
+        if sortorder == '':    
+            sortorder = SharedProperties.TEXTID_ASCENDING
+        if sortmethod == '':
+            sortmethod = SharedProperties.TEXTID_NAME
+        self.sortoptions.update({'recording': {'method': sortmethod, 'order': sortorder}})
+
+        sortmethod, sortorder = self.sharedproperties.get_sort_options_movies()
+        if sortorder == '':    
+            sortorder = SharedProperties.TEXTID_ASCENDING
+        if sortmethod == '':
+            sortmethod = SharedProperties.TEXTID_NAME
+        self.sortoptions.update({'movies': {'method': sortmethod, 'order': sortorder}})
+
+    def __next_sort_order(self):
+        wc = self.currentWindow.__class__.__name__
+        if wc.lower() == 'recordingwindow':
+            options = self.sortoptions['recording']
+        elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
+            options = self.sortoptions['channel']
+        else:
+            return
+        if int(options['order']) == SharedProperties.TEXTID_DESCENDING:
+            options['order'] = SharedProperties.TEXTID_ASCENDING
+        else:
+            options['order'] = SharedProperties.TEXTID_DESCENDING
+        self.sharedproperties.set_sort_options_channels(sortby=str(options['method']), sortorder=str(options['order']))
+        self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']), sortorder=str(options['order']))
+
+    def __next_sort_method(self):
+        wc = self.currentWindow.__class__.__name__
+        if wc.lower() == 'recordingwindow':
+            options = self.sortoptions['recording']
+            allowed = self.allowedsortmethods['recording']
+        elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
+            options = self.sortoptions['channel']
+            allowed = self.allowedsortmethods['channel']
+        else:
+            return
+        xbmc.log(f"OPTIONS {options}, ALLOWED {allowed}, current {options['method']}", xbmc.LOGINFO)
+        currentindex = allowed.index(int(options['method']))
+        currentindex += 1
+        if currentindex >= len(allowed):
+            currentindex = 0
+            
+        options['method'] = allowed[currentindex]
+        self.sharedproperties.set_sort_options_channels(sortby=str(options['method']), sortorder=str(options['order']))
+        self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']), sortorder=str(options['order']))
+
     def __setlabels(self):
-        self.getControl(self.SORTORDERLABEL).setLabel(xbmc.getLocalizedString(int(self.sortorder)))
-        self.getControl(self.SORTMETHODLABEL).setLabel(xbmc.getLocalizedString(int(self.sortmethod)))
+        wc = self.currentWindow.__class__.__name__
+        if wc.lower() == 'recordingwindow':
+            options = self.sortoptions['recording']
+        elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
+            options = self.sortoptions['channel']
+        else:
+            options = {}
+        # pylint: disable=no-member
+        self.getControl(self.SORTORDERLABEL).setLabel(xbmc.getLocalizedString(int(options['order'])))
+        self.getControl(self.SORTMETHODLABEL).setLabel(xbmc.getLocalizedString(int(options['method'])))
         self.getControl(self.FILTERLABEL).setLabel(self.ADDON.getLocalizedString(int(self.recordingfilter)))
         wc = self.currentWindow.__class__.__name__
         xbmc.log(f'Side Window current window class: {wc}', xbmc.LOGINFO)
         self.getControl(self.FILTERBUTTON).setVisible(False)
         self.getControl(self.FILTERLABEL).setVisible(False)
-        if wc.lower() in ['channelwindow', 'epgwindow', 'homewindow']:
-            if int(self.sortmethod) not in [SharedProperties.TEXTID_NAME, SharedProperties.TEXTID_NUMBER]:
-                self.sortmethod = SharedProperties.TEXTID_NAME
         if wc.lower() == 'recordingwindow':
             self.getControl(self.SIDERECORDINGSBUTTON).setEnabled(False)
             self.getControl(self.FILTERBUTTON).setVisible(True)
@@ -70,24 +133,9 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             return True
         else:
             if controlId == self.SORTORDERBUTTON:
-                if int(self.sortorder) == SharedProperties.TEXTID_DESCENDING:
-                    self.sortorder = SharedProperties.TEXTID_ASCENDING
-                else:
-                    self.sortorder = SharedProperties.TEXTID_DESCENDING
+                self.__next_sort_order()
             elif controlId == self.SORTMETHODBUTTON:
-                wc = self.currentWindow.__class__.__name__
-                if wc.lower() in ['channelwindow', 'epgwindow']:
-                    if int(self.sortmethod) == SharedProperties.TEXTID_NAME:
-                        self.sortmethod = SharedProperties.TEXTID_NUMBER
-                    elif int(self.sortmethod) == SharedProperties.TEXTID_NUMBER:
-                        self.sortmethod = SharedProperties.TEXTID_NAME
-                elif wc.lower() == 'recordingwindow':
-                    if int(self.sortmethod) == SharedProperties.TEXTID_NAME:
-                        self.sortmethod = SharedProperties.TEXTID_DATE
-                    elif int(self.sortmethod) == SharedProperties.TEXTID_NUMBER:
-                        self.sortmethod = SharedProperties.TEXTID_DATE
-                    elif int(self.sortmethod) == SharedProperties.TEXTID_DATE:
-                        self.sortmethod = SharedProperties.TEXTID_NAME
+                self.__next_sort_method()
             elif controlId == self.FILTERBUTTON:
                 if int(self.recordingfilter) == SharedProperties.TEXTID_RECORDED:
                     self.recordingfilter = SharedProperties.TEXTID_GEPLAND
@@ -99,12 +147,12 @@ class sideWindow(xbmcgui.WindowXMLDialog):
                 self.close()
                 return
 
-            self.sharedproperties.set_sort_options(sortby=str(self.sortmethod), sortorder=str(self.sortorder))
             self.sharedproperties.set_recording_filter(str(self.recordingfilter))
             self.__setlabels()
             return True
         
     def onFocus(self, controlId):
+        # pylint: disable=no-member
         if controlId == self.SIDECHANNELBUTTON:
             sclbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
             sclbl.setLabel(xbmc.getLocalizedString(19019))
@@ -121,6 +169,7 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             return False
 
     def getSortOptions(self):
+        # pylint: disable=no-member
         sortbyControl: xbmcgui.ControlButton = self.getControl(self.SORTMETHODBUTTON)
         sortorderControl: xbmcgui.ControlButton = self.getControl(self.SORTORDERBUTTON)
         sortby = sortbyControl.getLabel()

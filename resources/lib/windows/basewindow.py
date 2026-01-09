@@ -11,16 +11,9 @@ class baseWindow(xbmcgui.WindowXML):
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia)
         self.addon = addon
         self.sharedproperties = SharedProperties(addon)
-        self.sortby, self.sortorder = self.sharedproperties.get_sort_options()
-        if self.sortby == '' or self.sortorder == '':
-            self.sortby = str(SharedProperties.TEXTID_NUMBER)
-            self.sortorder = str(SharedProperties.TEXTID_ASCENDING)
-            self.sharedproperties.set_sort_options(sortby=self.sortby, sortorder=self.sortorder)
 
-        self.recordingfilter = self.sharedproperties.get_recording_filter()
-        if self.recordingfilter == '':    
-            self.recordingfilter = str(SharedProperties.TEXTID_RECORDED)
-            self.sharedproperties.set_recording_filter(self.recordingfilter)
+    def get_subclass_name(self):
+        return self.__class__.__name__
 
     def onAction(self, action):
         super().onAction(action)
@@ -48,7 +41,7 @@ class baseWindow(xbmcgui.WindowXML):
     def showOptions(self):
         from resources.lib.windows.sidewindow import loadsideWindow
         window = loadsideWindow(self.addon, self)
-        self.sortby, self.sortorder = self.sharedproperties.get_sort_options()
+        self.sortby, self.sortorder = self.sharedproperties.get_sort_options_channels()
         self.recordingfilter = self.sharedproperties.get_recording_filter()
         del window
         self.optionsSelected()

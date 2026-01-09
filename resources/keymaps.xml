@@ -12,6 +12,8 @@
 	    <seven>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"7"})</seven>
 	    <eight>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"8"})</eight>
 		<nine>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"9"})</nine>
+	    <pageup>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pageup"})</pageup>
+      	<pagedown>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pagedown"})</pagedown>
 	</keyboard>
   </FullScreenVideo>
 </keymap>

@@ -202,3 +202,10 @@ msgctxt "#40032"
 msgid "Recorded"
 msgstr ""
 
+msgctxt "#40033"
+msgid "Recording deleted"
+msgstr "Recording deleted"
+
+msgctxt "#40034"
+msgid "Series recording deleted"
+msgstr "Series recording deleted"

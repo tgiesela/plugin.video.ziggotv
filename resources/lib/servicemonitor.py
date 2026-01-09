@@ -125,14 +125,13 @@ class ServiceMonitor(xbmc.Monitor):
         self.refreshTimer = None
         self.licenseRefreshed = datetime.datetime.now() - datetime.timedelta(days=2)
         self.savedItemsUpdated = datetime.datetime.now() - datetime.timedelta(days=1)
-        self.epg = None
         self.__initialize_session()
 
         #  Set the status of this service to STARTED
         self.home.set_service_status(ServiceStatus.STARTED)
         xbmc.log('SERVICEMONITOR initialized: ', xbmc.LOGDEBUG)
-        self.keymap = ZiggoKeyMap(self.ADDON)
-        self.keymap.install()
+        keymap = ZiggoKeyMap(self.ADDON)
+        keymap.install()
 
     def __initialize_session(self):
         addonPath = xbmcvfs.translatePath(self.ADDON.getAddonInfo('profile'))

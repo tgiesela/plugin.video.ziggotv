@@ -25,28 +25,23 @@ class homeWindow(baseWindow):
         self.ADDON = addon
         self.savedchannelslist = None
         self.recentchannels = None
-        self.helper = ProxyHelper(self.ADDON)
+        self.helper:ProxyHelper = ProxyHelper(self.ADDON)
         self.channels = self.helper.dynamic_call(LoginSession.get_channels)
-        self.listitemHelper = ListitemHelper(self.ADDON)
-        self.videoHelper = VideoHelpers(self.ADDON)
-        self.keyboardmonitor = KeyMapMonitor(self.ADDON, self.switchToChannel)
+        self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
+        self.channellist:ChannelList = ChannelList(self.channels,self.entitlements)
+        self.listitemHelper:ListitemHelper = ListitemHelper(self.ADDON)
+        self.videoHelper:VideoHelpers = VideoHelpers(self.ADDON)
+        self.keyboardmonitor:KeyMapMonitor = KeyMapMonitor(self.ADDON, self.switchToChannel)
     
     def __del__(self):
+        self.keyboardmonitor.waitForAbort(1)
         self.keyboardmonitor = None
+        xbmc.log('HOMEWINDOW Destroyed', xbmc.LOGINFO)
 
-    def __findchannel(self,id):
-        channel: Channel = None
-        for channel in self.channels:
-            if id == channel.id:
-                return channel
-        return None   
-
-    def __findchannel_by_number(self,number):
-        channel: Channel = None
-        for channel in self.channels:
-            if int(number) == channel.logicalChannelNumber:
-                return channel
-        return None   
+    def __get_current_channel(self):
+        item: xbmcgui.ListItem = xbmc.Player().getPlayingItem()
+        channel = self.channellist.find_channel_by_listitem(item)
+        return channel
 
     def __do_play_channel(self, channel: Channel):
         self.videoHelper.play_channel(channel=channel)
@@ -59,20 +54,19 @@ class homeWindow(baseWindow):
         listing = []
         # this puts the focus on the first button of the screen
         recentchannellist: xbmcgui.ControlList = self.getControl(self.RECENTCHANNELLIST)
-        entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
-        channelList = ChannelList(self.channels, entitlements)
-        channelList.entitledOnly = self.ADDON.getSettingBool('allowed-channels-only')
-        channelList.apply_filter()
+        # pylint: disable=no-member
+        self.channellist.entitledOnly = self.ADDON.getSettingBool('allowed-channels-only')
+        self.channellist.apply_filter()
         # Obtain events
 
-        self.listitemHelper.channelList = channelList
+        self.listitemHelper.channelList = self.channellist
         self.listitemHelper.refreshepg()
 
         recentchannellist.reset()
 
         for recentchannel in self.recentchannels:
 #            channelname = self.recentchannels[recentchannel]['name']
-            channelobj:Channel = self.__findchannel(recentchannel)
+            channelobj:Channel = self.channellist.find_channel_by_id(recentchannel)
             if channelobj is None:
                 continue
             li = self.listitemHelper.listitem_from_channel(channelobj)
@@ -83,12 +77,31 @@ class homeWindow(baseWindow):
         recentchannellist.selectItem(0)
         self.setFocusId(5)
     
-    def switchToChannel(self, newchannel: str):
-        channel = self.__findchannel_by_number(newchannel)
-        if channel is None:
-            xbmc.executebuiltin(f'Notification(Channel,{self.keypresses} not found)')
-            return
-        self.__do_play_channel(channel)
+    def switchToChannel(self, keysentered: str):
+        if keysentered.isnumeric():
+            channel = self.channellist.find_channel_by_number(int(keysentered))
+            if channel is None:
+                xbmc.executebuiltin(f'Notification(Channel,{keysentered} not found)')
+                return
+            self.__do_play_channel(channel)
+        else:
+            channel = self.__get_current_channel()
+            startchannel = channel.id
+            if keysentered == 'pageup':
+                # Find the next playable channel
+                nextchannel = self.channellist.get_next_channel(channel)
+                while not self.channellist.is_playable(nextchannel) and nextchannel.id != startchannel:
+                    nextchannel = self.channellist.get_next_channel(nextchannel)
+                if nextchannel.id != startchannel and nextchannel is not None:
+                    self.__do_play_channel(nextchannel)
+            elif keysentered == 'pagedown':
+                prevchannel = self.channellist.get_prev_channel(channel)
+                while not self.channellist.is_playable(prevchannel) and prevchannel.id != startchannel:
+                    prevchannel = self.channellist.get_prev_channel(prevchannel)
+                if prevchannel.id != startchannel and prevchannel is not None:
+                    self.__do_play_channel(prevchannel)
+            else:
+                xbmc.log('Unkown command in switchToChannel', xbmc.LOGERROR)
 
     def onInit(self):
         # give kodi a bit of (processing) time to add all items to the container
@@ -99,15 +112,15 @@ class homeWindow(baseWindow):
     def onFocus(self, controlId):
         super().onFocus(controlId)
     
-    def onAction(self, action):
+    def onAction(self, action:xbmcgui.Action):
         super().onAction(action)
         if action.getId() == xbmcgui.ACTION_STOP:
-            xbmc.log(f'Window onAction STOP', xbmc.LOGDEBUG)
+            xbmc.log('Window onAction STOP', xbmc.LOGDEBUG)
             self.close()
             return
 
         if action.getId() == xbmcgui.ACTION_PREVIOUS_MENU or action.getId() == xbmcgui.ACTION_NAV_BACK:
-            xbmc.log(f'Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
+            xbmc.log('Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
             self.close()
             return
 
@@ -122,9 +135,12 @@ class homeWindow(baseWindow):
         elif controlId == self.MOVIESBUTTON:
             loadmovieWindow(self.ADDON)
         elif controlId == self.RECENTCHANNELLIST:
-            list: xbmcgui.ControlList = self.getControl(self.RECENTCHANNELLIST)
-            li = list.getSelectedItem()
-            channel = self.listitemHelper.findchannel(li, self.channels)
+            listctrl: xbmcgui.ControlList = self.getControl(self.RECENTCHANNELLIST)
+            # pylint: disable=no-member
+            li = listctrl.getSelectedItem()
+            tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+            channelid = tag.getUniqueID('ziggochannelid')
+            channel = self.channellist.find_channel_by_id(channelid)
             if channel is not None:
                 self.__do_play_channel(channel=channel)
             else:

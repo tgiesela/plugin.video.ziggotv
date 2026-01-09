@@ -203,3 +203,10 @@ msgctxt "#40032"
 msgid "Recorded"
 msgstr "Opgenomen"
 
+msgctxt "#40033"
+msgid "Recording deleted"
+msgstr "Opname verwijderd"
+
+msgctxt "#40034"
+msgid "Series recording deleted"
+msgstr "Serie opname verwijderd"

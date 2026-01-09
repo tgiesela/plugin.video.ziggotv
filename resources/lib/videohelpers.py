@@ -33,7 +33,7 @@ class VideoItem:
     """
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, addon, streamInfo, locator=None):
+    def __init__(self, addon, streamInfo, locator=None) -> xbmcgui.ListItem:
         self.urlHelper = UrlTools(addon)
         self.liHelper: ListitemHelper = ListitemHelper(addon)
         self.streamInfo = streamInfo
@@ -45,9 +45,10 @@ class VideoItem:
                 raise RuntimeError('url or locator missing')
         else:
             self.url = self.urlHelper.build_url(streamInfo.token, locator)
-        self.playItem = self.liHelper.listitem_from_url(requesturl=self.url,
-                                                        streamingToken=streamInfo.token,
-                                                        drmContentId=streamInfo.drmContentId)
+        self.playItem:xbmcgui.ListItem = \
+            self.liHelper.listitem_from_url(requesturl=self.url,
+                                            streamingToken=streamInfo.token,
+                                            drmContentId=streamInfo.drmContentId)
 
     def stop(self):
         """
@@ -61,6 +62,8 @@ class VideoItem:
 class VideoHelpers:
     """
     class with helper functions to prepare playing a video/recording etc.
+    Note all video play actions must be performed via this class, this includes 
+    starting and stopping of playing video/live tv.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -102,7 +105,8 @@ class VideoHelpers:
             if 'seriesTitle' in overview:
                 title = overview['seriesTitle']
                 if overview['type'] == 'EPISODE':
-                    title = title + '(S{season}-E{episode})'.format(season=overview['season'], episode=overview['episode'])
+                    title = title + '(S{season}-E{episode})'.format(season=overview['season'], 
+                                                                    episode=overview['episode'])
 
         playItem.setLabel(title)
         tag.setPlot(overview['synopsis'])
@@ -138,15 +142,19 @@ class VideoHelpers:
 
     def __add_event_info(self, playItem: xbmcgui.ListItem, channel: Channel, event: Event):
         if event is not None:
-            title = '{0}. {1}: {2}'.format(channel.logicalChannelNumber, channel.name, event.title)
+            title = '{0}: {1}'.format(channel.name, event.title)
             if not event.hasDetails:
                 event.details = self.helper.dynamic_call(LoginSession.get_event_details, eventId=event.id)
         else:
-            title = '{0}. {1}'.format(channel.logicalChannelNumber, channel.name)
+            title = '{0}'.format(channel.name)
         tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
+
         playItem.setLabel(title)
         if event is not None:
-            tag.setPlot(event.details.description)
+            start = utils.DatetimeHelper.from_unix(event.startTime).strftime('%H:%M')
+            end = utils.DatetimeHelper.from_unix(event.endTime).strftime('%H:%M')
+            description = f'{event.details.description}\n{start}-{end}'
+            tag.setPlot(description)
             if event.details.isSeries:
                 tag.setEpisode(event.details.episode)
                 tag.setSeason(event.details.season)
@@ -180,17 +188,27 @@ class VideoHelpers:
         self.__add_event_info(item, channel, event)
 
     def __update_event_signal(self):
-        xbmc.log(f'UPDATE EVENT TIMER EXPIRED', xbmc.LOGINFO)
+        xbmc.log('UPDATE EVENT TIMER EXPIRED', xbmc.LOGINFO)
+        self.updateeventsignal.stop()
+        try:
+            self.updateeventsignal.join()
+        except RuntimeError:
+            xbmc.log('Faild to join thread of current timer', xbmc.LOGERROR)
         self.updateeventsignal = None
         if xbmc.Player().isPlaying() and self.currentchannel is not None:
             channel: Channel = self.currentchannel
             event: Event = channel.events.get_current_event()
             now = utils.DatetimeHelper.unix_datetime(datetime.now())
             secondstogo = event.endTime - now
-            self.update_event(channel, channel.events.get_current_event())
+            
+            endTime = utils.DatetimeHelper.from_unix(event.endTime)
+            xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'), secondstogo), xbmc.LOGDEBUG)            
+            if secondstogo <= 0:
+                secondstogo=60
+            self.update_event(channel, event)
             self.updateeventsignal = utils.TimeSignal(secondstogo, self.__update_event_signal)
             self.updateeventsignal.start()
-            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED', xbmc.LOGINFO)      
+            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED for {secondstogo}', xbmc.LOGINFO)      
 
     def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
@@ -214,6 +232,7 @@ class VideoHelpers:
             if streamInfo is None:
                 return None
             item = VideoItem(self.addon, streamInfo, locator)
+            item.playItem.setProperty('ziggochannelid', channel.id)
 #            event = channel.events.get_current_event()
 #            self.__add_event_info(item.playItem, channel, event)
             self.__start_play(item, activateKeymap=True)
@@ -239,6 +258,7 @@ class VideoHelpers:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_replay_streaming_token,
                                                   path=event.details.eventId)
             item = VideoItem(self.addon, streamInfo)
+            item.playItem.setProperty('ziggoeventid', event.id)
             self.__add_event_info(item.playItem, channel, event)
             resumePoint = self.get_resume_point(event.id)
             if resumePoint > 0:
@@ -265,14 +285,13 @@ class VideoHelpers:
             return overview['instances'][0]  # return the first one if none was goPlayable
         return None
 
-    def __play_vod(self, overview, resumePoint, instance=None, offer=None) -> xbmcgui.ListItem:
+    def __play_vod(self, overview, resumePoint, instance=None) -> xbmcgui.ListItem:
         '''
         Function to play a video on demand item.
         
         :param overview: The movieOverview item as received from Ziggo webcall
         :param resumePoint: point at which the replay should start (0 if not applicable)
         :param instance: selected 'instance' from the movieOverview, should be 'goPlayable'
-        :param offer: Currently not used, was used to select an item based on the pricing. 
         :return: The listitem to be used by the videoplayer
         :rtype: ListItem
         '''
@@ -289,6 +308,7 @@ class VideoHelpers:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_vod_streaming_token,
                                                   streamId=playableInstance['id'])
             item = VideoItem(self.addon, streamInfo)
+            item.playItem.setProperty('ziggomovieid', overview['id'])
             self.__add_vod_info(item.playItem, overview)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
@@ -308,6 +328,7 @@ class VideoHelpers:
         try:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_recording_streaming_token, streamid=recording.id)
             item = VideoItem(self.addon, streamInfo)
+            item.playItem.setProperty('ziggorecordingid', recording.id)
             details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
             self.__add_recording_info(item.playItem, details)
             if resumePoint > 0:
@@ -394,13 +415,16 @@ class VideoHelpers:
             if self.player.isPlaying():
                 xbmc.log("VIDEOHELPER executebuiltin(Playercontrol(stop))", xbmc.LOGDEBUG)
                 xbmc.executebuiltin('PlayerControl(stop)')
-                del self.player
+#                del self.player
+        while xbmc.Player().isPlaying():
+            xbmc.sleep(500)
         if self.updateeventsignal is not None:
             self.updateeventsignal.stop()
+            self.updateeventsignal.join()
         self.updateeventsignal = None
         self.currentchannel = None
 
-    def play_movie(self, movieOverview, resumePoint, instance, offer) -> xbmcgui.ListItem:
+    def play_movie(self, movieOverview, resumePoint, instance) -> xbmcgui.ListItem:
         """
         Play a movie
         @param resumePoint: position where to start playing
@@ -408,7 +432,7 @@ class VideoHelpers:
         @return:
         """
         self.stop_player()
-        return self.__play_vod(movieOverview, resumePoint, instance, offer)
+        return self.__play_vod(movieOverview, resumePoint, instance)
 
     def play_recording(self, recording: SingleRecording, resumePoint):
         """
@@ -488,3 +512,9 @@ class VideoHelpers:
             xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH) +
                                 '\n status: ' + webExc.status)
         return False
+
+    def __del__(self):
+        if self.updateeventsignal is not None:
+            self.updateeventsignal.stop()
+            self.updateeventsignal.join()
+            self.updateeventsignal = None

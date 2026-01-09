@@ -53,7 +53,7 @@
 							<!--<font>font36_title</font>-->
 							<aligny>top</aligny>
 							<visible>true</visible>
-							<label>$INFO[ListItem.Label]</label>
+							<label>$INFO[ListItem.Title]</label>
 						</control>
 						<control type="group">
 							<visible>true</visible>
@@ -140,7 +140,7 @@
 							<!--<font>font36_title</font>-->
 							<aligny>top</aligny>
 							<visible>true</visible>
-							<label>$INFO[ListItem.Label]</label>
+							<label>$INFO[ListItem.Title]</label>
 						</control>
 						<control type="group">
 							<visible>true</visible>

@@ -420,6 +420,21 @@ class RecordingList:
                 seasonRecs.append(season)
         return seasonRecs
     
+    def sort_listitems(self, listing: list, sortby: int, sortorder: int):
+        if int(sortby) == utils.SharedProperties.TEXTID_NAME:
+            if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: x.getLabel().lower())
+            else:
+                listing.sort(key=lambda x: x.getLabel().lower(), reverse=True)
+        elif int(sortby) == utils.SharedProperties.TEXTID_NUMBER:
+            # We do not sort on number for recordings
+            pass
+        elif int(sortby) == utils.SharedProperties.TEXTID_DATE:
+            if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')))
+            else:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')), reverse=True)
+    
 class SavedStateList:
     """
     class to keep the state of played recording. This is used to resume a recording at the point where

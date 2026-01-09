@@ -224,7 +224,7 @@ class movieWindow(baseWindow):
         self.videoHelper = VideoHelpers(self.ADDON)
         resumePoint = self.videoHelper.get_resume_point(movieid)
         self.stop_monitor()
-        self.videoHelper.play_movie(_overview, resumePoint, _instance, _offer)
+        self.videoHelper.play_movie(_overview, resumePoint, _instance)
         self.start_monitor(_overview)
 
     def __list_seasons(self, seriesId: str):
@@ -416,7 +416,7 @@ class movieWindow(baseWindow):
 def loadmovieWindow(addon: xbmcaddon.Addon):
     try:
         from resources.lib.utils import invoke_debugger
-        invoke_debugger(True, 'vscode')
+        invoke_debugger(False, 'vscode')
         check_service(addon)
         window = movieWindow('movies.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
         window.doModal()

@@ -1,17 +1,19 @@
 """
 Classes for processing channels
 """
+import os
 import dataclasses
 from typing import List, Tuple
 from collections import UserList
+import json
+import datetime
+import xbmc
+import xbmcvfs
+import xbmcgui
 import xbmcaddon
 from resources.lib import utils
 from resources.lib.events import EventList
-import xbmcvfs
-import os
 from resources.lib.globals import G
-import json
-import datetime
 
 class Channel:
     """
@@ -148,6 +150,7 @@ class ChannelList(UserList):
     def __init__(self, channels: List[Channel], entitlements):
         super().__init__(channels)
         self.channels: List[Channel] = channels
+        self.__channelnumbers: List[int] = self.__create_list()
         self.filteredChannels: List[Channel] = []
         self.entitlements = entitlements
         self.suppressHidden = True
@@ -158,6 +161,12 @@ class ChannelList(UserList):
             self.entitlementList.append(entitlements['entitlements'][i]["id"])
             i += 1
         self.apply_filter()
+
+    def __create_list(self):
+        channelnumbers:List[int] = []
+        for channel in self.channels:
+            channelnumbers.append(channel.logicalChannelNumber)
+        return sorted(channelnumbers, key=int, reverse=False)
 
     # properties
     # pylint: disable=missing-function-docstring
@@ -195,6 +204,13 @@ class ChannelList(UserList):
             else:
                 self.filteredChannels.append(channel)
         self.data = self.filteredChannels
+
+    def is_playable(self, channel: Channel):
+        if self.is_entitled(channel):
+            if channel.locators['Default'] is None:
+                return False
+            return True
+        return False
 
     def is_entitled(self, channel: Channel):
         """
@@ -243,6 +259,68 @@ class ChannelList(UserList):
         self.channels.sort(key=lambda x: x.name, reverse=reverse)
         return self.channels
 
+    def sort_listitems(self, listing: list, sortby: int, sortorder: int):
+        if int(sortby) == utils.SharedProperties.TEXTID_NAME:
+            if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: x.getLabel().lower())
+            else:
+                listing.sort(key=lambda x: x.getLabel().lower(), reverse=True)
+        elif int(sortby) == utils.SharedProperties.TEXTID_NUMBER:
+            if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')))
+            else:
+                listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')), reverse=True)
+
+    def find_channel_by_id(self,channelid):
+        channel: Channel = None
+        for channel in self.channels:
+            if channelid == channel.id:
+                return channel
+        return None
+
+    def find_channel_by_number(self,number:int):
+        channel: Channel = None
+        for channel in self.channels:
+            if number == channel.logicalChannelNumber:
+                return channel
+        return None
+
+    def find_channel_by_listitem(self,li: xbmcgui.ListItem) -> Channel:
+        channelid = li.getProperty('ziggochannelid')
+        if channelid is None or channelid == '':
+            tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+            channelid = tag.getUniqueID('ziggochannelid')
+            if channelid is None or channelid == '':
+                return None
+        channel: Channel = self.find_channel_by_id(channelid)
+        return channel
+
+    def get_next_channel(self, channel: Channel) -> Channel:
+        try:
+            index = self.__channelnumbers.index(channel.logicalChannelNumber)
+            if index >= 0:
+                if index >= len(self.__channelnumbers):
+                    newchannelnr = self.__channelnumbers[0]
+                else:
+                    newchannelnr = self.__channelnumbers[index+1]
+                return self.find_channel_by_number(newchannelnr)
+            return channel
+        except ValueError:
+            return channel
+
+    def get_prev_channel(self, channel: Channel) -> Channel:
+        try:
+            index = self.__channelnumbers.index(channel.logicalChannelNumber)
+            if index >= 0:
+                if index <= 0:
+                    newchannelnr = self.__channelnumbers[len(self.__channelnumbers)-1]
+                else:
+                    newchannelnr = self.__channelnumbers[index-1]
+                return self.find_channel_by_number(newchannelnr)
+            return channel
+        except ValueError:
+            return channel
+        
 class SavedChannelsList:
     """
     class to keep the state of played channels. This is used to present a list of recently played channels
@@ -275,7 +353,8 @@ class SavedChannelsList:
         @param position:
         @return:
         """
-        self.states.update({itemId: {'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now()), 'name': name}})
+        self.states.update({itemId: {'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now()),
+                                     'name': name}})
         with open(self.fileName, 'w', encoding='utf-8') as file:
             json.dump(self.states, file)
 
