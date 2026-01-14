@@ -29,6 +29,8 @@ class TestUtils(unittest.TestCase):
     def test_times(self):
         rslt = utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ')
         self.assertEqual(rslt, 1622736076)
+
+        rslt = utils.DatetimeHelper.to_unix('2026-01-05T15:50:00Z', '%Y-%m-%dT%H:%M:%SZ')
         print(rslt)
         startTime = utils.DatetimeHelper.from_unix(utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
         self.assertEqual('2021-06-03', startTime.strftime('%Y-%m-%d'))
@@ -87,7 +89,7 @@ class TestSavedStates(TestBase):
         savedchannels.add('NL_000005_019462', 'RTL-5')
         savedchannels.delete('NL_000005_019462')
         savedchannels.cleanup(0,1)
-        self.assertEqual(len(savedchannels.getAll()),2)
+        self.assertEqual(len(savedchannels.get_all()),2)
         savedchannels = SavedChannelsList(self.addon)
         savedchannels.cleanup()
 

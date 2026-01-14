@@ -62,6 +62,24 @@ class TestRecordings(TestBase):
         recs = self.session.get_recordings_recorded()
         self.print_recordings(recs)
 
+    def test_buza_delete(self):
+        self.do_login()
+        self.session.refresh_channels()
+        self.session.refresh_entitlements()
+        self.session.refresh_recordings(True)
+        recsplanned = self.session.get_recordings_planned()
+        recsrecorded = self.session.get_recordings_recorded()
+        rec: SeasonRecording
+        for rec in recsplanned.recs:
+            if isinstance(rec, SeasonRecording):
+                if rec.title == 'BuZa':
+                    id = 'crid:~~2F~~2Fgn.tv~~2F20952261~~2FSH040806180000'
+                    self.assertEqual(rec.id,id)
+                    result = self.session.delete_recordings_planned(show=id,
+                                                                    channelId="NL_000001_019401")
+                    print(result)
+
+
     def test_record(self):
         self.do_login()
         self.session.refresh_channels()

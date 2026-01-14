@@ -240,8 +240,17 @@ class EventList(LinkedList):
             else:
                 return None
         return None
-    
+
     def get_next_event(self, current: Event) -> Event:
+        """
+        get the next event, based on the current event
+        
+        :param self: 
+        :param current: the event from which to start
+        :type current: Event
+        :return: the next event or None
+        :rtype: Event
+        """
         currentNode: Node = self.head
         while currentNode is not None:
             currentEvent: Event = currentNode.data

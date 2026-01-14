@@ -3,9 +3,7 @@ module containing the service monitor to track all ongoing tasks of the plugin
 """
 import datetime
 import http.server
-import json
 import os
-import shutil
 import threading
 from pathlib import Path
 

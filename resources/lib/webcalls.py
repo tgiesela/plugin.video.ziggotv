@@ -960,7 +960,7 @@ class LoginSession(Web):
         if not self.__status_code_ok(response):
             raise WebException(response)
         return json.loads(response.content)
-   
+
     def __get_recordings_planned(self, isAdult: bool):
         """
         Obtain list of planned recordings
@@ -1115,7 +1115,7 @@ class LoginSession(Web):
         recording.update({'images': seasonRecordings['images']})
         recording.update({'seasons':seasonRecordings['seasons']})
         recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
-    
+
     def refresh_recordings(self, includeAdult=False):
         """
         Routine to (re)load the recordings.
@@ -1128,24 +1128,24 @@ class LoginSession(Web):
         for recording in recordingsPlanned['data']:
             if recording['type'] == 'season':
                 self.__update_recording_season(recording, 'booking')
-        recJson.update({'planned': recordingsPlanned})
         if includeAdult:
             adultRecordingsPlanned = self.__get_recordings_planned(isAdult=True)
             for recording in adultRecordingsPlanned['data']:
                 if recording['type'] == 'season':
                     self.__update_recording_season(recording,'booking')
-            recJson['planned']['data'].extend(adultRecordingsPlanned['data'])
+            recordingsPlanned['data'].extend(adultRecordingsPlanned['data'])
+        recJson.update({'planned': recordingsPlanned})
         recordings = self.__get_recordings_recorded(isAdult=False)
         for recording in recordings['data']:
             if recording['type'] == 'season':
                 self.__update_recording_season(recording,'recording')
-        recJson.update({'recorded': recordings})
         if includeAdult:
             adultRecordings = self.__get_recordings_recorded(isAdult=True)
             for recording in adultRecordings['data']:
                 if recording['type'] == 'season':
                     self.__update_recording_season(recording,'recording')
-            recJson['recorded']['data'].extend(adultRecordings['data'])
+            recordings['data'].extend(adultRecordings['data'])
+        recJson.update({'recorded': recordings})
         Path(self.pluginpath(G.RECORDINGS_INFO)).write_text(json.dumps(recJson), encoding='utf-8')
 
     def get_recordings_planned(self) -> RecordingList:
@@ -1165,7 +1165,7 @@ class LoginSession(Web):
             recordingsInfo = json.loads(Path(self.pluginpath(G.RECORDINGS_INFO)).read_text(encoding='utf-8'))
             return RecordingList(recordingsInfo['recorded'],RecordingType.RECORDED)
         return None
-    
+
     def get_event_details(self, eventId):
         """
         Get the details of an event for the EPG
@@ -1197,6 +1197,7 @@ class LoginSession(Web):
         """
         return self.cookies.get_dict()
 
+    # pylint: disable=useless-parent-delegation
     def close(self):
         """
         method to close a session. Only here for debugging purpose

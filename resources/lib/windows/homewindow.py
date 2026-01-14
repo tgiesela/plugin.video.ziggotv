@@ -1,3 +1,6 @@
+"""
+Module for creating and loading homewindow (initial form)
+"""
 import xbmc
 import xbmcgui
 import xbmcaddon
@@ -7,12 +10,15 @@ from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.utils import KeyMapMonitor, ProxyHelper, check_service
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
-from resources.lib.windows.basewindow import baseWindow
-from resources.lib.windows.channelwindow import loadchannelWindow
-from resources.lib.windows.epgwindow import loadepgWindow
-from resources.lib.windows.moviewindow import loadmovieWindow
-from resources.lib.windows.recwindow import loadrecordingWindow
-class homeWindow(baseWindow):
+from resources.lib.windows.basewindow import BaseWindow
+from resources.lib.windows.channelwindow import load_channelwindow
+from resources.lib.windows.epgwindow import load_epgwindow
+from resources.lib.windows.moviewindow import load_moviewindow
+from resources.lib.windows.recwindow import load_recordingwindow
+class HomeWindow(BaseWindow):
+    """
+    Window class for the home window, which is shown when the addon is started
+    """
     GROUPLIST=50
     CHANNELBUTTON=5
     EPGBUTTON=6
@@ -20,19 +26,20 @@ class homeWindow(baseWindow):
     MOVIESBUTTON=8
     RECENTCHANNELLIST=150
     RECENTRECORDINGSLIST=250
-    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon=''):
+    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p",
+                 isMedia = False, addon=''):
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
-        self.ADDON = addon
+        self.addon = addon
         self.savedchannelslist = None
         self.recentchannels = None
-        self.helper:ProxyHelper = ProxyHelper(self.ADDON)
+        self.helper:ProxyHelper = ProxyHelper(self.addon)
         self.channels = self.helper.dynamic_call(LoginSession.get_channels)
         self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
         self.channellist:ChannelList = ChannelList(self.channels,self.entitlements)
-        self.listitemHelper:ListitemHelper = ListitemHelper(self.ADDON)
-        self.videoHelper:VideoHelpers = VideoHelpers(self.ADDON)
-        self.keyboardmonitor:KeyMapMonitor = KeyMapMonitor(self.ADDON, self.switchToChannel)
-    
+        self.listitemHelper:ListitemHelper = ListitemHelper(self.addon)
+        self.videoHelper:VideoHelpers = VideoHelpers(self.addon)
+        self.keyboardmonitor:KeyMapMonitor = KeyMapMonitor(self.addon, self.switch_tochannel)
+
     def __del__(self):
         self.keyboardmonitor.waitForAbort(1)
         self.keyboardmonitor = None
@@ -49,13 +56,13 @@ class homeWindow(baseWindow):
             self.savedchannelslist.add(channel.id, channel.name)
 
     def __showrecentchannels(self):
-        self.savedchannelslist = SavedChannelsList(self.ADDON)
-        self.recentchannels = self.savedchannelslist.getAll()
+        self.savedchannelslist = SavedChannelsList(self.addon)
+        self.recentchannels = self.savedchannelslist.get_all()
         listing = []
         # this puts the focus on the first button of the screen
         recentchannellist: xbmcgui.ControlList = self.getControl(self.RECENTCHANNELLIST)
         # pylint: disable=no-member
-        self.channellist.entitledOnly = self.ADDON.getSettingBool('allowed-channels-only')
+        self.channellist.entitledOnly = self.addon.getSettingBool('allowed-channels-only')
         self.channellist.apply_filter()
         # Obtain events
 
@@ -76,8 +83,15 @@ class homeWindow(baseWindow):
         recentchannellist.addItems(listing)
         recentchannellist.selectItem(0)
         self.setFocusId(5)
-    
-    def switchToChannel(self, keysentered: str):
+
+    def switch_tochannel(self, keysentered: str):
+        """
+        Function to switch to a different channel. Invoked by entering digits or page-up/down
+        
+        :param self: 
+        :param keysentered: the keys entered (either a sequence of numeric digits or 'pageup'|'pagedown')
+        :type keysentered: str
+        """
         if keysentered.isnumeric():
             channel = self.channellist.find_channel_by_number(int(keysentered))
             if channel is None:
@@ -109,9 +123,10 @@ class homeWindow(baseWindow):
         self.__showrecentchannels()
         # self.__showrecentrecordings()
 
+    # pylint: disable=useless-parent-delegation
     def onFocus(self, controlId):
         super().onFocus(controlId)
-    
+
     def onAction(self, action:xbmcgui.Action):
         super().onAction(action)
         if action.getId() == xbmcgui.ACTION_STOP:
@@ -127,13 +142,13 @@ class homeWindow(baseWindow):
     def onClick(self, controlId):
         super().onClick(controlId)
         if controlId == self.CHANNELBUTTON:
-            loadchannelWindow(self.ADDON)
+            load_channelwindow(self.addon)
         elif controlId == self.EPGBUTTON:
-            loadepgWindow(self.ADDON)
+            load_epgwindow(self.addon)
         elif controlId == self.RECORDINGSBUTTON:
-            loadrecordingWindow(self.ADDON)
+            load_recordingwindow(self.addon)
         elif controlId == self.MOVIESBUTTON:
-            loadmovieWindow(self.ADDON)
+            load_moviewindow(self.addon)
         elif controlId == self.RECENTCHANNELLIST:
             listctrl: xbmcgui.ControlList = self.getControl(self.RECENTCHANNELLIST)
             # pylint: disable=no-member
@@ -146,9 +161,16 @@ class homeWindow(baseWindow):
             else:
                 xbmc.log(f'Channel not found for listitem {li.getLabel()}', xbmc.LOGERROR)
 
-def loadhomeWindow(addon: xbmcaddon.Addon):
+def load_homewindow(addon: xbmcaddon.Addon):
+    """
+    Function to create, populate and display the home window
+    
+    :param addon: the addon for which the form is created
+    :type addon: xbmcaddon.Addon
+    """
+    # pylint: disable=import-outside-toplevel
     from resources.lib.utils import invoke_debugger
     invoke_debugger(True, 'vscode')
     check_service(addon)
-    window = homeWindow('ziggohome.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
+    window = HomeWindow('ziggohome.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
     window.doModal()

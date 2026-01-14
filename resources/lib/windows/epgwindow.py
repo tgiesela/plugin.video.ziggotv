@@ -1,20 +1,14 @@
-import time
-import xbmc
 import xbmcgui
 import xbmcaddon
 from xbmcgui import Action, Control
 
-from resources.lib import utils
-from resources.lib.channel import Channel, ChannelList
-from resources.lib.channelguide import ChannelGuide
-from resources.lib.listitemhelper import ListitemHelper
+from resources.lib.channel import ChannelList
 from resources.lib.programevent import ProgramEventGrid
-from resources.lib.utils import ProxyHelper, SharedProperties, check_service
-from resources.lib.videohelpers import VideoHelpers
+from resources.lib.utils import ProxyHelper, check_service
 from resources.lib.webcalls import LoginSession
-from resources.lib.windows.basewindow import baseWindow
+from resources.lib.windows.basewindow import BaseWindow
 
-class epgWindow(baseWindow):
+class EpgWindow(BaseWindow):
     # pylint: disable=too-many-instance-attributes
     """
     Class representing Epg Window defined in screen-epg.xml.
@@ -91,17 +85,24 @@ class epgWindow(baseWindow):
         else:
             self.grid.onAction(action)
 
-    def optionsSelected(self):
+    def options_selected(self):
         """
         called when options were selected in the side window
         """
         self.onInit()
 
-def loadepgWindow(addon:xbmcaddon.Addon):
+def load_epgwindow(addon:xbmcaddon.Addon):
+    """
+    Function to create, populate and display the epg form
+    
+    :param addon: the addon for which the form is created
+    :type addon: xbmcaddon.Addon
+    """
+    # pylint: disable=import-outside-toplevel
     from resources.lib.utils import invoke_debugger
     invoke_debugger(False, 'vscode')
     check_service(addon)
-    window = epgWindow('screen-epg.xml', addon.getAddonInfo('path'), addon)
+    window = EpgWindow('screen-epg.xml', addon.getAddonInfo('path'), addon)
     window.doModal()
 
     # epgwindow = epgWindow('test-screen-epg.xml', CWD, defaultRes='1080i',addon=addon)

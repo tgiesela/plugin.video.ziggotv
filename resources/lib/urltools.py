@@ -2,7 +2,7 @@
 Module with a collection of url functions
 """
 from collections import namedtuple
-from urllib.parse import urlparse, parse_qs, urlunparse, urlencode, unquote
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 import xbmc
 import xbmcaddon
@@ -60,4 +60,3 @@ class UrlTools:
         if '/live' in locator:
             return locator.replace("/live", "/live,vxttoken=" + streamingToken).replace("http://", "https://")
         return locator
-

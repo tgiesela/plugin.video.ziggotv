@@ -110,6 +110,24 @@
 							<textureradiooffnofocus>icons/submenu/recordings.png</textureradiooffnofocus>
 							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/recordings.png</textureradiooffdisabled>
 						</control>
+						<control type="radiobutton" id="103">
+							<width>92</width>
+							<height>92</height>
+							<align>center</align>
+							<aligny>center</aligny>
+							<font></font>
+							<texturefocus colordiffuse="button_focus">buttons/roundbutton-fo.png</texturefocus>
+							<texturenofocus />
+							<radioposx>26</radioposx>
+							<radioposy>0</radioposy>
+							<radiowidth>40</radiowidth>
+							<radioheight>40</radioheight>
+							<textureradioonfocus>icons/sidemenu/movies.png</textureradioonfocus>
+							<textureradioonnofocus>icons/sidemenu/movies.png</textureradioonnofocus>
+							<textureradioofffocus>icons/sidemenu/movies.png</textureradioofffocus>
+							<textureradiooffnofocus>icons/sidemenu/movies.png</textureradiooffnofocus>
+							<textureradiooffdisabled colordiffuse="button_focus">icons/sidemenu/movies.png</textureradiooffdisabled>
+						</control>
 					</control>
 				</control>
 				<control type="label" id="200">

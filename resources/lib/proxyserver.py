@@ -90,12 +90,22 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
     def send_error(self, exc: Exception, request: HTTPRequestHandler):
+        """
+        Function to send an error message in case of a failure
+        
+        :param self: 
+        :param exc: the exception that has occurred
+        :type exc: Exception
+        :param request: the http request which caused the error
+        :type request: HTTPRequestHandler
+        """
         try:
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
             request.send_response(500)
             request.send_header('Content-Type','text/html')
             request.end_headers()
             request.wfile.write(bytes(str(exc), 'utf-8'))
+        # pylint: disable=broad-exception-caught
         except Exception as ex:
             xbmc.log('Failed to send proper response: {0}'.format(ex))
 
@@ -450,7 +460,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         except ConnectionResetError as exc:
             xbmc.log('Connection reset during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)
-            request.close_connection = True     
+            request.close_connection = True
         except ConnectionAbortedError as exc:
             xbmc.log('Connection aborted during processing: {0}'.format(exc), xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGDEBUG)

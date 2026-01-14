@@ -73,6 +73,10 @@ class Recording:
             self.type = recordingJson['type']
         if 'episodeTitle' in recordingJson:
             self.episodeTitle = recordingJson['episodeTitle']
+        self.synopsis = ''
+        if 'synopsis' in recordingJson:
+            self.synopsis = recordingJson['synopsis']
+
         if 'captionLanguages' in recordingJson:
             for subtitle in recordingJson['captionLanguages']:
                 self.subtitles.append(self.Language(subtitle))
@@ -133,7 +137,6 @@ class Recording:
             self.episodeNumber = recordingJson['episodeNumber']
         if 'seasonNumber' in recordingJson:
             self.seasonNumber = recordingJson['seasonNumber']
-        
 
     @property
     def isRecording(self) -> bool:
@@ -327,6 +330,13 @@ class RecordingList:
                     self.recs.append(recSingle)
 
     def append(self, recordingsJson, recordingtype=RecordingType.PLANNED|RecordingType.RECORDED):
+        """
+        function to append recordings received in a webcall
+        
+        :param self: 
+        :param recordingsJson: the received data containing recordings to append to the list
+        :param recordingtype: type of recordings, can either planned or recorded
+        """
         self.total += recordingsJson['total']
         self.size += recordingsJson['size']
         self.quota += recordingsJson['quota']['quota']
@@ -343,7 +353,6 @@ class RecordingList:
                     recSingle = SingleRecording(data)
                     self.recs.append(recSingle)
 
-    
     def find(self, eventId):
         """
         function to find a recording by its id
@@ -361,8 +370,8 @@ class RecordingList:
                 if recording.id == eventId:
                     return rec
         return None
-    
-    def getPlannedRecordings(self):
+
+    def get_planned_recordings(self):
         """
         function to get all planned recordings
         @return: list of planned recordings
@@ -374,8 +383,8 @@ class RecordingList:
                 if recording.isPlanned:
                     plannedRecs.append(recording)
         return plannedRecs
-    
-    def getRecordedRecordings(self):
+
+    def get_recorded_recordings(self):
         """
         function to get all recorded recordings
         @return: list of recorded recordings
@@ -387,8 +396,8 @@ class RecordingList:
                 if recording.isRecorded:
                     recordedRecs.append(recording)
         return recordedRecs
-    
-    def getAllRecordings(self):
+
+    def get_all_recordings(self):
         """
         function to get all recordings
         @return: list of all recordings
@@ -406,8 +415,8 @@ class RecordingList:
                 recording: PlannedRecording = rec
                 allRecs.append(recording)
         return allRecs
-    
-    def getSeasonRecordings(self):
+
+    def get_season_recordings(self):
         """
         function to get all season recordings, i.e. recordings of type SeasonRecording
         a season recording is a container for multiple recordings of a series/season
@@ -419,8 +428,19 @@ class RecordingList:
                 season: SeasonRecording = rec
                 seasonRecs.append(season)
         return seasonRecs
-    
+
     def sort_listitems(self, listing: list, sortby: int, sortorder: int):
+        """
+        Function to sort a list of ListItems
+        
+        :param self: 
+        :param listing: list of listitems
+        :type listing: list
+        :param sortby: the key to sort on
+        :type sortby: int
+        :param sortorder: the order in which to sort 
+        :type sortorder: int
+        """
         if int(sortby) == utils.SharedProperties.TEXTID_NAME:
             if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
                 listing.sort(key=lambda x: x.getLabel().lower())
@@ -434,7 +454,7 @@ class RecordingList:
                 listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')))
             else:
                 listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')), reverse=True)
-    
+
 class SavedStateList:
     """
     class to keep the state of played recording. This is used to resume a recording at the point where

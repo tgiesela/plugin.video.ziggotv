@@ -1,12 +1,9 @@
 """
 Module with classes for playing videos
 """
-import shutil
 import xbmc
-import xbmcvfs
-
 from resources.lib.utils import WebException, ZiggoKeyMap
-
+from resources.lib.videohelpers import VideoItem
 
 class ZiggoPlayer(xbmc.Player):
     """
@@ -79,9 +76,22 @@ class ZiggoPlayer(xbmc.Player):
         self.replay = isReplay
         self.prePadding = time
 
-    def setItem(self, item):
+    def set_item(self, item: VideoItem):
+        """
+        Function to set the listitem of the current playing video
+        
+        :param self: 
+        :param item: Description
+        """
         self.item = item
 
-    def setKeymap(self, keymap: ZiggoKeyMap):
+    def set_keymap(self, keymap: ZiggoKeyMap):
+        """
+        Function to set the keymap. The player will activate/deactive when video stop/starts
+        
+        :param self: 
+        :param keymap: keymap object
+        :type keymap: ZiggoKeyMap
+        """
         self.keymap = keymap
         self.keymap.activate()

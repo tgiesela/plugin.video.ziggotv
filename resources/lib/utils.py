@@ -91,7 +91,7 @@ class SharedProperties:
             self.kodiVersion = '21.0'
         digits = self.kodiVersion.split('.')
         self.kodiVersionMajor = digits[0]
-        if (digits[1].isnumeric()):
+        if digits[1].isnumeric():
             self.kodiVersionMinor = digits[1]
         else:
             self.kodiVersionMinor = digits[1].split('-')[0]
@@ -124,7 +124,7 @@ class SharedProperties:
     def get_kodi_version_minor(self) -> int:
         """return the minor version number of Kodi"""
         return int(self.kodiVersionMinor)
-    
+
     def get_sort_options_channels(self):
         """get the current sort options for channels from kodi"""
         sortby = self.window.getProperty('ziggotv.SortMethodChannels')
@@ -134,7 +134,7 @@ class SharedProperties:
         if sortorder == '':
             sortorder = str(SharedProperties.TEXTID_ASCENDING)
         return sortby, sortorder
-    
+
     def get_sort_options_recordings(self):
         """get the current sort options for recordings from kodi"""
         sortby = self.window.getProperty('ziggotv.SortMethodRecordings')
@@ -158,8 +158,10 @@ class SharedProperties:
     def get_recording_filter(self):
         """get the current recording filter from kodi"""
         recordingfilter = self.window.getProperty('ziggotv.RecordingFilter')
+        if recordingfilter == '':
+            recordingfilter = str(SharedProperties.TEXTID_RECORDED)
         return recordingfilter
-    
+
     def set_recording_filter(self, recordingfilter: str=None):
         """set the recording filter in kodi"""
         if recordingfilter is not None:
@@ -203,8 +205,13 @@ class TimeSignal(threading.Thread):
         if result:
             return
         self.callbackfunction()
-    
+
     def stop(self):
+        """
+        Function to stop the timer
+        
+        :param self: 
+        """
         self.stopEvent.set()
         xbmc.log(f'Timer for {self.timeout} stopped by owner',xbmc.LOGDEBUG)
 
@@ -286,10 +293,18 @@ class DatetimeHelper:
         @return:
         """
         return int(time.mktime(dt.timetuple()))
-    
+
     @staticmethod
-    def from_utc_to_local(date_time: datetime) -> datetime:
-        newtime = date_time.replace(tzinfo=timezone.utc).astimezone(tz=None)
+    def from_utc_to_local(dateTime: datetime) -> datetime:
+        """
+        Function to convert datetime from utc to local timezone
+        
+        :param date_time: Description
+        :type date_time: datetime
+        :return: Description
+        :rtype: datetime
+        """
+        newtime = dateTime.replace(tzinfo=timezone.utc).astimezone(tz=None)
         return newtime
 
 class WebException(Exception):
@@ -406,36 +421,41 @@ class KodiLock:
     def __exit__(self, _type, value, _traceback):
         self.release()
 
-def invoke_debugger(enable_debug: bool, debug_type:str):
+def invoke_debugger(enableDebug: bool, debugType:str):
     """
         debug_type: one of 'vscode', 'eclipse', 'web'
     """
-    if enable_debug:
+    if enableDebug:
         try:
             # pylint: disable=import-error, import-outside-toplevel
-            if debug_type == 'eclipse':
+            if debugType == 'eclipse':
                 try:
                     # sys.path.append('E:\Eclipse IDE\eclipse\plugins\org.python.pydev.core_10.2.1.202307021217\pysrc')
                     # or add pydevd as a dependency (update addon.xml and install the script.module.pydevd)
                     import pydevd
                     pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+                # pylint: disable=broad-exception-caught
                 except Exception:
                     sys.stderr.write("Error: " + "You must add org.python.pydev.debug.pysrc to your PYTHONPATH")
                     sys.stderr.write("Error: " + "Debug not available")
-            elif debug_type == 'vscode': # debugpy
+            elif debugType == 'vscode': # debugpy
                 try:
                     # add debugpy as a dependency (update addon.xml and install the plugin.script.debugpy)
                     import debugpy
-                    # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+                    # 5678 is the default attach port in the VS Code debug configurations.
+                    # Unless a host and port are specified, host defaults to 127.0.0.1
                     if not debugpy.is_client_connected():
                         debugpy.connect(('localhost', 5678))
                     debugpy.breakpoint()
+                # pylint: disable=broad-exception-caught
                 except Exception:
-                    sys.stderr.write("Error: " + "You must add debugpy to your PYTHONPATH or install the addon script.module.debugpy")
+                    sys.stderr.write("Error: " +
+                        "You must add debugpy to your PYTHONPATH or install the addon script.module.debugpy")
                     sys.stderr.write("Error: " + "Debug not available")
-            elif debug_type == 'web':
+            elif debugType == 'web':
                 import web_pdb # type: ignore
                 web_pdb.set_trace()
+        # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Could not connect to debugger: {0}'.format(exc), xbmc.LOGERROR)
     return
@@ -463,10 +483,14 @@ def check_service(addon: xbmcaddon.Addon):
         raise RuntimeError('Service did not start in time')
 
 class KeyMapMonitor(xbmc.Monitor):
+    """
+    Class responsible for monitoring specific key-strokes while playing video
+    This is used to switch channels by typing channelnumber or pageup/down
+    """
     def __init__(self, addon: xbmcaddon.Addon, callback):
         xbmc.log('KEYMAPMONITOR created', xbmc.LOGINFO)
         super().__init__()
-        self.ADDON = addon
+        self.addon = addon
         self.callback = callback
         self.keypresses = ''
         self.firstkeypress = datetime.now() - timedelta(days=1)
@@ -478,11 +502,14 @@ class KeyMapMonitor(xbmc.Monitor):
         self.callback(self.keypresses)
         self.keypresses = ''
         self.keytimer.stop()
-        self.keytimer.join()
-    
+        try:
+            self.keytimer.join()
+        except RuntimeError:
+            xbmc.log('Failed to join thread of current timer', xbmc.LOGDEBUG)
+
     def onNotification(self, sender, method, data):
         xbmc.log('KEYMAPMONITOR Notification received', xbmc.LOGINFO)
-        if sender == self.ADDON.getAddonInfo("id"):
+        if sender == self.addon.getAddonInfo("id"):
             if method == 'Other.keypressed':
                 params = json.loads(data)
                 xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGINFO)
@@ -503,7 +530,7 @@ class KeyMapMonitor(xbmc.Monitor):
                 #xbmc.executebuiltin(f'Action(Number{numberkey})')
 
         return super().onNotification(sender, method, data)
-    
+
     def __del__(self):
         xbmc.log('KEYMAPMONITOR deleted', xbmc.LOGINFO)
 
@@ -543,10 +570,10 @@ class ZiggoKeyMap:
         It is inactive because the extension in not '.xml'        
         :param self: 
         """
-        self.remove(self.inactivefilename)     
+        self.remove(self.inactivefilename)
         xbmc.log(f'Keymap install: copy {self.path + self.SOURCEKEYMAP} to {self.inactivefilename}', xbmc.LOGDEBUG)
         shutil.copy(self.path + self.SOURCEKEYMAP, self.inactivefilename)
-    
+
     def activate(self):
         """
         Function to activate the keymap for our plugin

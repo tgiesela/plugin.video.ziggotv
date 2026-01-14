@@ -250,10 +250,17 @@
 					<control type="textbox">
 						<top>365</top>
 						<width>830</width>
-						<height>262</height>
+						<height>60</height>
 						<font>font36_title</font>
 						<label>$INFO[ListItem.Title]</label>
 						<scroll>true</scroll>
+						<visible>true</visible>
+					</control>
+					<control type="label">
+						<top>415</top>
+						<width>830</width>
+						<height>30</height>
+						<label>$INFO[ListItem.Property(AvailableAfter),[COLOR red]$LOCALIZE[21408]: [/COLOR]]</label>
 						<visible>true</visible>
 					</control>
 					<control type="label">

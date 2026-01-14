@@ -3,6 +3,7 @@ Module containing classes to help with creating video stream
 """
 import json
 from datetime import datetime, timedelta
+from typing import Union
 
 import xbmc
 import xbmcaddon
@@ -20,6 +21,7 @@ from resources.lib.globals import S, G
 from resources.lib.utils import ProxyHelper, SharedProperties, WebException, ZiggoKeyMap
 from resources.lib.webcalls import LoginSession
 from resources.lib.ziggoplayer import ZiggoPlayer
+from resources.lib.movies import Movie, OfferType, Instance, Episode, Asset, SeriesList
 
 try:
     # pylint: disable=import-error, broad-exception-caught
@@ -96,28 +98,23 @@ class VideoHelpers:
                                         xbmcgui.DLG_YESNO_NO_BTN)
         return choice
 
-    @staticmethod
-    def __add_vod_info(playItem, overview):
+    def __add_asset_info(self, playItem: xbmcgui.ListItem, asset: Asset):
         tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
-        if 'title' in overview:
-            title = overview['title']
-        else:
-            if 'seriesTitle' in overview:
-                title = overview['seriesTitle']
-                if overview['type'] == 'EPISODE':
-                    title = title + '(S{season}-E{episode})'.format(season=overview['season'], 
-                                                                    episode=overview['episode'])
+        tag.setPlot(asset.synopsis)
+        tag.setGenres(asset.genres)
 
+    def __add_vod_info(self, playItem: xbmcgui.ListItem, item: Union[Movie,Episode]):
+        tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
+        title = item.title
         playItem.setLabel(title)
-        tag.setPlot(overview['synopsis'])
-        tag.setGenres(overview['genres'])
-        if 'episode' in overview:
-            tag.setEpisode(int(overview['episode']))
-        if 'season' in overview:
-            tag.setSeason(int(overview['season']))
+        self.__add_asset_info(playItem, item.asset)
+        if isinstance(item, Episode):
+            episode: Episode = item
+            tag.setEpisode(int(episode.episodenumber))
+            tag.setSeason(int(episode.season.seasonnumber))
 
     @staticmethod
-    def __add_recording_info(playItem, overview):
+    def __add_recording_info(playItem: xbmcgui.ListItem, overview):
         tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
         playItem.setLabel(overview['title'])
         tag.setPlot(overview['synopsis'])
@@ -134,9 +131,9 @@ class VideoHelpers:
             self.player.set_replay(False, 0)
         else:
             self.player.set_replay(True, startposition)
-        self.player.setItem(item)
+        self.player.set_item(item)
         if activateKeymap:
-            self.player.setKeymap(self.keymap)
+            self.player.set_keymap(self.keymap)
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
 
@@ -164,10 +161,11 @@ class VideoHelpers:
                 genres.append(genre)
         else:
             genres = []
-        for genre in channel.genre:
-            genres.append(genre)
+            for genre in channel.genre:
+                genres.append(genre)
         tag.setGenres(genres)
-        self.player.updateInfoTag(playItem)
+        if self.player is not None:
+            self.player.updateInfoTag(playItem)
 
     def update_event(self, channel: Channel, event: Event):
         """
@@ -193,22 +191,24 @@ class VideoHelpers:
         try:
             self.updateeventsignal.join()
         except RuntimeError:
-            xbmc.log('Faild to join thread of current timer', xbmc.LOGERROR)
+            xbmc.log('Failed to join thread of current timer', xbmc.LOGERROR)
         self.updateeventsignal = None
         if xbmc.Player().isPlaying() and self.currentchannel is not None:
             channel: Channel = self.currentchannel
             event: Event = channel.events.get_current_event()
             now = utils.DatetimeHelper.unix_datetime(datetime.now())
             secondstogo = event.endTime - now
-            
+
             endTime = utils.DatetimeHelper.from_unix(event.endTime)
-            xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'), secondstogo), xbmc.LOGDEBUG)            
+            xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(
+                endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'),
+                secondstogo), xbmc.LOGDEBUG)
             if secondstogo <= 0:
                 secondstogo=60
             self.update_event(channel, event)
             self.updateeventsignal = utils.TimeSignal(secondstogo, self.__update_event_signal)
             self.updateeventsignal.start()
-            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED for {secondstogo}', xbmc.LOGINFO)      
+            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED for {secondstogo}', xbmc.LOGINFO)
 
     def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
@@ -221,7 +221,7 @@ class VideoHelpers:
                                                        channelId=channel.id, assetType=assetType)
                 return get_token.locator, _streamInfo
             except WebException as exc:
-                retry = self.__handleWebException(exc, suppressHD)
+                retry = self.__handle_web_exception(exc, suppressHD)
                 if retry:
                     return get_token(True)
                 return get_token.locator, None
@@ -241,7 +241,7 @@ class VideoHelpers:
             self.updateeventsignal.start()
             return item.playItem
         except WebException as webExc:
-            self.__handleWebException(webExc)
+            self.__handle_web_exception(webExc)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Error in __play_channel: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
@@ -268,35 +268,25 @@ class VideoHelpers:
             self.__start_play(item, startposition=position,activateKeymap=False)
             self.monitor_state(event.id)
         except WebException as webExc:
-            self.__handleWebException(webExc)
+            self.__handle_web_exception(webExc)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Error in __replay_event: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
 
-    @staticmethod
-    def __get_playable_instance(overview):
-        if 'instances' in overview:
-            for instance in overview['instances']:
-                if instance['goPlayable']:
-                    return instance
-
-            return overview['instances'][0]  # return the first one if none was goPlayable
-        return None
-
-    def __play_vod(self, overview, resumePoint, instance=None) -> xbmcgui.ListItem:
+    def __play_vod(self, movie: Union[Movie,Episode], resumePoint, instance:Instance=None) -> xbmcgui.ListItem:
         '''
         Function to play a video on demand item.
         
-        :param overview: The movieOverview item as received from Ziggo webcall
+        :param movie: The movie item as received from Ziggo webcall
         :param resumePoint: point at which the replay should start (0 if not applicable)
         :param instance: selected 'instance' from the movieOverview, should be 'goPlayable'
         :return: The listitem to be used by the videoplayer
         :rtype: ListItem
         '''
         if instance is None:
-            playableInstance = self.__get_playable_instance(overview)
+            playableInstance, _ = movie.asset.find_entitled_offer(OfferType.FREE)
         else:
             playableInstance = instance
         if playableInstance is None:
@@ -306,10 +296,10 @@ class VideoHelpers:
         streamInfo = None
         try:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_vod_streaming_token,
-                                                  streamId=playableInstance['id'])
+                                                  streamId=playableInstance.id)
             item = VideoItem(self.addon, streamInfo)
-            item.playItem.setProperty('ziggomovieid', overview['id'])
-            self.__add_vod_info(item.playItem, overview)
+            item.playItem.setProperty('ziggomovieid', movie.id)
+            self.__add_vod_info(item.playItem, movie)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:
@@ -339,7 +329,7 @@ class VideoHelpers:
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log('Error in __play_recording: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
             return None
@@ -424,15 +414,22 @@ class VideoHelpers:
         self.updateeventsignal = None
         self.currentchannel = None
 
-    def play_movie(self, movieOverview, resumePoint, instance) -> xbmcgui.ListItem:
+    def play_movie(self, movie: Union[Movie,Episode], resumePoint) -> xbmcgui.ListItem:
         """
         Play a movie
         @param resumePoint: position where to start playing
-        @param movieOverview:
+        @param movie: Movie object containing all info for playing the movie
         @return:
         """
         self.stop_player()
-        return self.__play_vod(movieOverview, resumePoint, instance)
+        if isinstance(movie, Episode) and movie.isEvent():
+            episode: Episode = movie
+            serieslist:SeriesList = episode.season.series.serieslist
+            event: Event = serieslist.get_event(episode)
+            channel = self.channels.find_channel_by_id(episode.source.channel['channelId'])
+            return self.__replay_event(event, channel)
+        else:
+            return self.__play_vod(movie, resumePoint)
 
     def play_recording(self, recording: SingleRecording, resumePoint):
         """
@@ -494,7 +491,7 @@ class VideoHelpers:
             resumePoint = 0
         return resumePoint
 
-    def __handleWebException(self, webExc, suppressHD=False) -> bool:
+    def __handle_web_exception(self, webExc, suppressHD=False) -> bool:
         xbmc.log(webExc.response.decode('utf-8'), xbmc.LOGERROR)
         if webExc.status == 403:
             errorMsg = json.loads(webExc.response)

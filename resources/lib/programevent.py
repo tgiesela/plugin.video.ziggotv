@@ -136,7 +136,7 @@ class ProgramEventGrid:
             pixelsPerMinute = pixelsForWindow / self.MINUTES_IN_GRID
             delta = currentTime - self.startWindow
             deltaMinutes = int(delta.total_seconds() / 60)
-            width = int(deltaMinutes * pixelsPerMinute)
+            # width = int(deltaMinutes * pixelsPerMinute)
             timeBar.setPosition(int(deltaMinutes * pixelsPerMinute), 0)
             timeBar.setVisible(True)
 

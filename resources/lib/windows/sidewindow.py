@@ -1,3 +1,8 @@
+"""
+Module containing all logic for the sidewindow (options)
+It is not as clean as should, but all logic is in here.
+For cleanup the calling window should have a method named 'cleanup'
+"""
 import xbmc
 import xbmcgui
 import xbmcaddon
@@ -5,9 +10,11 @@ import xbmcaddon
 from resources.lib.channel import SavedChannelsList
 from resources.lib.recording import SavedStateList
 from resources.lib.utils import SharedProperties
-from resources.lib.windows.basewindow import baseWindow
 
-class sideWindow(xbmcgui.WindowXMLDialog):
+class SideWindow(xbmcgui.WindowXMLDialog):
+    """
+    class for display the side window with sort/filter options
+    """
     SIDECHANNELBUTTON=100
     SIDEEPGBUTTON=101
     SIDERECORDINGSBUTTON=102
@@ -22,39 +29,40 @@ class sideWindow(xbmcgui.WindowXMLDialog):
     FILTERLABEL=9502
     CLEARDATABUTTON=9601
     CLEARDATALABEL=9602
-    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p", isMedia = False, addon:xbmcaddon.Addon=None,currentWindow=None):
+    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default",
+                 defaultRes = "720p", isMedia = False, addon:xbmcaddon.Addon=None,currentWindow=None):
         # pylint: disable=too-many-function-args
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
         self.sortoptions = {}
         self.allowedsortmethods = {'channel': [SharedProperties.TEXTID_NAME, SharedProperties.TEXTID_NUMBER],
                                    'recording': [SharedProperties.TEXTID_NAME, SharedProperties.TEXTID_DATE],
                                    'movies': [SharedProperties.TEXTID_NAME]}
-        self.ADDON = addon
+        self.addon = addon
         self.currentWindow = currentWindow
         self.sharedproperties = SharedProperties(addon)
         self.__get_sort_options()
         self.recordingfilter = self.sharedproperties.get_recording_filter()
-        if self.recordingfilter == '':    
+        if self.recordingfilter == '':
             self.recordingfilter = str(SharedProperties.TEXTID_RECORDED)  # All Recordings with state "Recorded"
         self.show()
 
     def __get_sort_options(self):
         sortmethod, sortorder = self.sharedproperties.get_sort_options_channels()
-        if sortorder == '':    
+        if sortorder == '':
             sortorder = SharedProperties.TEXTID_ASCENDING
         if sortmethod == '':
             sortmethod = SharedProperties.TEXTID_NAME
         self.sortoptions.update({'channel': {'method': sortmethod, 'order': sortorder}})
 
         sortmethod, sortorder = self.sharedproperties.get_sort_options_recordings()
-        if sortorder == '':    
+        if sortorder == '':
             sortorder = SharedProperties.TEXTID_ASCENDING
         if sortmethod == '':
             sortmethod = SharedProperties.TEXTID_NAME
         self.sortoptions.update({'recording': {'method': sortmethod, 'order': sortorder}})
 
         sortmethod, sortorder = self.sharedproperties.get_sort_options_movies()
-        if sortorder == '':    
+        if sortorder == '':
             sortorder = SharedProperties.TEXTID_ASCENDING
         if sortmethod == '':
             sortmethod = SharedProperties.TEXTID_NAME
@@ -66,14 +74,23 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             options = self.sortoptions['recording']
         elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
             options = self.sortoptions['channel']
+        elif wc.lower() == 'moviewindow':
+            options = self.sortoptions['movies']
         else:
             return
         if int(options['order']) == SharedProperties.TEXTID_DESCENDING:
             options['order'] = SharedProperties.TEXTID_ASCENDING
         else:
             options['order'] = SharedProperties.TEXTID_DESCENDING
-        self.sharedproperties.set_sort_options_channels(sortby=str(options['method']), sortorder=str(options['order']))
-        self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']), sortorder=str(options['order']))
+        if wc.lower() == 'recordingwindow':
+            self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']),
+                                                              sortorder=str(options['order']))
+        elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
+            self.sharedproperties.set_sort_options_channels(sortby=str(options['method']),
+                                                            sortorder=str(options['order']))
+        elif wc.lower() == 'moviewindow':
+            self.sharedproperties.set_sort_options_movies(sortby=str(options['method']),
+                                                          sortorder=str(options['order']))
 
     def __next_sort_method(self):
         wc = self.currentWindow.__class__.__name__
@@ -83,6 +100,9 @@ class sideWindow(xbmcgui.WindowXMLDialog):
         elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
             options = self.sortoptions['channel']
             allowed = self.allowedsortmethods['channel']
+        elif wc.lower() == 'moviewindow':
+            options = self.sortoptions['movies']
+            allowed = self.allowedsortmethods['movies']
         else:
             return
         xbmc.log(f"OPTIONS {options}, ALLOWED {allowed}, current {options['method']}", xbmc.LOGINFO)
@@ -90,10 +110,18 @@ class sideWindow(xbmcgui.WindowXMLDialog):
         currentindex += 1
         if currentindex >= len(allowed):
             currentindex = 0
-            
+
         options['method'] = allowed[currentindex]
-        self.sharedproperties.set_sort_options_channels(sortby=str(options['method']), sortorder=str(options['order']))
-        self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']), sortorder=str(options['order']))
+
+        if wc.lower() == 'recordingwindow':
+            self.sharedproperties.set_sort_options_recordings(sortby=str(options['method']),
+                                                              sortorder=str(options['order']))
+        elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
+            self.sharedproperties.set_sort_options_channels(sortby=str(options['method']),
+                                                            sortorder=str(options['order']))
+        elif wc.lower() == 'moviewindow':
+            self.sharedproperties.set_sort_options_movies(sortby=str(options['method']),
+                                                          sortorder=str(options['order']))
 
     def __setlabels(self):
         wc = self.currentWindow.__class__.__name__
@@ -101,12 +129,14 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             options = self.sortoptions['recording']
         elif wc.lower() in ['channelwindow','epgwindow','homewindow']:
             options = self.sortoptions['channel']
+        elif wc.lower() == 'moviewindow':
+            options = self.sortoptions['movies']
         else:
             options = {}
         # pylint: disable=no-member
         self.getControl(self.SORTORDERLABEL).setLabel(xbmc.getLocalizedString(int(options['order'])))
         self.getControl(self.SORTMETHODLABEL).setLabel(xbmc.getLocalizedString(int(options['method'])))
-        self.getControl(self.FILTERLABEL).setLabel(self.ADDON.getLocalizedString(int(self.recordingfilter)))
+        self.getControl(self.FILTERLABEL).setLabel(self.addon.getLocalizedString(int(self.recordingfilter)))
         wc = self.currentWindow.__class__.__name__
         xbmc.log(f'Side Window current window class: {wc}', xbmc.LOGINFO)
         self.getControl(self.FILTERBUTTON).setVisible(False)
@@ -119,12 +149,15 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             self.getControl(self.SIDECHANNELBUTTON).setEnabled(False)
         elif wc.lower() == 'epgwindow':
             self.getControl(self.SIDEEPGBUTTON).setEnabled(False)
+        elif wc.lower() == 'moviewindow':
+            self.getControl(self.SIDEMOVIESBUTTON).setEnabled(False)
 
     def onInit(self):
         xbmc.sleep(100)
         self.__setlabels()
 
     def onAction(self, action):
+        # pylint: disable=useless-parent-delegation
         super().onAction(action)
 
     def onClick(self, controlId):
@@ -142,15 +175,19 @@ class sideWindow(xbmcgui.WindowXMLDialog):
                 else:
                     self.recordingfilter = SharedProperties.TEXTID_RECORDED
             elif controlId == self.CLEARDATABUTTON:
-                SavedStateList(self.ADDON).cleanup(0)
-                SavedChannelsList(self.ADDON).cleanup(0)
+                SavedStateList(self.addon).cleanup(0)
+                SavedChannelsList(self.addon).cleanup(0)
+
+                cleanupMethod = getattr(self.currentWindow, "cleanup", None)
+                if cleanupMethod is not None and callable(cleanupMethod):
+                    self.currentWindow.cleanup()
                 self.close()
                 return
 
             self.sharedproperties.set_recording_filter(str(self.recordingfilter))
             self.__setlabels()
             return True
-        
+
     def onFocus(self, controlId):
         # pylint: disable=no-member
         if controlId == self.SIDECHANNELBUTTON:
@@ -165,6 +202,10 @@ class sideWindow(xbmcgui.WindowXMLDialog):
             srlbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
             srlbl.setLabel(xbmc.getLocalizedString(19017))
             return True
+        elif controlId == self.SIDEMOVIESBUTTON:
+            srlbl: xbmcgui.ControlLabel = self.getControl(self.LABELSELECTED)
+            srlbl.setLabel(xbmc.getLocalizedString(342))
+            return True
         else:
             return False
 
@@ -177,21 +218,36 @@ class sideWindow(xbmcgui.WindowXMLDialog):
         return sortby, sortorder
     
     def shortcutClicked(self, controlId):
+        """
+        Function to handle click on the shortcuts
+        
+        :param self: 
+        :param controlId: the id of the clicked control
+        """
         if controlId == self.SIDECHANNELBUTTON:
-            from resources.lib.windows.channelwindow import loadchannelWindow
+            # pylint: disable=import-outside-toplevel
+            from resources.lib.windows.channelwindow import load_channelwindow
             self.close()
-            loadchannelWindow(self.ADDON)
+            load_channelwindow(self.addon)
         elif controlId == self.SIDEEPGBUTTON:
-            from resources.lib.windows.epgwindow import loadepgWindow
+            # pylint: disable=import-outside-toplevel
+            from resources.lib.windows.epgwindow import load_epgwindow
             self.close()
-            loadepgWindow(self.ADDON)
+            load_epgwindow(self.addon)
         elif controlId == self.SIDERECORDINGSBUTTON:
-            from resources.lib.windows.recwindow import loadrecordingWindow
+            # pylint: disable=import-outside-toplevel
+            from resources.lib.windows.recwindow import load_recordingwindow
             self.close()
-            loadrecordingWindow(self.ADDON)
+            load_recordingwindow(self.addon)
 
-def loadsideWindow(addon: xbmcaddon.Addon, currentWindow=None):
-    CWD: str=addon.getAddonInfo('path')
-    sidewindow = sideWindow('sideWindow.xml', CWD, defaultRes='1080i', addon=addon, currentWindow=currentWindow)
+def load_sidewindow(addon: xbmcaddon.Addon, currentWindow=None):
+    """
+    Function to create, populate and display the sidewindow
+    
+    :param addon: the addon for which the form is created
+    :type addon: xbmcaddon.Addon
+    """
+    cwd: str=addon.getAddonInfo('path')
+    sidewindow = SideWindow('sideWindow.xml', cwd, defaultRes='1080i', addon=addon, currentWindow=currentWindow)
     sidewindow.doModal()
     return sidewindow

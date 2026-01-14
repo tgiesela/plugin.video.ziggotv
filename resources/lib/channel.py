@@ -206,6 +206,13 @@ class ChannelList(UserList):
         self.data = self.filteredChannels
 
     def is_playable(self, channel: Channel):
+        """
+        Function to verify that the channel can be played
+        
+        :param self: 
+        :param channel: the channel
+        :type channel: Channel
+        """
         if self.is_entitled(channel):
             if channel.locators['Default'] is None:
                 return False
@@ -260,6 +267,17 @@ class ChannelList(UserList):
         return self.channels
 
     def sort_listitems(self, listing: list, sortby: int, sortorder: int):
+        """
+        Function to sort the channels in a list of listitems
+        
+        :param self: 
+        :param listing: the list of xbmcgui.ListItems
+        :type listing: list
+        :param sortby: the key to sort on
+        :type sortby: int
+        :param sortorder: the sort order
+        :type sortorder: int
+        """
         if int(sortby) == utils.SharedProperties.TEXTID_NAME:
             if int(sortorder) == utils.SharedProperties.TEXTID_ASCENDING:
                 listing.sort(key=lambda x: x.getLabel().lower())
@@ -272,6 +290,12 @@ class ChannelList(UserList):
                 listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggochannelnumber')), reverse=True)
 
     def find_channel_by_id(self,channelid):
+        """
+        Function to find a channel by its id
+        
+        :param self: Description
+        :param channelid: Description
+        """
         channel: Channel = None
         for channel in self.channels:
             if channelid == channel.id:
@@ -279,6 +303,13 @@ class ChannelList(UserList):
         return None
 
     def find_channel_by_number(self,number:int):
+        """
+        Function to find a channel by its number
+        
+        :param self: 
+        :param number: the logical channel number
+        :type number: int
+        """
         channel: Channel = None
         for channel in self.channels:
             if number == channel.logicalChannelNumber:
@@ -286,6 +317,15 @@ class ChannelList(UserList):
         return None
 
     def find_channel_by_listitem(self,li: xbmcgui.ListItem) -> Channel:
+        """
+        Function to find a channel based on information in the listitem
+        
+        :param self: 
+        :param li: the listitem from which the channel info must be taken
+        :type li: xbmcgui.ListItem
+        :return: the found channel or None
+        :rtype: Channel
+        """
         channelid = li.getProperty('ziggochannelid')
         if channelid is None or channelid == '':
             tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
@@ -296,6 +336,15 @@ class ChannelList(UserList):
         return channel
 
     def get_next_channel(self, channel: Channel) -> Channel:
+        """
+        Function to find the next playable channel from the list
+        
+        :param self: 
+        :param channel: the current channel
+        :type channel: Channel
+        :return: the next channel
+        :rtype: Channel
+        """
         try:
             index = self.__channelnumbers.index(channel.logicalChannelNumber)
             if index >= 0:
@@ -309,6 +358,15 @@ class ChannelList(UserList):
             return channel
 
     def get_prev_channel(self, channel: Channel) -> Channel:
+        """
+        Function to find the previous playable channel from the list
+        
+        :param self: 
+        :param channel: the current channel
+        :type channel: Channel
+        :return: the previous channel
+        :rtype: Channel
+        """
         try:
             index = self.__channelnumbers.index(channel.logicalChannelNumber)
             if index >= 0:
@@ -320,7 +378,7 @@ class ChannelList(UserList):
             return channel
         except ValueError:
             return channel
-        
+
 class SavedChannelsList:
     """
     class to keep the state of played channels. This is used to present a list of recently played channels
@@ -396,7 +454,7 @@ class SavedChannelsList:
         with open(self.fileName, 'w', encoding='utf-8') as file:
             json.dump(self.states, file)
 
-    def getAll(self):
+    def get_all(self):
         """
         function to get all saved channels, ordered by date played
         @return:
