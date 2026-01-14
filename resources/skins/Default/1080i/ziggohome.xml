@@ -91,7 +91,7 @@
 							<left>25</left>
 							<width>150</width>
 							<height>25</height>
-							<font>font13</font>
+							<font>font12</font>
 							<align>center</align>
 							<label>$INFO[ListItem.SetId]. $INFO[ListItem.Label]</label>
 						</control>
@@ -120,7 +120,7 @@
 							<left>25</left>
 							<width>150</width>
 							<height>25</height>
-							<font>font13</font>
+							<font>font12</font>
 							<align>center</align>
 							<label>$INFO[ListItem.SetId]. $INFO[ListItem.Label]</label>
 						</control>

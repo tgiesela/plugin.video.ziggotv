@@ -3,7 +3,6 @@ Module with classes for playing videos
 """
 import xbmc
 from resources.lib.utils import WebException, ZiggoKeyMap
-from resources.lib.videohelpers import VideoItem
 
 class ZiggoPlayer(xbmc.Player):
     """
@@ -76,12 +75,12 @@ class ZiggoPlayer(xbmc.Player):
         self.replay = isReplay
         self.prePadding = time
 
-    def set_item(self, item: VideoItem):
+    def set_item(self, item):
         """
         Function to set the listitem of the current playing video
         
         :param self: 
-        :param item: Description
+        :param item: this is VideoItem object. We cannot import it here due to circular imports
         """
         self.item = item
 

@@ -170,7 +170,7 @@ def load_homewindow(addon: xbmcaddon.Addon):
     """
     # pylint: disable=import-outside-toplevel
     from resources.lib.utils import invoke_debugger
-    invoke_debugger(True, 'vscode')
+    invoke_debugger(False, 'vscode')
     check_service(addon)
     window = HomeWindow('ziggohome.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
     window.doModal()

@@ -164,7 +164,7 @@ class VideoHelpers:
             for genre in channel.genre:
                 genres.append(genre)
         tag.setGenres(genres)
-        if self.player is not None:
+        if self.player is not None and self.player.isPlaying():
             self.player.updateInfoTag(playItem)
 
     def update_event(self, channel: Channel, event: Event):
