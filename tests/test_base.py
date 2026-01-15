@@ -29,6 +29,9 @@ class Addon(xbmcaddon.Addon):
     def setSettingNumber(self, id: str, value: float) -> None:
         self.settings.update({id: value})
 
+    def setSettingBool(self, id: str, value: bool) -> None:
+        self.settings.update({id: value})
+
     def getSetting(self, id: str) -> str:
         return self.settings[id]
 
@@ -47,13 +50,13 @@ class TestBase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.addon = Addon('plugin.video.ziggotv')
-        self.addon.setSetting('print-network-traffic', 'false')
+        self.addon.setSettingBool('print-network-traffic', False)
         self.addon.setSetting('proxy-ip', '127.0.0.1')
         self.addon.setSetting('proxy-port', '6868')
-        self.addon.setSetting('use-proxy', 'true')
-        self.addon.setSetting('full-hd', 'true')
-        self.addon.setSetting('print-response-content', 'true')
-        self.addon.setSetting('print-request-content', 'true')
+        self.addon.setSettingBool('use-proxy', True)
+        self.addon.setSettingBool('full-hd', True)
+        self.addon.setSettingBool('print-response-content', False)
+        self.addon.setSettingBool('print-request-content', False)
         self.addon.setSettingNumber('connection-timeout', 10)
         self.addon.setSettingNumber('data-timeout', 10)
         self.cleanup_all()

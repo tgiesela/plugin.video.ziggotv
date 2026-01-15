@@ -289,8 +289,8 @@ class PlannedRecording(Recording):
         if 'minimumAge' in recordingJson:
             self.minimumAge = recordingJson['minimumAge']
         self.viewState = 'notWatched'
+        self.season: SeasonRecording = season
         if season is not None:
-            self.season: SeasonRecording = season
             if self.channelId is None:
                 self.channelId = self.season.channelId
             if self.showId is None:

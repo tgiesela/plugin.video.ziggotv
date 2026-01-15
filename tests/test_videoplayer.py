@@ -3,9 +3,7 @@ import unittest
 from urllib.parse import unquote
 
 from resources.lib.avstream import AvStream
-from resources.lib.channel import SavedChannelsList
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import SavedStateList
 from resources.lib.urltools import UrlTools
 from tests.test_base import TestBase
 

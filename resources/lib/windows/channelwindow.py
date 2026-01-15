@@ -102,6 +102,7 @@ class ChannelWindow(BaseWindow):
         self.channels.sort_listitems(listing, sortby, sortorder)
         listbox.addItems(listing)
         listbox.selectItem(0)
+        self.listitemHelper.update_event_details(listbox.getSelectedItem())
         self.setFocusId(self.LISTBOX)
 
 def load_channelwindow(addon:xbmcaddon.Addon):

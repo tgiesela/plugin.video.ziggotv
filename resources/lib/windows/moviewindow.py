@@ -154,7 +154,9 @@ class MovieWindow(BaseWindow):
         serie: Series = self.series.find_serie(self.currentseriesId)
         listing = []
         if not serie.hasdetails:
-            self.series.update_season_details(serie)
+            errors = self.series.update_season_details(serie)
+            if errors:
+                xbmcgui.Dialog().ok('Error',f'{errors} while processing seasons, see log for details')
         for season in serie.seasons:
             li = self.listitemHelper.listitem_from_season(season)
             listing.append(li)
@@ -175,11 +177,13 @@ class MovieWindow(BaseWindow):
         if serie is None or season is None:
             xbmcgui.Dialog().ok('Error', 'Missing series/season')
             return
+        errors = 0
         for episode in season.episodes:
-            self.series.update_episode_details(episode)
+            errors += self.series.update_episode_details(episode)
             li = self.listitemHelper.listitem_from_episode(episode)
             listing.append(li)
-
+        if errors > 0:
+            xbmcgui.Dialog().ok('Error',f'{errors} while processing episodes, see log for details')
         movielist.reset()
         movielist.addItems(listing)
         movielist.selectItem(0)
@@ -206,32 +210,48 @@ class MovieWindow(BaseWindow):
     def __list_overview(self,categoryId):
         listingseries = []
         listingmovies = []
+
+        dlg = xbmcgui.DialogProgress()
+        dlg.create('ZiggoTV', 'Loading series...')
+
         # pylint: disable=no-member
         if self.series is not None:
             self.series.save()
             self.series = None
         movielistctrl: xbmcgui.ControlList = self.getControl(self.MOVIELIST)
         self.series = SeriesList(self.addon, categoryId)
+        seasonerrors = 0
         for serie in self.series.series:
             if not serie.hasdetails:
-                self.series.update_season_details(serie)
+                seasonerrors += self.series.update_season_details(serie)
             li = self.listitemHelper.listitem_from_series(serie)
             listingseries.append(li)
+
+        self.series.save()
+
+        dlg.update(50, 'Loading movies...')
 
         if self.movies is not None:
             self.movies.save()
             self.movies = None
         self.movies = MovieList(self.addon, categoryId)
+        movieerrors = 0
         for movie in self.movies.movies:
             if not movie.hasdetails:
-                self.movies.update_details(movie)
+                movieerrors += self.movies.update_details(movie)
             li = self.listitemHelper.listitem_from_movie(movie)
             listingmovies.append(li)
+        self.movies.save()
 
         movielistctrl.reset()
         sortby, sortorder = self.sharedproperties.get_sort_options_movies()
         self.sort_listitems(listingseries, sortby, sortorder)
         self.sort_listitems(listingmovies, sortby, sortorder)
+
+        dlg.close()
+        if seasonerrors > 0 or movieerrors > 0 or self.movies.parseerrors > 0 or self.series.parseerrors > 0:
+            xbmcgui.Dialog().ok('Error','Errors while processing seasons/movies, see log for details')
+
         movielistctrl.addItems(listingseries)
         movielistctrl.addItems(listingmovies)
         movielistctrl.selectItem(0)
@@ -372,6 +392,7 @@ class MovieWindow(BaseWindow):
         xbmc.log('CLEANUP METHOD CALLED', xbmc.LOGDEBUG)
         self.series.cleanup()
         self.movies.cleanup()
+        self.onClick(self.MOVIECATEGORIESLIST)
 
 def load_moviewindow(addon: xbmcaddon.Addon):
     """

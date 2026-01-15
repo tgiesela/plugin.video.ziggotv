@@ -73,7 +73,10 @@ class EpgWindow(BaseWindow):
         if self.grid.is_at_first_row():
             #  Set control to header to select date or back to grid
             if action.getId() == xbmcgui.ACTION_MOVE_UP:
-                self.setFocusId(1010)
+                if self.getFocusId() in [1016, 1017, 1018, 1020]:
+                    self.setFocusId(9001)
+                else:
+                    self.setFocusId(1016)
             elif (action.getId() == xbmcgui.ACTION_MOVE_DOWN and
                   self.getFocusId() in [1016, 1017, 1018, 1020]):
                 self.grid.set_focus()

@@ -14,6 +14,7 @@
 			<top>65</top>
 			<width>1920</width>
 			<height>750</height>
+			<onleft>SendClick(9001)</onleft>
 			<control type="image">
 				<left>0</left>
 				<top>65</top>
@@ -96,7 +97,8 @@
 					<height>30</height>
 					<visible>true</visible>
 					<onright>1017</onright>
-					<onleft>1020</onleft>
+					<onleft>SendClick(9001)</onleft>
+					<onup>9001</onup>
 					<texturefocus flipx="true" colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
 					<texturenofocus flipx="true" colordiffuse="FFFFFFFF">icons/now-playing/next.png</texturenofocus>
 				</control>
@@ -121,6 +123,7 @@
 					<visible>true</visible>
 					<onleft>1016</onleft>
 					<onright>1018</onright>
+					<onup>9001</onup>
 					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
 					<texturefocus colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
@@ -135,6 +138,7 @@
 					<visible>true</visible>
 					<onleft>1017</onleft>
 					<onright>1020</onright>
+					<onup>9001</onup>
 					<texturefocus flipx="true" colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
 					<texturenofocus flipx="true" colordiffuse="FFCCCCCC">icons/now-playing/next.png</texturenofocus>
 				</control>
@@ -159,6 +163,7 @@
 					<visible>true</visible>
 					<onleft>1018</onleft>
 					<onright>1016</onright>
+					<onup>9001</onup>
 					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
 					<texturefocus colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
@@ -184,6 +189,7 @@
 				<top>65</top>
 				<width>1520</width>
 				<height>750</height>
+				<onup>1016</onup>
 				<!-- Event grid -->
 				<control type="group" id="2199">
 					<top>0</top>

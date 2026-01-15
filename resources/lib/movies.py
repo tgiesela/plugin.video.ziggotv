@@ -4,6 +4,7 @@ Module containiner helper classes for movies and series
 import json
 from pathlib import Path
 from enum import IntEnum
+import xbmc
 import xbmcaddon
 import xbmcvfs
 
@@ -498,6 +499,7 @@ class SeriesList:
         self.helper = ProxyHelper(addon)
         self.series: list[Series] = []
         self.addon: xbmcaddon.Addon = addon
+        self.parseerrors = 0
         self.file = xbmcvfs.translatePath(self.addon.getAddonInfo('profile')) + G.SERIES_INFO
         self.seriesDetails = self.__load_series_details()
         self.__process_series(screenId)
@@ -516,19 +518,26 @@ class SeriesList:
     def __process_series(self, screenId):
         itemsSeen = []
         screenDetails = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=screenId)
+        self.parseerrors = 0
         if 'collections' in screenDetails:
             for collection in screenDetails['collections']:
                 for item in collection['items']:
                     if item['id'] in itemsSeen:
                         continue
                     if item['type'] == 'SERIES':
-                        itemsSeen.append(item['id'])
-                        serie:Series = Series(item, self)
-                        self.series.append(serie)
-                        for seriedetails in self.seriesDetails:
-                            if seriedetails['id'] == serie.id:
-                                serie.add_details(seriedetails)
-                                break
+                        try:
+                            itemsSeen.append(item['id'])
+                            serie:Series = Series(item, self)
+                            self.series.append(serie)
+                            for seriedetails in self.seriesDetails:
+                                if seriedetails['id'] == serie.id:
+                                    serie.add_details(seriedetails)
+                                    break
+                        except KeyError as exc:
+                            itemid=item['id']
+                            xbmc.log(f'item: {item}',xbmc.LOGDEBUG)
+                            xbmc.log(f'Parsing of series failed, for item-id: {itemid}, Exception{exc}',xbmc.LOGERROR)
+                            self.parseerrors += 1
 
     def update_season_details(self, serie: Series):
         """
@@ -551,7 +560,14 @@ class SeriesList:
                 raise RuntimeError('Cannot obtain seasons/episodes!!')
 
         self.seriesDetails.append(details)
-        serie.add_details(details)
+        try:
+            serie.add_details(details)
+            return 0
+        except KeyError as exc:
+            xbmc.log(f'details: {details}',xbmc.LOGDEBUG)
+            xbmc.log(f'Parsing of details of series failed, for series-id: {serie.id}, Exception{exc}',xbmc.LOGERROR)
+            return 1
+
 
     def update_episode_details(self, episode: Episode):
         """
@@ -579,7 +595,13 @@ class SeriesList:
                         storedepisode.update({'assetDetails': assetDetails})
                         break
                 break
-        episode.add_details(assetDetails)
+        try:
+            episode.add_details(assetDetails)
+            return 0
+        except KeyError as exc:
+            xbmc.log(f'assetDetails: {assetDetails}',xbmc.LOGDEBUG)
+            xbmc.log(f'Parsing of details of episode failed, for series-id: {series.id}, Exception{exc}',xbmc.LOGERROR)
+            return 1
 
     def find_serie(self, seriesId) -> Series:
         """
@@ -657,6 +679,7 @@ class MovieList:
         self.helper = ProxyHelper(addon)
         self.movies: list[Movie] = []
         self.addon: xbmcaddon.Addon = addon
+        self.parseerrors = 0
         self.file = xbmcvfs.translatePath(self.addon.getAddonInfo('profile')) + G.MOVIE_INFO
         self.moviesDetails = self.__load_movies_details()
         self.__process_movies(screenId)
@@ -673,19 +696,26 @@ class MovieList:
         """
         itemsSeen = []
         screenDetails = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=screenId)
+        self.parseerrors = 0
         if 'collections' in screenDetails:
             for collection in screenDetails['collections']:
                 for item in collection['items']:
                     if item['id'] in itemsSeen:
                         continue
                     if item['type'] == 'ASSET':
-                        itemsSeen.append(item['id'])
-                        movie:Movie = Movie(item)
-                        self.movies.append(movie)
-                        for moviedetails in self.moviesDetails:
-                            if moviedetails['id'] == movie.id:
-                                movie.add_details(moviedetails)
-                                break
+                        try:
+                            itemsSeen.append(item['id'])
+                            movie:Movie = Movie(item)
+                            self.movies.append(movie)
+                            for moviedetails in self.moviesDetails:
+                                if moviedetails['id'] == movie.id:
+                                    movie.add_details(moviedetails)
+                                    break
+                        except KeyError as exc:
+                            itemid=item['id']
+                            xbmc.log(f'item: {item}',xbmc.LOGDEBUG)
+                            xbmc.log(f'Parsing of movies failed, for item-id: {itemid}, Exception{exc}',xbmc.LOGERROR)
+                            self.parseerrors += 1
 
     def update_details(self, movie: Movie):
         """
@@ -706,7 +736,14 @@ class MovieList:
             details = self.helper.dynamic_call(LoginSession.obtain_asset_details, assetId=movie.id)
 
         self.moviesDetails.append(details)
-        movie.add_details(details)
+
+        try:
+            movie.add_details(details)
+            return 0
+        except KeyError as exc:
+            xbmc.log(f'details: {details}',xbmc.LOGDEBUG)
+            xbmc.log(f'Parsing of details of series failed, for series-id: {movie.id}, Exception{exc}',xbmc.LOGERROR)
+            return 1
 
     def find_movie(self, movieId) -> Movie:
         """

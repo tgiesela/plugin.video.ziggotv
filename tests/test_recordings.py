@@ -62,24 +62,6 @@ class TestRecordings(TestBase):
         recs = self.session.get_recordings_recorded()
         self.print_recordings(recs)
 
-    def test_buza_delete(self):
-        self.do_login()
-        self.session.refresh_channels()
-        self.session.refresh_entitlements()
-        self.session.refresh_recordings(True)
-        recsplanned = self.session.get_recordings_planned()
-        recsrecorded = self.session.get_recordings_recorded()
-        rec: SeasonRecording
-        for rec in recsplanned.recs:
-            if isinstance(rec, SeasonRecording):
-                if rec.title == 'BuZa':
-                    id = 'crid:~~2F~~2Fgn.tv~~2F20952261~~2FSH040806180000'
-                    self.assertEqual(rec.id,id)
-                    result = self.session.delete_recordings_planned(show=id,
-                                                                    channelId="NL_000001_019401")
-                    print(result)
-
-
     def test_record(self):
         self.do_login()
         self.session.refresh_channels()
@@ -121,10 +103,17 @@ class TestRecordings(TestBase):
         self.do_login()
         self.session.refresh_recordings(True)
         recs = self.session.get_recordings_recorded()
+        listitemhelper = ListitemHelper(self.addon)
         for rec in recs.recs:
             if isinstance(rec, SeasonRecording):
+                for recording in rec.episodes:
+                    li = listitemhelper.listitem_from_recording(recording)
+                    print(li.getLabel())
                 continue
-            details = self.session.get_recording_details(recordingId=rec.id)
+            else:
+                details = self.session.get_recording_details(recordingId=rec.id)
+                li = listitemhelper.listitem_from_recording(rec)
+                print(li.getLabel())
             print(details)
 
 if __name__ == '__main__':

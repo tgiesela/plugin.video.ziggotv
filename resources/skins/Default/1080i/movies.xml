@@ -13,11 +13,6 @@
 					<top>60</top>
 					<left>0</left>
 					<right>980</right>
-					<control type="label">
-						<height>30</height>
-						<label>$LOCALIZE[31148]</label>
-						<font>font13</font>
-					</control>
 					<control type="list" id = "150">
 						<top>60</top>
 						<width>980</width>

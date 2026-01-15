@@ -259,14 +259,15 @@ class TestWebCalls(TestBase):
                 print('\t\tItem: ', item['title'], ',', item['type'], ', entitlementState: ', entitled)
                 if 'brandingProviderId' in item:
                     print('\t\t      Branding-provider', item['brandingProviderId'])
-                episoderesponse, asset = self.session.get_episode(item)
-                print("Episo-resp:", episoderesponse)
-                print("Asset-resp:", asset)
-                if asset != '':
-                    assetJson = json.loads(asset)
-                    print("CHANNEL=", assetJson['channelId'])
-                    print("STARTTIME:", datetime.datetime.fromtimestamp(assetJson['startTime']))
-                    print("ENDTIME:", datetime.datetime.fromtimestamp(assetJson['endTime']))
+                if entitled:
+                    episoderesponse, asset = self.session.get_episode(item)
+                    print("Episo-resp:", episoderesponse)
+                    print("Asset-resp:", asset)
+                    if asset != '':
+                        assetJson = json.loads(asset)
+                        print("CHANNEL=", assetJson['channelId'])
+                        print("STARTTIME:", datetime.datetime.fromtimestamp(assetJson['startTime']))
+                        print("ENDTIME:", datetime.datetime.fromtimestamp(assetJson['endTime']))
 
     def process_collection_movies(self, collection):
         # pylint: disable=too-many-branches

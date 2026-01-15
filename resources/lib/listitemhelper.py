@@ -193,18 +193,23 @@ class ListitemHelper:
             start = datetime.fromtimestamp(time.mktime(time.strptime(recording.startTime,
                                                                      '%Y-%m-%dT%H:%M:%S.%fZ')))
         if recording.source == 'show':
-            if recording.type == 'single':
-                if hasattr(recording, 'episodeTitle'):
-                    episode = f'S{recording.seasonNumber}-{recording.episodeTitle}'
+            if hasattr(recording, 'episodeTitle'):
+                episode = f'E{recording.episodeNumber}-{recording.episodeTitle}'
+            else:
+                if hasattr(recording.episodeNumber):
+                    episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
                 else:
                     episode = f'S{recording.seasonNumber}-E?'
-            else:
-                episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
         else:
             start = utils.DatetimeHelper.from_utc_to_local(start)
             episode = start.strftime('%Y-%m-%d %H:%M')
-        title = "{0} ({1})".format(recording.title, episode)
+        title = episode
         li = xbmcgui.ListItem(label=title)
+        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+        if recording.source == 'show':
+            tag.addSeason(recording.seasonNumber, recording.season.seasonTitle)
+            li.setProperty('SeasonTitle', f'{recording.seasonNumber}. {recording.season.seasonTitle}')
+
         if recording.poster is not None:
             thumbname = xbmc.getCacheThumbName(recording.poster.url)
             thumbfile = xbmcvfs.translatePath('special://thumbnails/' + thumbname[0:1] + '/' + thumbname)
@@ -217,7 +222,6 @@ class ListitemHelper:
         li.setProperty('IsPlayable', 'true')
         li.setMimeType('application/dash+xml')
         li.setContentLookup(False)
-        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         if recording.isPlanned:
             tag.setTitle('[COLOR red]' + title + '[/COLOR]')
             li.setLabel('[COLOR red]' + li.getLabel() + '[/COLOR]')

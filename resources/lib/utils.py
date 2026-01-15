@@ -538,8 +538,8 @@ class ZiggoKeyMap:
     """
     Class to install, activate and deactivate the keymaps during Playing video to capture numeric key-strokes
     """
-    SOURCEKEYMAP = 'resources\\keymaps.xml'
-    KEYMAPSFOLDER = 'keymaps\\'
+    SOURCEKEYMAP = 'resources/keymaps.xml'
+    KEYMAPSFOLDER = 'keymaps/'
     TARGETKEYMAPACTIVE = 'ziggokeymaps.xml'
     TARGETKEYMAPINACTIVE = 'ziggokeymaps.xml.inactive'
     def __init__(self, addon: xbmcaddon.Addon):

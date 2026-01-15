@@ -162,7 +162,7 @@ class SideWindow(xbmcgui.WindowXMLDialog):
 
     def onClick(self, controlId):
         if controlId in [self.SIDECHANNELBUTTON, self.SIDEEPGBUTTON, self.SIDERECORDINGSBUTTON]:
-            self.shortcutClicked(controlId)
+            self.shortcut_clicked(controlId)
             return True
         else:
             if controlId == self.SORTORDERBUTTON:
@@ -209,15 +209,7 @@ class SideWindow(xbmcgui.WindowXMLDialog):
         else:
             return False
 
-    def getSortOptions(self):
-        # pylint: disable=no-member
-        sortbyControl: xbmcgui.ControlButton = self.getControl(self.SORTMETHODBUTTON)
-        sortorderControl: xbmcgui.ControlButton = self.getControl(self.SORTORDERBUTTON)
-        sortby = sortbyControl.getLabel()
-        sortorder = sortorderControl.getLabel()
-        return sortby, sortorder
-    
-    def shortcutClicked(self, controlId):
+    def shortcut_clicked(self, controlId):
         """
         Function to handle click on the shortcuts
         
@@ -239,6 +231,11 @@ class SideWindow(xbmcgui.WindowXMLDialog):
             from resources.lib.windows.recwindow import load_recordingwindow
             self.close()
             load_recordingwindow(self.addon)
+        elif controlId == self.SIDEMOVIESBUTTON:
+            # pylint: disable=import-outside-toplevel
+            from resources.lib.windows.moviewindow import load_moviewindow
+            self.close()
+            load_moviewindow(self.addon)
 
 def load_sidewindow(addon: xbmcaddon.Addon, currentWindow=None):
     """
@@ -248,6 +245,6 @@ def load_sidewindow(addon: xbmcaddon.Addon, currentWindow=None):
     :type addon: xbmcaddon.Addon
     """
     cwd: str=addon.getAddonInfo('path')
-    sidewindow = SideWindow('sideWindow.xml', cwd, defaultRes='1080i', addon=addon, currentWindow=currentWindow)
+    sidewindow = SideWindow('sidewindow.xml', cwd, defaultRes='1080i', addon=addon, currentWindow=currentWindow)
     sidewindow.doModal()
     return sidewindow

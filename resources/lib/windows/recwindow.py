@@ -182,6 +182,7 @@ class recordingWindow(BaseWindow):
         self.recordings.sort_listitems(listing, sortby, sortorder)
         listbox.addItems(listing)
         listbox.selectItem(0)
+        self.listitemHelper.update_recording_details(listbox.getSelectedItem(), self.recordings, self.recordingfilter)
         self.setFocusId(self.LISTBOX)
 
     def show_context_menu(self):
