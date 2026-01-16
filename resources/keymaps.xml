@@ -15,5 +15,11 @@
 	    <pageup>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pageup"})</pageup>
       	<pagedown>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pagedown"})</pagedown>
 	</keyboard>
+	<remote>
+		<up>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pageup"})</up>
+		<down>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pageup"})</down>
+		<pageplus>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pageup"})</pageplus>
+		<pageminus>NotifyAll(plugin.video.ziggotv,keypressed,{"key":"pagedown"})</pageminus>
+	</remote>
   </FullScreenVideo>
 </keymap>

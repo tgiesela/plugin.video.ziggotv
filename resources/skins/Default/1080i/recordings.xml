@@ -146,7 +146,7 @@
 					<onright>50</onright>
 					<onup>50</onup>
 					<ondown>50</ondown>				
-					<orientation>horizontal</orientation>
+					<orientation>vertical</orientation>
 				</control>
 				
 			</control>

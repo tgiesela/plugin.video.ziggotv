@@ -25,6 +25,7 @@
 						<ondown>74</ondown>
 						<onup>50</onup>
 						<onleft>SendClick(9001)</onleft>
+						<onright>73</onright>
 						<pagecontrol>74</pagecontrol>
 						<itemlayout height="200" width="200" infoupdate="5000">
 							<control type="image">

@@ -9,7 +9,6 @@ from http.cookiejar import Cookie
 from xml.dom import minidom
 
 import requests
-import xbmcaddon
 
 from resources.lib.avstream import StreamSession
 from resources.lib.globals import G
@@ -136,7 +135,6 @@ class TestWebCalls(TestBase):
         return None
 
     def test_manifest(self):
-        tools = UrlTools(self.addon)
         self.do_login()
         self.session.refresh_channels()
         self.session.printNetworkTraffic = True

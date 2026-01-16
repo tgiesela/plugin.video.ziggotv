@@ -16,8 +16,8 @@ class ChannelWindow(BaseWindow):
     """
     The actual channel Window for an overview of live tv channels
     """
-    LISTBOX =50
-    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", 
+    LISTBOX = 50
+    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default",
                  defaultRes = "720p", isMedia = False, addon:xbmcaddon.Addon=None):
         super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
         self.addon = addon
