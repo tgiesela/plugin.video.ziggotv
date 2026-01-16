@@ -98,7 +98,6 @@
 					<visible>true</visible>
 					<onright>1017</onright>
 					<onleft>SendClick(9001)</onleft>
-					<onup>9001</onup>
 					<texturefocus flipx="true" colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
 					<texturenofocus flipx="true" colordiffuse="FFFFFFFF">icons/now-playing/next.png</texturenofocus>
 				</control>
@@ -123,7 +122,6 @@
 					<visible>true</visible>
 					<onleft>1016</onleft>
 					<onright>1018</onright>
-					<onup>9001</onup>
 					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
 					<texturefocus colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
@@ -138,7 +136,6 @@
 					<visible>true</visible>
 					<onleft>1017</onleft>
 					<onright>1020</onright>
-					<onup>9001</onup>
 					<texturefocus flipx="true" colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
 					<texturenofocus flipx="true" colordiffuse="FFCCCCCC">icons/now-playing/next.png</texturenofocus>
 				</control>
@@ -163,7 +160,6 @@
 					<visible>true</visible>
 					<onleft>1018</onleft>
 					<onright>1016</onright>
-					<onup>9001</onup>
 					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
 					<texturefocus colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
@@ -319,8 +315,8 @@
 				<description>Program description</description>
 				<posx>3</posx>
 				<posy>50</posy>
-				<width>1000</width>
-				<height>118</height>
+				<width>1200</width>
+				<height>100</height>
 				<font>font12</font>
 				<aligny>top</aligny>
 				<align>left</align>
