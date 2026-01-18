@@ -488,7 +488,7 @@ class KeyMapMonitor(xbmc.Monitor):
     This is used to switch channels by typing channelnumber or pageup/down
     """
     def __init__(self, addon: xbmcaddon.Addon, callback):
-        xbmc.log('KEYMAPMONITOR created', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR created', xbmc.LOGDEBUG)
         super().__init__()
         self.addon = addon
         self.callback = callback
@@ -497,7 +497,7 @@ class KeyMapMonitor(xbmc.Monitor):
         self.keytimer: TimeSignal = None
 
     def __keypress_completed(self):
-        xbmc.log(f'KEYMAPMONITOR KEYPRESS COMPLETED: {self.keypresses}',xbmc.LOGINFO)
+        xbmc.log(f'KEYMAPMONITOR KEYPRESS COMPLETED: {self.keypresses}',xbmc.LOGDEBUG)
         xbmc.executebuiltin(f'Notification(Channel,{self.keypresses})')
         self.callback(self.keypresses)
         self.keypresses = ''
@@ -508,11 +508,11 @@ class KeyMapMonitor(xbmc.Monitor):
             xbmc.log('Failed to join thread of current timer', xbmc.LOGDEBUG)
 
     def onNotification(self, sender, method, data):
-        xbmc.log('KEYMAPMONITOR Notification received', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR Notification received', xbmc.LOGDEBUG)
         if sender == self.addon.getAddonInfo("id"):
             if method == 'Other.keypressed':
                 params = json.loads(data)
-                xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGINFO)
+                xbmc.log("KEYMAPMONITOR key: {0}".format(params['key']), xbmc.LOGDEBUG)
                 key = str(params['key'])
                 if key.isnumeric():
                     numberkey = params['key']
@@ -521,7 +521,7 @@ class KeyMapMonitor(xbmc.Monitor):
                         self.firstkeypress = datetime.now()
                         self.keytimer = TimeSignal(3, self.__keypress_completed)
                         self.keytimer.start()
-                        xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGINFO)
+                        xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGDEBUG)
                     else:
                         self.keypresses = self.keypresses + numberkey
                     xbmc.executebuiltin(f'Notification(Channel,{self.keypresses}-),1000')
@@ -532,7 +532,7 @@ class KeyMapMonitor(xbmc.Monitor):
         return super().onNotification(sender, method, data)
 
     def __del__(self):
-        xbmc.log('KEYMAPMONITOR deleted', xbmc.LOGINFO)
+        xbmc.log('KEYMAPMONITOR deleted', xbmc.LOGDEBUG)
 
 class ZiggoKeyMap:
     """
