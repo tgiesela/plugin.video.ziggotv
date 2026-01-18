@@ -348,10 +348,11 @@ class ChannelList(UserList):
         try:
             index = self.__channelnumbers.index(channel.logicalChannelNumber)
             if index >= 0:
+                index += 1
                 if index >= len(self.__channelnumbers):
                     newchannelnr = self.__channelnumbers[0]
                 else:
-                    newchannelnr = self.__channelnumbers[index+1]
+                    newchannelnr = self.__channelnumbers[index]
                 return self.find_channel_by_number(newchannelnr)
             return channel
         except ValueError:
@@ -370,10 +371,11 @@ class ChannelList(UserList):
         try:
             index = self.__channelnumbers.index(channel.logicalChannelNumber)
             if index >= 0:
+                index -= 1
                 if index <= 0:
                     newchannelnr = self.__channelnumbers[len(self.__channelnumbers)-1]
                 else:
-                    newchannelnr = self.__channelnumbers[index-1]
+                    newchannelnr = self.__channelnumbers[index]
                 return self.find_channel_by_number(newchannelnr)
             return channel
         except ValueError:

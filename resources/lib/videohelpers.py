@@ -132,10 +132,10 @@ class VideoHelpers:
         else:
             self.player.set_replay(True, startposition)
         self.player.set_item(item)
-        if activateKeymap:
-            self.player.set_keymap(self.keymap)
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
+        if activateKeymap:
+            self.player.set_keymap(self.keymap)
 
     def __add_event_info(self, playItem: xbmcgui.ListItem, channel: Channel, event: Event):
         if event is not None:
@@ -186,7 +186,7 @@ class VideoHelpers:
         self.__add_event_info(item, channel, event)
 
     def __update_event_signal(self):
-        xbmc.log('UPDATE EVENT TIMER EXPIRED', xbmc.LOGINFO)
+        xbmc.log('UPDATE EVENT TIMER EXPIRED', xbmc.LOGDEBUG)
         self.updateeventsignal.stop()
         try:
             self.updateeventsignal.join()
@@ -196,19 +196,19 @@ class VideoHelpers:
         if xbmc.Player().isPlaying() and self.currentchannel is not None:
             channel: Channel = self.currentchannel
             event: Event = channel.events.get_current_event()
-            now = utils.DatetimeHelper.unix_datetime(datetime.now())
-            secondstogo = event.endTime - now
-
-            endTime = utils.DatetimeHelper.from_unix(event.endTime)
-            xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(
-                endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'),
-                secondstogo), xbmc.LOGDEBUG)
+            if event is not None:
+                now = utils.DatetimeHelper.unix_datetime(datetime.now())
+                secondstogo = event.endTime - now
+                endTime = utils.DatetimeHelper.from_unix(event.endTime)
+                xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(
+                    endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'),
+                    secondstogo), xbmc.LOGDEBUG)
             if secondstogo <= 0:
                 secondstogo=60
             self.update_event(channel, event)
             self.updateeventsignal = utils.TimeSignal(secondstogo, self.__update_event_signal)
             self.updateeventsignal.start()
-            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED for {secondstogo}', xbmc.LOGINFO)
+            xbmc.log(f'EVENT UPDATED AND NEW TIMER STARTED for {secondstogo}', xbmc.LOGDEBUG)
 
     def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
