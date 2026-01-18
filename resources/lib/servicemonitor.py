@@ -65,7 +65,7 @@ class HttpProxyService:
         thread.start()
         self.httpServerThread = thread
         xbmc.log("ProxyService started listening on {0}-{1}".format(self.address,
-                                                                    self.port), xbmc.LOGINFO)
+                                                                    self.port), xbmc.LOGDEBUG)
 
     def stop_http_server(self):
         """stop the http server"""

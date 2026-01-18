@@ -43,7 +43,7 @@ class HomeWindow(BaseWindow):
     def __del__(self):
         self.keyboardmonitor.waitForAbort(1)
         self.keyboardmonitor = None
-        xbmc.log('HOMEWINDOW Destroyed', xbmc.LOGINFO)
+        xbmc.log('HOMEWINDOW Destroyed', xbmc.LOGDEBUG)
 
     def __get_current_channel(self):
         item: xbmcgui.ListItem = xbmc.Player().getPlayingItem()

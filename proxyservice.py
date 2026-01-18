@@ -15,7 +15,7 @@ if __name__ == '__main__':
             # Sleep/wait for abort for 5 seconds
             if MONITOR_SERVICE.waitForAbort(5):
                 # Abort was requested while waiting. We should exit
-                xbmc.log("MONITOR PROXYSERVICE WAITFORABORT timeout", xbmc.LOGINFO)
+                xbmc.log("MONITOR PROXYSERVICE WAITFORABORT timeout", xbmc.LOGDEBUG)
                 break
 
     # pylint: disable=broad-exception-caught

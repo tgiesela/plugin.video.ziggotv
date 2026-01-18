@@ -410,7 +410,7 @@ class LoginSession(Web):
             xbmc.log("Login: Accesstoken still valid", xbmc.LOGDEBUG)
         else:
             if self.__refresh_token_valid():
-                xbmc.log("Login: Accesstoken expired, refresh token still valid, refreshing login", xbmc.LOGINFO)
+                xbmc.log("Login: Accesstoken expired, refresh token still valid, refreshing login", xbmc.LOGDEBUG)
                 # Als het token niet meer geldig is moet het ACCESSTOKEN-cookie worden verwijderd!
                 self.__delete_cookie('ACCESSTOKEN')
                 response = super().do_post(G.AUTHENTICATION_URL + "/refresh",
@@ -422,7 +422,7 @@ class LoginSession(Web):
                 Path(self.pluginpath(G.SESSION_INFO)).write_text(json.dumps(self.sessionInfo), encoding='utf-8')
                 self.refresh_entitlements()
             else:
-                xbmc.log("Login: refresh token expired, new login required", xbmc.LOGINFO)
+                xbmc.log("Login: refresh token expired, new login required", xbmc.LOGDEBUG)
                 self.extraHeaders = {}
                 self.cookies.clear_session_cookies()
                 Path(self.pluginpath(G.COOKIES_INFO)).unlink(missing_ok=True)
@@ -1114,7 +1114,8 @@ class LoginSession(Web):
         recording.update({'genres': seasonRecordings['genres']})
         recording.update({'images': seasonRecordings['images']})
         recording.update({'seasons':seasonRecordings['seasons']})
-        recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
+        if 'shortSynopsis' in seasonRecordings:
+            recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
 
     def refresh_recordings(self, includeAdult=False):
         """

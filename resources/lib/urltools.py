@@ -24,7 +24,7 @@ class UrlTools:
         """
         useProxy = self.addon.getSettingBool('use-proxy')
         if useProxy:
-            xbmc.log('Using proxy server', xbmc.LOGINFO)
+            xbmc.log('Using proxy server', xbmc.LOGDEBUG)
             o = urlparse(locator)
             Components = namedtuple(
                 typename='Components',

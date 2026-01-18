@@ -196,19 +196,28 @@ class ListitemHelper:
             if hasattr(recording, 'episodeTitle'):
                 episode = f'E{recording.episodeNumber}-{recording.episodeTitle}'
             else:
-                if hasattr(recording.episodeNumber):
+                if hasattr(recording, 'episodeNumber'):
                     episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
                 else:
                     episode = f'S{recording.seasonNumber}-E?'
+        elif recording.source == 'single':
+            if hasattr(recording,'episodeTitle'):
+                episode = recording.episodeTitle
+            elif hasattr(recording,'title'):
+                episode = recording.title
+            else:
+                start = utils.DatetimeHelper.from_utc_to_local(start)
+                episode = start.strftime('%Y-%m-%d %H:%M')
         else:
-            start = utils.DatetimeHelper.from_utc_to_local(start)
-            episode = start.strftime('%Y-%m-%d %H:%M')
+            episode = '<?>'
         title = episode
         li = xbmcgui.ListItem(label=title)
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
-        if recording.source == 'show':
+        if recording.source == 'show' and recording.type == 'season':
             tag.addSeason(recording.seasonNumber, recording.season.seasonTitle)
             li.setProperty('SeasonTitle', f'{recording.seasonNumber}. {recording.season.seasonTitle}')
+        elif recording.source == 'show' and recording.type == 'single':
+            li.setProperty('SeasonTitle', f'{recording.seasonNumber}. {recording.title}')
 
         if recording.poster is not None:
             thumbname = xbmc.getCacheThumbName(recording.poster.url)

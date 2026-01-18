@@ -197,7 +197,7 @@
 						<visible>true</visible>
 					</control>
 					<control type="textbox">
-						<top>425</top>
+						<top>420</top>
 						<width>830</width>
 						<height>40</height>
 						<font>font12</font>

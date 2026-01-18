@@ -105,7 +105,7 @@ class SideWindow(xbmcgui.WindowXMLDialog):
             allowed = self.allowedsortmethods['movies']
         else:
             return
-        xbmc.log(f"OPTIONS {options}, ALLOWED {allowed}, current {options['method']}", xbmc.LOGINFO)
+        xbmc.log(f"OPTIONS {options}, ALLOWED {allowed}, current {options['method']}", xbmc.LOGDEBUG)
         currentindex = allowed.index(int(options['method']))
         currentindex += 1
         if currentindex >= len(allowed):
@@ -138,7 +138,7 @@ class SideWindow(xbmcgui.WindowXMLDialog):
         self.getControl(self.SORTMETHODLABEL).setLabel(xbmc.getLocalizedString(int(options['method'])))
         self.getControl(self.FILTERLABEL).setLabel(self.addon.getLocalizedString(int(self.recordingfilter)))
         wc = self.currentWindow.__class__.__name__
-        xbmc.log(f'Side Window current window class: {wc}', xbmc.LOGINFO)
+        xbmc.log(f'Side Window current window class: {wc}', xbmc.LOGDEBUG)
         self.getControl(self.FILTERBUTTON).setVisible(False)
         self.getControl(self.FILTERLABEL).setVisible(False)
         if wc.lower() == 'recordingwindow':
