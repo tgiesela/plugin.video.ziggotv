@@ -1,14 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
-	<backgroundcolor>background</backgroundcolor>
+	<backgroundcolor>FF000000</backgroundcolor>
 	<menucontrol>150</menucontrol>
 	<controls>
-		<include>DefaultBackground</include>
+		<!-- Background -->
+		<control type="image">
+			<depth>-0.80</depth>
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<aspectratio>scale</aspectratio>
+			<texture colordiffuse="FF0E597E">backgrounds/primary.jpg</texture>
+		</control>
+		<!-- Header -->
+		<control type="label">
+			<top>0</top>
+			<left>10</left>
+			<shadowcolor>22000000</shadowcolor>
+			<height>100</height>
+			<align>left</align>
+			<width>300</width>
+			<label>Ziggo/$LOCALIZE[342]</label>
+		</control>
+		<control type="label">
+			<top>0</top>
+			<right>10</right>
+			<shadowcolor>22000000</shadowcolor>
+			<height>200</height>
+			<align>right</align>
+			<width>200</width>
+			<label>$INFO[System.Time]</label>
+		</control>
+		<control type="label">
+			<top>40</top>
+			<right>10</right>
+			<align>right</align>
+			<shadowcolor>22000000</shadowcolor>
+			<height>40</height>
+			<width>400</width>
+			<label>$INFO[System.Date]</label>
+		</control>
+		<!-- Actual form -->
 		<control type="group">
 			<control type="group">
-				<include>OpenClose_Left</include>
-
 				<control type="group"> <!-- horizontal list of movie categories (For You/Series etc)-->
 					<top>60</top>
 					<left>0</left>
@@ -53,7 +89,7 @@
 								<top>0</top>
 								<right>0</right>
 								<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
-								<texture colordiffuse="button_focus">lists/focus.png</texture>
+								<texture colordiffuse="FF12A0C7">lists/focus.png</texture>
 								<visible>Control.HasFocus(150)</visible>
 							</control>
 							<control type="image">
@@ -94,7 +130,7 @@
 					<left>0</left>
 					<top>300</top>
 					<right>980</right>
-					<bottom>list_bottom_offset</bottom>
+					<bottom>80</bottom>
 					<onleft>SendClick(9001)</onleft>
 					<onright>73</onright>
 					<onup>150</onup>
@@ -121,7 +157,7 @@
 							<height>32</height>
 							<aspectratio align="center">keep</aspectratio>
 							<visible>ListItem.Property(hasResumepoint)</visible>
-							<texture>overlays/watched/resume.png</texture>
+							<texture>icons/resume.png</texture>
 						</control>
 						<control type="label">
 							<left>120</left>
@@ -133,7 +169,7 @@
 							<label>$INFO[ListItem.Title]</label>
 						</control>
 						<control type="image">
-							<right>20</right>
+							<left>850</left>
 							<top>0</top>
 							<width>80</width>
 							<aligny>center</aligny>
@@ -151,7 +187,7 @@
 							<top>0</top>
 							<right>0</right>
 							<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
-							<texture colordiffuse="button_focus">lists/focus.png</texture>
+							<texture colordiffuse="FF12A0C7">lists/focus.png</texture>
 							<visible>Control.HasFocus(50)</visible>
 						</control>
 						<control type="image">
@@ -170,7 +206,7 @@
 							<height>32</height>
 							<aspectratio align="center">keep</aspectratio>
 							<visible>ListItem.Property(hasResumepoint)</visible>
-							<texture>overlays/watched/resume.png</texture>
+							<texture>icons/resume.png</texture>
 						</control>
 						<control type="label">
 							<left>120</left>
@@ -182,7 +218,7 @@
 							<label>$INFO[ListItem.Title]</label>
 						</control>
 						<control type="image">
-							<right>20</right>
+							<left>850</left>
 							<top>0</top>
 							<width>80</width>
 							<aligny>center</aligny>
@@ -214,7 +250,6 @@
 				<onleft>50</onleft>
 				<onright>9000</onright>
 				<depth>DepthContentPanel</depth>
-				<include>OpenClose_Right</include>
 				<width>870</width>
 				<control type="image">
 					<texture flipx="false" colordiffuse="EDFFFFFF">lists/panel.png</texture>
@@ -245,15 +280,16 @@
 					</control>
 					<control type="textbox">
 						<top>365</top>
+						<left>0</left>
 						<width>830</width>
 						<height>60</height>
-						<font>font36_title</font>
-						<label>$INFO[ListItem.Title]</label>
+						<label>[B]$INFO[ListItem.Title][/B]</label>
 						<scroll>true</scroll>
 						<visible>true</visible>
 					</control>
 					<control type="label">
 						<top>415</top>
+						<left>0</left>
 						<width>830</width>
 						<height>30</height>
 						<label>$INFO[ListItem.Property(AvailableAfter),[COLOR red]$LOCALIZE[21408]: [/COLOR]]</label>
@@ -261,6 +297,7 @@
 					</control>
 					<control type="label">
 						<top>460</top>
+						<left>0</left>
 						<width>830</width>
 						<height>140</height>
 						<scroll>true</scroll>
@@ -269,6 +306,7 @@
 					</control>
 					<control type="textbox">
 						<top>570</top>
+						<left>0</left>
 						<width>830</width>
 						<bottom>list_bottom_offset</bottom>
 						<label>$INFO[ListItem.Plot][CR][CR]$INFO[ListItem.Cast,[COLOR grey]$LOCALIZE[206]:[CR][/COLOR]]</label>
@@ -276,31 +314,26 @@
 					</control>
 				</control>
 <!--InfoPanel End-->
-				
 			</control>
-			<include content="TopBar">
-				<param name="breadcrumbs_label" value="Ziggo/$ADDON[plugin.video.ziggotv 40030]" />
-			</include>
-
 			<control type="button" id="9001">
-				<onup>50</onup>
-				<ondown>50</ondown>
 				<bottom>20</bottom>
 				<left>12</left>
 				<width>36</width>
 				<height>36</height>
-				<texturefocus colordiffuse="button_focus">frame/menu-nofo.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">frame/menu-nofo.png</texturenofocus>
+				<onup>50</onup>
+				<ondown>50</ondown>
+				<texturefocus colordiffuse="FF12A0C7">icons/menu-nofo.png</texturefocus>
+				<texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
 				<animation effect="fade" time="200">VisibleChange</animation>
 				<onclick></onclick>
-				<visible>!Control.IsVisible(6160)</visible>
+				<visible>true</visible>
 			</control>
 			<control type="button" id="9002">
 				<bottom>16</bottom>
 				<left>64</left>
 				<width>300</width>
 				<height>44</height>
-				<shadowcolor>text_shadow</shadowcolor>
+				<shadowcolor>22000000</shadowcolor>
 				<label>$LOCALIZE[33063]</label>
 				<onclick></onclick>
 				<texturefocus />

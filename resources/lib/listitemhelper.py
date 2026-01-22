@@ -170,6 +170,7 @@ class ListitemHelper:
         li.setProperty('recEventDuration', str(endTime-startTime))
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         tag.setDuration(recording.duration)  # in seconds
+        self.savedStateList.reload()
         resumePoint = self.savedStateList.get(recording.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
@@ -254,7 +255,7 @@ class ListitemHelper:
         @param recType: the type of recording (planned|recorded)
         @return: listitem
         """
-        description = self.addon.getLocalizedString(S.MSG_EPISODES).format(len(recording.episodes))
+        description = f'{recording.nrofepisodes}/{len(recording.episodes)} {self.addon.getLocalizedString(S.MSG_EPISODES)}'
         title = "{0} ({1})".format(recording.title, description)
         li = xbmcgui.ListItem(label=title)
         thumbname = xbmc.getCacheThumbName(recording.poster.url)
@@ -330,7 +331,7 @@ class ListitemHelper:
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         ziggoid = tag.getUniqueID('ziggoRecordingId')
         recording: Recording = None
-        if recfilter == str(SharedProperties.TEXTID_RECORDED):
+        if recfilter == SharedProperties.TEXTID_RECORDED:
             rectype = 'recorded'
         else:
             rectype = 'planned'
@@ -479,7 +480,7 @@ class ListitemHelper:
 
     def __addmovieproperties(self, li: xbmcgui.ListItem, movie: Movie):
         li.setProperty('isMovie','true')
-
+        self.savedStateList.reload()
         resumePoint = self.savedStateList.get(movie.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
@@ -488,7 +489,7 @@ class ListitemHelper:
 
     def __addepisodeproperties(self, li: xbmcgui.ListItem, episode: Episode):
         li.setProperty('isEpisode','true')
-
+        self.savedStateList.reload()
         resumePoint = self.savedStateList.get(episode.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
@@ -667,7 +668,7 @@ class ListitemHelper:
             tag.setPlot(item.season.series.synopsis)
         tag.setPlotOutline('')
 
-        if item.source.entitlementState == 'entitled':
+        if item.source.entitlementState != 'entitled':
             li.setProperty('IsPlayable', 'false')
         tag.setGenres(item.asset.genres)
         cast = []

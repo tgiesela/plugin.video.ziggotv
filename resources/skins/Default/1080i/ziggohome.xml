@@ -1,15 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
-	<backgroundcolor>background</backgroundcolor>
+	<backgroundcolor>FF000000</backgroundcolor>
 	<views>50,51</views>
 	<menucontrol>9000</menucontrol>
 	<controls>
-		<include>DefaultBackground</include>
+		<!-- Background -->
+		<control type="image">
+			<depth>-0.80</depth>
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<aspectratio>scale</aspectratio>
+			<texture colordiffuse="FF0E597E">backgrounds/primary.jpg</texture>
+		</control>
+		<!-- Header -->
+		<control type="label">
+			<top>0</top>
+			<left>10</left>
+			<font>font36</font>
+			<shadowcolor>22000000</shadowcolor>
+			<height>100</height>
+			<align>left</align>
+			<width>300</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>Ziggo</label>
+		</control>
+		<control type="label">
+			<top>0</top>
+			<right>10</right>
+			<font>font12</font>
+			<shadowcolor>22000000</shadowcolor>
+			<height>200</height>
+			<align>right</align>
+			<width>200</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>$INFO[System.Time]</label>
+		</control>
+		<control type="label">
+			<top>40</top>
+			<right>10</right>
+			<font>font12</font>
+			<align>right</align>
+			<shadowcolor>22000000</shadowcolor>
+			<height>40</height>
+			<width>400</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>$INFO[System.Date]</label>
+		</control>
+		
+		<!-- Actual form -->
 		<control type="group">
-			<animation effect="fade" start="100" end="0" time="200" tween="sine" condition="$EXP[infodialog_active]">Conditional</animation>
 			<control type="group">
-				<include>OpenClose_Left</include>
 				<control type="grouplist" id="50">
 					<left>150</left>
 					<top>100</top>
@@ -23,36 +66,94 @@
 					<onright>5</onright>
 					<onup>9001</onup>
 					<ondown>150</ondown>
-					<include content="InfoDialogButton">
-						<param name="width" value="275" />
-						<param name="id" value="5" />
-						<param name="icon" value="icons/submenu/channels.png" />
-						<param name="label" value="$LOCALIZE[19019]" />
-						<param name="visible" value="True" />
-					</include>
-					<include content="InfoDialogButton"> <!--Default skin dialogbutton-->
-						<param name="width" value="275" />
-						<param name="id" value="6" />
-						<param name="icon" value="icons/submenu/guide.png" />
-						<param name="label" value="$LOCALIZE[19069]" />
-						<param name="visible" value="True" />
-						<param name="onclick_1_condition" value="" />
-						<param name="onclick_1" value=""/>
-					</include>
-					<include content="InfoDialogButton">
-						<param name="width" value="275" />
-						<param name="id" value="7" />
-						<param name="icon" value="icons/submenu/recordings.png" />
-						<param name="label" value="$LOCALIZE[19017]" />
-						<param name="visible" value="True" />
-					</include>
-					<include content="InfoDialogButton">
-						<param name="width" value="275" />
-						<param name="id" value="8" />
-						<param name="icon" value="icons/sidemenu/movies.png" />
-						<param name="label" value="$ADDON[plugin.video.ziggotv 40030]" />
-						<param name="visible" value="True" />
-					</include>
+					<control type="radiobutton" id="5">
+						<width>264</width>
+						<height>142</height>
+						<align>center</align>
+						<aligny>top</aligny>
+						<texturefocus border="21" colordiffuse="FF12A0C7">buttons/button-fo.png</texturefocus>
+						<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+						<textoffsetx>22</textoffsetx>
+						<textoffsety>85</textoffsety>
+						<radioposx>108</radioposx>
+						<radioposy>28</radioposy>
+						<radiowidth>48</radiowidth>
+						<!--<font>font10</font>-->
+						<textureradioonfocus colordiffuse="D0FFFFFF">icons/channels.png</textureradioonfocus>
+						<textureradioonnofocus colordiffuse="D0FFFFFF">icons/channels.png</textureradioonnofocus>
+						<textureradioofffocus colordiffuse="D0FFFFFF">icons/channels.png</textureradioofffocus>
+						<textureradiooffnofocus colordiffuse="D0FFFFFF">icons/channels.png</textureradiooffnofocus>
+						<textureradiooffdisabled colordiffuse="40FFFFFF">icons/channels.png</textureradiooffdisabled>
+						<textureradioondisabled colordiffuse="40FFFFFF">icons/channels.png</textureradioondisabled>
+						<label>$LOCALIZE[19019]</label>
+						<visible>true</visible>
+					</control>
+					<control type="radiobutton" id="6">
+						<width>264</width>
+						<height>142</height>
+						<align>center</align>
+						<aligny>top</aligny>
+						<texturefocus border="21" colordiffuse="FF12A0C7">buttons/button-fo.png</texturefocus>
+						<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+						<textoffsetx>22</textoffsetx>
+						<textoffsety>85</textoffsety>
+						<radioposx>108</radioposx>
+						<radioposy>28</radioposy>
+						<radiowidth>48</radiowidth>
+						<!--<font>font10</font>-->
+						<textureradioonfocus colordiffuse="D0FFFFFF">icons/guide.png</textureradioonfocus>
+						<textureradioonnofocus colordiffuse="D0FFFFFF">icons/guide.png</textureradioonnofocus>
+						<textureradioofffocus colordiffuse="D0FFFFFF">icons/guide.png</textureradioofffocus>
+						<textureradiooffnofocus colordiffuse="D0FFFFFF">icons/guide.png</textureradiooffnofocus>
+						<textureradiooffdisabled colordiffuse="40FFFFFF">icons/guide.png</textureradiooffdisabled>
+						<textureradioondisabled colordiffuse="40FFFFFF">icons/guide.png</textureradioondisabled>
+						<label>$LOCALIZE[19069]</label>
+						<visible>true</visible>
+					</control>
+					<control type="radiobutton" id="7">
+						<width>264</width>
+						<height>142</height>
+						<align>center</align>
+						<aligny>top</aligny>
+						<texturefocus border="21" colordiffuse="FF12A0C7">buttons/button-fo.png</texturefocus>
+						<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+						<textoffsetx>22</textoffsetx>
+						<textoffsety>85</textoffsety>
+						<radioposx>108</radioposx>
+						<radioposy>28</radioposy>
+						<radiowidth>48</radiowidth>
+						<!--<font>font10</font>-->
+						<textureradioonfocus colordiffuse="D0FFFFFF">icons/recordings.png</textureradioonfocus>
+						<textureradioonnofocus colordiffuse="D0FFFFFF">icons/recordings.png</textureradioonnofocus>
+						<textureradioofffocus colordiffuse="D0FFFFFF">icons/recordings.png</textureradioofffocus>
+						<textureradiooffnofocus colordiffuse="D0FFFFFF">icons/recordings.png</textureradiooffnofocus>
+						<textureradiooffdisabled colordiffuse="40FFFFFF">icons/recordings.png</textureradiooffdisabled>
+						<textureradioondisabled colordiffuse="40FFFFFF">icons/recordings.png</textureradioondisabled>
+						<label>$LOCALIZE[19017]</label>
+						<visible>true</visible>
+					</control>
+					<control type="radiobutton" id="8">
+						<width>264</width>
+						<height>142</height>
+						<align>center</align>
+						<aligny>top</aligny>
+						<texturefocus border="21" colordiffuse="FF12A0C7">buttons/button-fo.png</texturefocus>
+						<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+						<textoffsetx>22</textoffsetx>
+						<textoffsety>85</textoffsety>
+						<radioposx>108</radioposx>
+						<radioposy>28</radioposy>
+						<radiowidth>48</radiowidth>
+						<!--<font>font10</font>-->
+						<textureradioonfocus colordiffuse="D0FFFFFF">icons/movies.png</textureradioonfocus>
+						<textureradioonnofocus colordiffuse="D0FFFFFF">icons/movies.png</textureradioonnofocus>
+						<textureradioofffocus colordiffuse="D0FFFFFF">icons/movies.png</textureradioofffocus>
+						<textureradiooffnofocus colordiffuse="D0FFFFFF">icons/movies.png</textureradiooffnofocus>
+						<textureradiooffdisabled colordiffuse="40FFFFFF">icons/movies.png</textureradiooffdisabled>
+						<textureradioondisabled colordiffuse="40FFFFFF">icons/movies.png</textureradioondisabled>
+						<label>$ADDON[plugin.video.ziggotv 40030]</label>
+						<visible>true</visible>
+					</control>
 				</control>
 
 			</control>
@@ -62,7 +163,7 @@
 				<left>60</left>
 				<control type="label">
 					<height>30</height>
-					<label>$LOCALIZE[31016]</label>
+					<label>$ADDON[plugin.video.ziggotv 40036]</label>
 					<font>font13</font>
 				</control>
 				<control type="list" id = "150">
@@ -102,7 +203,7 @@
 							<top>15</top>
 							<right>0</right>
 							<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
-							<texture colordiffuse="button_focus">lists/focus.png</texture>
+							<texture colordiffuse="FF12A0C7">lists/focus.png</texture>
 							<visible>Control.HasFocus(150)</visible>
 						</control>
 					
@@ -129,10 +230,6 @@
 
 			</control>
 
-			<include content="TopBar">
-				<param name="breadcrumbs_label" value="Ziggo" />
-			</include>
-
 			<control type="button" id="9001">
 				<bottom>20</bottom>
 				<left>12</left>
@@ -140,38 +237,23 @@
 				<height>36</height>
 				<onup>150</onup>
 				<ondown>50</ondown>
-				<texturefocus colordiffuse="button_focus">frame/menu-nofo.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">frame/menu-nofo.png</texturenofocus>
+				<texturefocus colordiffuse="FF12A0C7">icons/menu-nofo.png</texturefocus>
+				<texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
 				<animation effect="fade" time="200">VisibleChange</animation>
 				<onclick></onclick>
-				<visible>!Control.IsVisible(6160)</visible>
-			</control>
-			<control type="button" id="9003">
-				<bottom>20</bottom>
-				<left>12</left>
-				<width>36</width>
-				<height>36</height>
-				<texturefocus colordiffuse="button_focus">icons/menu.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">icons/menu.png</texturenofocus>
-				<animation effect="fade" time="200">VisibleChange</animation>
-				<onclick>SetFocus(9000)</onclick>
-				<visible>Window.IsActive(screen-epg.xml)</visible>
+				<visible>true</visible>
 			</control>
 			<control type="button" id="9002">
 				<bottom>16</bottom>
 				<left>64</left>
 				<width>300</width>
 				<height>44</height>
-				<shadowcolor>text_shadow</shadowcolor>
+				<shadowcolor>22000000</shadowcolor>
 				<label>$LOCALIZE[33063]</label>
 				<onclick></onclick>
 				<texturefocus />
 				<texturenofocus />
 			</control>
-
-<!--			<include content="BottomBar">
-				<param name="info_visible" value="true" />-
-			</include>-->
 		</control>
 	</controls>
 </window>

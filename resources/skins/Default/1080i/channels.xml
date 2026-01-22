@@ -1,18 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
-	<backgroundcolor>background</backgroundcolor>
+	<backgroundcolor>FF000000</backgroundcolor>
 	<menucontrol>9000</menucontrol>
 	<controls>
-		<include>DefaultBackground</include>
+		<!-- Background -->
+		<control type="image">
+			<depth>-0.80</depth>
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<aspectratio>scale</aspectratio>
+			<texture colordiffuse="FF0E597E">backgrounds/primary.jpg</texture>
+		</control>
+		<!-- Header -->
+		<control type="label">
+			<top>0</top>
+			<left>10</left>
+			<shadowcolor>22000000</shadowcolor>
+			<height>100</height>
+			<align>left</align>
+			<width>300</width>
+			<label>Ziggo/$LOCALIZE[19019]</label>
+		</control>
+		<control type="label">
+			<top>0</top>
+			<right>10</right>
+			<shadowcolor>22000000</shadowcolor>
+			<height>200</height>
+			<align>right</align>
+			<width>200</width>
+			<label>$INFO[System.Time]</label>
+		</control>
+		<control type="label">
+			<top>40</top>
+			<right>10</right>
+			<align>right</align>
+			<shadowcolor>22000000</shadowcolor>
+			<height>40</height>
+			<width>400</width>
+			<label>$INFO[System.Date]</label>
+		</control>
+		<!-- Actual form -->
 		<control type="group">
 			<control type="group">
-				<include>OpenClose_Left</include>
 				<control type="fixedlist" id="50">
 					<left>0</left>
-					<top>list_top_offset</top>
+					<top>100</top>
 					<right>980</right>
-					<bottom>list_bottom_offset</bottom>
+					<bottom>80</bottom>
 					<onleft>SendClick(9001)</onleft>
 					<onright>73</onright>
 					<onup>61</onup>
@@ -21,7 +58,6 @@
 					<focusposition>4</focusposition>
 					<pagecontrol>73</pagecontrol>
 					<scrolltime tween="cubic" easing="out">500</scrolltime>
-					<viewtype label="535">list</viewtype>
 <!--ListitemLayout-->
 					<itemlayout height="100" infoupdate="5000">
 						<control type="progress">
@@ -39,10 +75,8 @@
 							<left>30</left>
 							<top>0</top>
 							<width>90</width>
-							<!--<font>font36_title</font>-->
 							<align>center</align>
 							<aligny>top</aligny>
-							<!--<visible>ListItem.Property(hasepg)</visible>-->
 							<visible>ListItem.Property(hasepg)</visible>
 							<label>$INFO[ListItem.SetId].</label>
 						</control>
@@ -50,24 +84,19 @@
 							<left>120</left>
 							<top>0</top>
 							<right>30</right>
-							<!--<font>font36_title</font>-->
+							<width>700</width>
 							<aligny>top</aligny>
 							<visible>true</visible>
 							<label>$INFO[ListItem.Title]</label>
 						</control>
-						<control type="group">
+						<control type="image">
+							<left>850</left>
+							<top>0</top>
+							<width>80</width>
+							<aligny>center</aligny>
+							<aspectratio align="center">keep</aspectratio>
 							<visible>true</visible>
-							<animation effect="slide" start="0,0" end="0,16" time="0" condition="!$EXP[listitem_has_epg_event_info]">Conditional</animation>
-<!-- image in front of channelname-->
-							<control type="image">
-								<left>29</left>
-								<top>17</top>
-								<width>32</width>
-								<height>32</height>
-								<aspectratio align="center">keep</aspectratio>
-								<visible>false</visible>
-								<texture></texture>
-							</control>
+							<texture>$INFO[ListItem.ActualIcon]</texture>
 						</control>
 						<control type="group">
 							<visible>true</visible>
@@ -76,28 +105,10 @@
 								<right>120</right>
 								<top>53</top>
 								<height>30</height>
-								<font>font12</font>
 								<aligny>top</aligny>
+								<width>500</width>
 								<label>$INFO[ListItem.Property(epgEventTitle)]</label>
 							</control>
-						</control>
-						<control type="image">
-							<right>110</right>
-							<top>0</top>
-							<width>32</width>
-							<aligny>center</aligny>
-							<aspectratio align="center">keep</aspectratio>
-							<texture>$VAR[PVRStatusImageVar]</texture>
-							<visible>true</visible>
-						</control>
-						<control type="image">
-							<right>20</right>
-							<top>0</top>
-							<width>80</width>
-							<aligny>center</aligny>
-							<aspectratio align="center">keep</aspectratio>
-							<visible>true</visible>
-							<texture>$INFO[ListItem.ActualIcon]</texture>
 						</control>
 					
 <!-- ListItemLayout end -->
@@ -109,7 +120,7 @@
 							<top>0</top>
 							<right>0</right>
 							<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
-							<texture colordiffuse="button_focus">lists/focus.png</texture>
+							<texture colordiffuse="FF12A0C7">lists/focus.png</texture>
 							<visible>Control.HasFocus(50)</visible>
 						</control>
 						<control type="progress">
@@ -119,7 +130,7 @@
 							<height>12</height>
 							<align>center</align>
 							<aligny>center</aligny>
-							<midtexture border="3">progress/texturebg_white.png</midtexture>
+							<midtexture border="3">backgrounds/texturebg_white.png</midtexture>
 							<visible>ListItem.Property(hasepg)</visible>
 							<info>80</info>
 						</control>
@@ -127,7 +138,6 @@
 							<left>30</left>
 							<top>0</top>
 							<width>90</width>
-							<!--<font>font36_title</font>-->
 							<align>center</align>
 							<aligny>top</aligny>
 							<visible>ListItem.Property(hasepg)</visible>
@@ -137,24 +147,9 @@
 							<left>120</left>
 							<top>0</top>
 							<right>30</right>
-							<!--<font>font36_title</font>-->
 							<aligny>top</aligny>
 							<visible>true</visible>
 							<label>$INFO[ListItem.Title]</label>
-						</control>
-						<control type="group">
-							<visible>true</visible>
-							<animation effect="slide" start="0,0" end="0,16" time="0" condition="!$EXP[listitem_has_epg_event_info]">Conditional</animation>
-<!-- image in front of channelname-->
-							<control type="image">
-								<left>29</left>
-								<top>17</top>
-								<width>32</width>
-								<height>32</height>
-								<aspectratio align="center">keep</aspectratio>
-								<visible>false</visible>
-								<texture></texture>
-							</control>
 						</control>
 						<control type="group">
 							<visible>true</visible>
@@ -163,22 +158,12 @@
 								<right>120</right>
 								<top>53</top>
 								<height>30</height>
-								<font>font12</font>
 								<aligny>top</aligny>
 								<label>$INFO[ListItem.Property(epgEventTitle)]</label>
 							</control>
 						</control>
 						<control type="image">
-							<right>110</right>
-							<top>0</top>
-							<width>32</width>
-							<aligny>center</aligny>
-							<aspectratio align="center">keep</aspectratio>
-							<texture>icon/submenu/add-ons.png</texture>
-							<visible>true</visible>
-						</control>
-						<control type="image">
-							<right>20</right>
+							<left>850</left>
 							<top>0</top>
 							<width>80</width>
 							<aligny>center</aligny>
@@ -192,13 +177,14 @@
 				<control type="scrollbar" id="73">
 					<left>981</left>
 					<top>0</top>
-					<width>12</width>
+					<width>10</width>
 					<height>100%</height>
 					<onleft>50</onleft>
 					<onright>50</onright>
 					<onup>50</onup>
 					<ondown>50</ondown>				
 					<orientation>vertical</orientation>
+					<showonepage>true</showonepage>
 				</control>
 				
 			</control>
@@ -206,17 +192,16 @@
 			<control type="group" id="60">
 				<top>0</top>
 				<height>100%</height>
-				<left>993</left>
+				<left>994</left>
 				<onleft>50</onleft>
 				<onright>9000</onright>
-				<depth>DepthContentPanel</depth>
-				<include>OpenClose_Right</include>
+				<depth>0.05</depth>
 				<width>870</width>
 				<control type="image">
 					<texture flipx="false" colordiffuse="EDFFFFFF">lists/panel.png</texture>
-					<bordertexture border="21" infill="false">overlays/shadow.png</bordertexture>
+					<bordertexture border="21" infill="false">backgrounds/shadow.png</bordertexture>
 					<bordersize>0</bordersize>
-					<width>1000</width>
+					<width>950</width>
 					<left>00</left>
 					<right>0</right>
 					<top>0</top>
@@ -239,16 +224,11 @@
 							<fadetime>200</fadetime>
 						</control>
 						<control type="label">
-							<height>262</height>
-							<font>font45</font>
+							<height>80</height>
 							<label>$INFO[ListItem.Label]</label>
 						</control>
-						<control type="label">
-							<top>60</top>
-							<height>200</height>
-							<label>$INFO[ListItem.Label2]</label>
-						</control>
 						<control type="progress">
+							<left>0</left>
 							<top>340</top>
 							<height>12</height>
 							<colordiffuse>88FFFFFF</colordiffuse>
@@ -257,26 +237,26 @@
 						</control>
 					</control>
 					<control type="label">
-						<top>365</top>
+						<top>380</top>
 						<width>830</width>
-						<height>262</height>
-						<font>font36_title</font>
-						<label>$INFO[ListItem.Property(EpgEventTitle)]</label>
+						<height>60</height>
+						<label>[B]$INFO[ListItem.Property(EpgEventTitle)][/B]</label>
 						<scroll>true</scroll>
 						<visible>ListItem.Property(hasepg)</visible>
 					</control>
 					<control type="label">
 						<top>460</top>
 						<width>830</width>
-						<height>140</height>
+						<height>100</height>
 						<scroll>true</scroll>
 						<label>[I]$INFO[ListItem.Property(epgEventStartTime)] - $INFO[ListItem.Property(epgEventEndTime)] ($INFO[ListItem.Property(epgEventDuration)])[/I][CR]$INFO[ListItem.Genre,[COLOR grey]$LOCALIZE[515]: [/COLOR]]</label>
 						<visible>ListItem.Property(hasepg)</visible>
 					</control>
 					<control type="textbox">
 						<top>570</top>
+						<left>0</left>
 						<width>830</width>
-						<bottom>list_bottom_offset</bottom>
+						<bottom>80</bottom>
 						<label>$INFO[ListItem.Plot][CR][CR]$INFO[ListItem.Cast,[COLOR grey]$LOCALIZE[206]:[CR][/COLOR]]</label>
 						<autoscroll delay="10000" time="3000" repeat="10000">true</autoscroll>
 					</control>
@@ -284,40 +264,26 @@
 <!--InfoPanel End-->
 				
 			</control>
-			<include content="TopBar">
-				<param name="breadcrumbs_label" value="Ziggo" />
-			</include>
 
 			<control type="button" id="9001">
-				<onup>50</onup>
-				<ondown>50</ondown>
 				<bottom>20</bottom>
 				<left>12</left>
 				<width>36</width>
 				<height>36</height>
-				<texturefocus colordiffuse="button_focus">frame/menu-nofo.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">frame/menu-nofo.png</texturenofocus>
+				<onup>150</onup>
+				<ondown>50</ondown>
+				<texturefocus colordiffuse="FF12A0C7">icons/menu-nofo.png</texturefocus>
+				<texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
 				<animation effect="fade" time="200">VisibleChange</animation>
 				<onclick></onclick>
-				<visible>!Control.IsVisible(6160)</visible>
-			</control>
-			<control type="button" id="9003">
-				<bottom>20</bottom>
-				<left>12</left>
-				<width>36</width>
-				<height>36</height>
-				<texturefocus colordiffuse="button_focus">icons/menu.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">icons/menu.png</texturenofocus>
-				<animation effect="fade" time="200">VisibleChange</animation>
-				<onclick>SetFocus(9000)</onclick>
-				<visible>Window.IsActive(screen-epg.xml)</visible>
+				<visible>true</visible>
 			</control>
 			<control type="button" id="9002">
 				<bottom>16</bottom>
 				<left>64</left>
 				<width>300</width>
 				<height>44</height>
-				<shadowcolor>text_shadow</shadowcolor>
+				<shadowcolor>22000000</shadowcolor>
 				<label>$LOCALIZE[33063]</label>
 				<onclick></onclick>
 				<texturefocus />
@@ -334,7 +300,6 @@
 				<align>right</align>
 				<aligny>center</aligny>
 				<wrapmultiline>true</wrapmultiline>
-				<font>font27</font>
 			</control>
 		</control>
 	</controls>

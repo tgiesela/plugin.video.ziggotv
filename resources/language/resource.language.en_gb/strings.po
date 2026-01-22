@@ -135,7 +135,7 @@ msgid "Recordings"
 msgstr ""
 
 msgctxt "#40016"
-msgid "{0} Episodes"
+msgid "Episodes"
 msgstr ""
 
 msgctxt "#40017"
@@ -209,3 +209,11 @@ msgstr "Recording deleted"
 msgctxt "#40034"
 msgid "Series recording deleted"
 msgstr "Series recording deleted"
+
+msgctxt "#40035"
+msgid "Sort by"
+msgstr "Sort by"
+
+msgctxt "#40036"
+msgid "Recently played channels"
+msgstr "Recently played channels"

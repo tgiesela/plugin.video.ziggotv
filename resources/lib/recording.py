@@ -524,3 +524,10 @@ class SavedStateList:
                 self.delete(item)
         with open(self.fileName, 'w', encoding='utf-8') as file:
             json.dump(self.states, file)
+
+    def reload(self):
+        """
+        function to reload the saved states from file
+        @return:
+        """
+        self.__load()

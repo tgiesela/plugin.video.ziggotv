@@ -136,8 +136,8 @@ msgid "Recordings"
 msgstr "Opnamen"
 
 msgctxt "#40016"
-msgid "{0} Episodes"
-msgstr "{0} Afleveringen"
+msgid "Episodes"
+msgstr "Afleveringen"
 
 msgctxt "#40017"
 msgid "Planned recordings"
@@ -210,3 +210,11 @@ msgstr "Opname verwijderd"
 msgctxt "#40034"
 msgid "Series recording deleted"
 msgstr "Serie opname verwijderd"
+
+msgctxt "#40035"
+msgid "Sort by"
+msgstr "Sorteer op"
+
+msgctxt "#40036"
+msgid "Recently played channels"
+msgstr "Recent gespeelde zenders"

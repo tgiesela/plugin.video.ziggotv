@@ -1,13 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
-	<backgroundcolor>background</backgroundcolor>
+	<backgroundcolor>FF000000</backgroundcolor>
 	<menucontrol>9000</menucontrol>
 	<controls>
-		<include>DefaultBackground</include>
-		<include content="TopBar">
-			<param name="breadcrumbs_label" value="Ziggo" />
-		</include> <!-- height = 130 -->
+		<!-- Background -->
+		<control type="image">
+			<depth>-0.80</depth>
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<aspectratio>scale</aspectratio>
+			<texture colordiffuse="FF0E597E">backgrounds/primary.jpg</texture>
+		</control>
+		<!-- Header -->
+		<control type="label">
+			<top>0</top>
+			<left>10</left>
+			<shadowcolor>22000000</shadowcolor>
+			<height>100</height>
+			<align>left</align>
+			<width>300</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>Ziggo/$LOCALIZE[19069]</label>
+		</control>
+		<control type="label">
+			<top>0</top>
+			<right>10</right>
+			<font>font12</font>
+			<shadowcolor>22000000</shadowcolor>
+			<height>200</height>
+			<align>right</align>
+			<width>200</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>$INFO[System.Time]</label>
+		</control>
+		<control type="label">
+			<top>40</top>
+			<right>10</right>
+			<font>font12</font>
+			<align>right</align>
+			<shadowcolor>22000000</shadowcolor>
+			<height>40</height>
+			<width>400</width>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.Next(screencalibration)">WindowClose</animation>
+			<label>$INFO[System.Date]</label>
+		</control>
+		
+		<!-- Actual form -->
 		<control type="group" id="2000">
 			<description>Body container</description>
 			<left>0</left>
@@ -88,7 +129,6 @@
 					<align>left</align>
 				</control>
 
-
 				<control type="button" id="1016">
 					<description>Button one day back</description>
 					<left>0</left>
@@ -98,24 +138,24 @@
 					<visible>true</visible>
 					<onright>1017</onright>
 					<onleft>SendClick(9001)</onleft>
-					<texturefocus flipx="true" colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
-					<texturenofocus flipx="true" colordiffuse="FFFFFFFF">icons/now-playing/next.png</texturenofocus>
+					<ondown>2199</ondown>
+					<texturefocus flipx="true" colordiffuse="FF00FFFF">icons/next.png</texturefocus>
+					<texturenofocus flipx="true" colordiffuse="FFFFFFFF">icons/next.png</texturenofocus>
 				</control>
 				<control type="label" id="1011">
 					<description>Displays EPG day</description>
 					<left>30</left>
 					<top>0</top>
-					<width>130</width>
+					<width>160</width>
 					<height>30</height>
 					<textcolor>white</textcolor>
-					<font>font12</font>
 					<align>center</align>
 					<aligny>center</aligny>
 					<visible>true</visible>
 				</control>
 				<control type="button" id="1017">
 					<description>Button one day forward</description>
-					<left>160</left>
+					<left>190</left>
 					<top>0</top>
 					<width>30</width>
 					<height>30</height>
@@ -124,58 +164,44 @@
 					<onright>1018</onright>
 					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
-					<texturefocus colordiffuse="FF00FFFF">icons/now-playing/next.png</texturefocus>
-					<texturenofocus colordiffuse="FFFFFFFF">icons/now-playing/next.png</texturenofocus>
+					<texturefocus colordiffuse="FF00FFFF">icons/next.png</texturefocus>
+					<texturenofocus colordiffuse="FFFFFFFF">icons/next.png</texturenofocus>
 				</control>
 				<control type="button" id="1018">
 					<description>Button 6 hours back</description>
-					<left>190</left>
+					<left>220</left>
 					<top>0</top>
 					<width>30</width>
 					<height>30</height>
 					<visible>true</visible>
 					<onleft>1017</onleft>
 					<onright>1020</onright>
-					<texturefocus flipx="true" colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
-					<texturenofocus flipx="true" colordiffuse="FFCCCCCC">icons/now-playing/next.png</texturenofocus>
+					<texturefocus flipx="true" colordiffuse="FF12A0C7">icons/next.png</texturefocus>
+					<texturenofocus flipx="true" colordiffuse="FFCCCCCC">icons/next.png</texturenofocus>
 				</control>
 				<control type="label" id="1019">
 					<description>Displays EPG start hour</description>
-					<left>210</left>
+					<left>250</left>
 					<top>0</top>
 					<width>120</width>
 					<height>30</height>
 					<textcolor>white</textcolor>
-					<font>font12</font>
 					<align>center</align>
 					<aligny>center</aligny>
 					<visible>true</visible>
 				</control>
 				<control type="button" id="1020">
 					<description>Button 6 hours forward</description>
-					<left>330</left>
+					<left>370</left>
 					<top>0</top>
 					<width>30</width>
 					<height>30</height>
 					<visible>true</visible>
 					<onleft>1018</onleft>
 					<onright>1016</onright>
-					<font>font12</font>
 					<textcolor>FFFFFFFF</textcolor>
-					<texturefocus colordiffuse="button_focus">icons/now-playing/next.png</texturefocus>
-					<texturenofocus colordiffuse="FFCCCCCC">icons/now-playing/next.png</texturenofocus>
-				</control>
-				<control type="label">
-					<description>Displays todays date</description>
-					<left>1100</left>
-					<top>0</top>
-					<width>400</width>
-					<height>20</height>
-					<align>right</align>
-					<font>font12</font>
-					<textcolor>white</textcolor>
-					<visible>true</visible>
-					<label>$INFO[System.Date]</label>
+					<texturefocus colordiffuse="FF12A0C7">icons/next.png</texturefocus>
+					<texturenofocus colordiffuse="FFCCCCCC">icons/next.png</texturenofocus>
 				</control>
 			</control>
 			<!-- grid header END -->
@@ -324,28 +350,32 @@
 				<scroll>true</scroll>
 			</control>
 		</control>
-			<control type="button" id="9001">
-				<bottom>20</bottom>
-				<left>12</left>
-				<width>36</width>
-				<height>36</height>
-				<texturefocus colordiffuse="button_focus">frame/menu-nofo.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">frame/menu-nofo.png</texturenofocus>
-				<animation effect="fade" time="200">VisibleChange</animation>
-				<onclick></onclick>
-				<visible>True</visible>
-			</control>
-			<control type="button" id="9002">
-				<bottom>16</bottom>
-				<left>64</left>
-				<width>300</width>
-				<height>44</height>
-				<shadowcolor>text_shadow</shadowcolor>
-				<label>$LOCALIZE[33063]</label>
-				<onclick></onclick>
-				<texturefocus />
-				<texturenofocus />
-			</control>
+		<control type="button" id="9001">
+			<bottom>20</bottom>
+			<left>12</left>
+			<width>36</width>
+			<height>36</height>
+			<onup>2199</onup>
+			<ondown>1016</ondown>
+			<texturefocus colordiffuse="FF12A0C7">icons/menu-nofo.png</texturefocus>
+			<texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
+			<animation effect="fade" time="200">VisibleChange</animation>
+			<onclick></onclick>
+			<visible>true</visible>
+		</control>
+		<control type="button" id="9002">
+			<bottom>16</bottom>
+			<left>64</left>
+			<width>300</width>
+			<height>44</height>
+			<onup>2199</onup>
+			<ondown>1016</ondown>
+			<shadowcolor>22000000</shadowcolor>
+			<label>$LOCALIZE[33063]</label>
+			<onclick></onclick>
+			<texturefocus />
+			<texturenofocus />
+		</control>
 
 	</controls>
 </window>

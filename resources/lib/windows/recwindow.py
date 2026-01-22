@@ -16,7 +16,7 @@ from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import BaseWindow
 
-class recordingWindow(BaseWindow):
+class RecordingWindow(BaseWindow):
     """
     class for recording window which show planned and recorded recordings
     """
@@ -212,8 +212,8 @@ class recordingWindow(BaseWindow):
         choices = {}
         if isinstance(recording, SingleRecording):
             choices = {self.addon.getLocalizedString(S.MSG_PLAY_FROM_BEGINNING): 'playbeginning'}
-            recList = SavedStateList(self.addon)
-            resumePoint = recList.get(recording.id)
+            savedstateList = SavedStateList(self.addon)
+            resumePoint = savedstateList.get(recording.id)
             if resumePoint is not None:
                 t = datetime.now().replace(hour=0, minute=0, second=0) + timedelta(seconds=resumePoint)
                 choices.update({self.addon.getLocalizedString(
@@ -279,7 +279,7 @@ def load_recordingwindow(addon:xbmcaddon.Addon):
     :type addon: xbmcaddon.Addon
     """
     cwd: str=addon.getAddonInfo('path')
-    recwindow = recordingWindow('recordings.xml', cwd, defaultRes='1080i',addon=addon)
+    recwindow = RecordingWindow('recordings.xml', cwd, defaultRes='1080i',addon=addon)
     recwindow.showrecordings()
     recwindow.doModal()
     recwindow.stop_monitor() # make sure thread is stopped at the end

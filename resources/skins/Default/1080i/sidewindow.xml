@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window type="dialog">
 	<defaultcontrol always="true">9000</defaultcontrol>
-	<backgroundcolor>default_background</backgroundcolor>
+	<backgroundcolor>FF000000</backgroundcolor>
 	<coordinates>
 		<left>0</left>
 		<top>0</top>
 	</coordinates>
 	<controls>
-<!--		<include>DefaultBackground</include>-->
 		<control type="group">
 			<width>470</width>
-			<!--<include>MediaMenuCommon</include>-->
 			<control type="image">
 				<top>00</top>
 				<left>-50</left>
 				<width>570</width>
 				<height>100%</height>
-				<texture border="20">dialogs/dialog-bg.png</texture>
+				<texture border="20">backgrounds/dialog-bg.png</texture>
 			</control>
 			<control type="grouplist" id="9000">
 				<top>50</top>
@@ -26,8 +24,15 @@
 				<control type="group" id="9100">
 					<height>50</height>
 					<control type="label" id="9101">
-						<include>MediaMenuLabelCommon</include>
-						<label>$LOCALIZE[31148]</label>
+						<width>470</width>
+						<textoffsetx>20</textoffsetx>
+						<textoffsety>15</textoffsety>
+						<height>50</height>
+						<radioposx>300</radioposx>
+						<font>font25_title</font>
+						<aligny>top</aligny>
+						<textcolor>FF12A0C7</textcolor>
+						<label>$LOCALIZE[21866]</label>
 					</control>
 					<control type="label" id="9102">
 						<width>470</width>
@@ -60,17 +65,17 @@
 							<align>center</align>
 							<aligny>center</aligny>
 							<font></font>
-							<texturefocus colordiffuse="button_focus">buttons/roundbutton-fo.png</texturefocus>
+							<texturefocus colordiffuse="FF12A0C7">buttons/roundbutton-fo.png</texturefocus>
 							<texturenofocus />
 							<radioposx>26</radioposx>
 							<radioposy>0</radioposy>
 							<radiowidth>40</radiowidth>
 							<radioheight>40</radioheight>
-							<textureradioonfocus>icons/submenu/channels.png</textureradioonfocus>
-							<textureradioonnofocus>icons/submenu/channels.png</textureradioonnofocus>
-							<textureradioofffocus>icons/submenu/channels.png</textureradioofffocus>
-							<textureradiooffnofocus>icons/submenu/channels.png</textureradiooffnofocus>
-							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/channels.png</textureradiooffdisabled>
+							<textureradioonfocus>icons/channels.png</textureradioonfocus>
+							<textureradioonnofocus>icons/channels.png</textureradioonnofocus>
+							<textureradioofffocus>icons/channels.png</textureradioofffocus>
+							<textureradiooffnofocus>icons/channels.png</textureradiooffnofocus>
+							<textureradiooffdisabled colordiffuse="FF12A0C7">icons/channels.png</textureradiooffdisabled>
 							<enabled>!Window.IsActive(channels.xml)</enabled>
 						</control>
 						<control type="radiobutton" id="101">
@@ -79,18 +84,18 @@
 							<align>center</align>
 							<aligny>center</aligny>
 							<font></font>
-							<texturefocus colordiffuse="button_focus">buttons/roundbutton-fo.png</texturefocus>
+							<texturefocus colordiffuse="FF12A0C7">buttons/roundbutton-fo.png</texturefocus>
 							<texturenofocus />
 							<radioposx>26</radioposx>
 							<radioposy>0</radioposy>
 							<radiowidth>40</radiowidth>
 							<radioheight>40</radioheight>
-							<textureradioonfocus>icons/submenu/guide.png</textureradioonfocus>
-							<textureradioonnofocus>icons/submenu/guide.png</textureradioonnofocus>
-							<textureradioofffocus>icons/submenu/guide.png</textureradioofffocus>
-							<textureradiooffnofocus>icons/submenu/guide.png</textureradiooffnofocus>
-							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/guide.png</textureradiooffdisabled>
-							<enabled>!Window.IsActive(recordings.xml)</enabled>
+							<textureradioonfocus>icons/guide.png</textureradioonfocus>
+							<textureradioonnofocus>icons/guide.png</textureradioonnofocus>
+							<textureradioofffocus>icons/guide.png</textureradioofffocus>
+							<textureradiooffnofocus>icons/guide.png</textureradiooffnofocus>
+							<textureradiooffdisabled colordiffuse="FF12A0C7">icons/guide.png</textureradiooffdisabled>
+							<enabled>!Window.IsActive(screen-epg.xml)</enabled>
 						</control>
 						<control type="radiobutton" id="102">
 							<width>92</width>
@@ -98,17 +103,18 @@
 							<align>center</align>
 							<aligny>center</aligny>
 							<font></font>
-							<texturefocus colordiffuse="button_focus">buttons/roundbutton-fo.png</texturefocus>
+							<texturefocus colordiffuse="FF12A0C7">buttons/roundbutton-fo.png</texturefocus>
 							<texturenofocus />
 							<radioposx>26</radioposx>
 							<radioposy>0</radioposy>
 							<radiowidth>40</radiowidth>
 							<radioheight>40</radioheight>
-							<textureradioonfocus>icons/submenu/recordings.png</textureradioonfocus>
-							<textureradioonnofocus>icons/submenu/recordings.png</textureradioonnofocus>
-							<textureradioofffocus>icons/submenu/recordings.png</textureradioofffocus>
-							<textureradiooffnofocus>icons/submenu/recordings.png</textureradiooffnofocus>
-							<textureradiooffdisabled colordiffuse="button_focus">icons/submenu/recordings.png</textureradiooffdisabled>
+							<textureradioonfocus>icons/recordings.png</textureradioonfocus>
+							<textureradioonnofocus>icons/recordings.png</textureradioonnofocus>
+							<textureradioofffocus>icons/recordings.png</textureradioofffocus>
+							<textureradiooffnofocus>icons/recordings.png</textureradiooffnofocus>
+							<textureradiooffdisabled colordiffuse="FF12A0C7">icons/recordings.png</textureradiooffdisabled>
+							<enabled>!Window.IsActive(recordings.xml)</enabled>
 						</control>
 						<control type="radiobutton" id="103">
 							<width>92</width>
@@ -116,22 +122,30 @@
 							<align>center</align>
 							<aligny>center</aligny>
 							<font></font>
-							<texturefocus colordiffuse="button_focus">buttons/roundbutton-fo.png</texturefocus>
+							<texturefocus colordiffuse="FF12A0C7">buttons/roundbutton-fo.png</texturefocus>
 							<texturenofocus />
 							<radioposx>26</radioposx>
 							<radioposy>0</radioposy>
 							<radiowidth>40</radiowidth>
 							<radioheight>40</radioheight>
-							<textureradioonfocus>icons/sidemenu/movies.png</textureradioonfocus>
-							<textureradioonnofocus>icons/sidemenu/movies.png</textureradioonnofocus>
-							<textureradioofffocus>icons/sidemenu/movies.png</textureradioofffocus>
-							<textureradiooffnofocus>icons/sidemenu/movies.png</textureradiooffnofocus>
-							<textureradiooffdisabled colordiffuse="button_focus">icons/sidemenu/movies.png</textureradiooffdisabled>
+							<textureradioonfocus>icons/movies.png</textureradioonfocus>
+							<textureradioonnofocus>icons/movies.png</textureradioonnofocus>
+							<textureradioofffocus>icons/movies.png</textureradioofffocus>
+							<textureradiooffnofocus>icons/movies.png</textureradiooffnofocus>
+							<textureradiooffdisabled colordiffuse="FF12A0C7">icons/movies.png</textureradiooffdisabled>
+							<enabled>!Window.IsActive(movies.xml)</enabled>
 						</control>
 					</control>
 				</control>
 				<control type="label" id="200">
-					<include>MediaMenuLabelCommon</include>
+					<width>470</width>
+					<textoffsetx>20</textoffsetx>
+					<textoffsety>15</textoffsety>
+					<height>50</height>
+					<radioposx>300</radioposx>
+					<font>font25_title</font>
+					<aligny>top</aligny>
+					<textcolor>FF12A0C7</textcolor>
 					<label>$LOCALIZE[14018]</label>
 				</control>
 				<control type="group" id="9300"> <!--Sort Method Group-->
@@ -150,12 +164,12 @@
 							<textoffsetx>20</textoffsetx>
 							<height>80</height>
 							<aligny>center</aligny>
-							<invalidcolor>invalid</invalidcolor>
-							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<invalidcolor>FFFF0000</invalidcolor>
+							<texturefocus colordiffuse="FF12A0C7">lists/focus.png</texturefocus>
 							<texturenofocus />
-							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturefocus colordiffuse="FF12A0C7">lists/focus.png</alttexturefocus>
 							<alttexturenofocus></alttexturenofocus>
-							<label>$LOCALIZE[31022]</label>
+							<label>$ADDON[plugin.video.ziggotv 40035]</label>
 						</control>
 						<control type="label" id="9302">
 							<left>270</left>
@@ -175,12 +189,12 @@
 							<top>80</top>
 							<height>80</height>
 							<aligny>center</aligny>
-							<invalidcolor>invalid</invalidcolor>
-							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<invalidcolor>FFFF0000</invalidcolor>
+							<texturefocus colordiffuse="FF12A0C7">lists/focus.png</texturefocus>
 							<texturenofocus />
-							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturefocus colordiffuse="FF12A0C7">lists/focus.png</alttexturefocus>
 							<alttexturenofocus></alttexturenofocus>
-							<label>$LOCALIZE[31032]</label>
+							<label>$LOCALIZE[21429]</label>
 							<label2></label2>
 							<onclick></onclick>
 						</control>					
@@ -205,10 +219,10 @@
 							<textoffsetx>20</textoffsetx>
 							<height>80</height>
 							<aligny>center</aligny>
-							<invalidcolor>invalid</invalidcolor>
-							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<invalidcolor>FFFF0000</invalidcolor>
+							<texturefocus colordiffuse="FF12A0C7">lists/focus.png</texturefocus>
 							<texturenofocus />
-							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturefocus colordiffuse="FF12A0C7">lists/focus.png</alttexturefocus>
 							<alttexturenofocus></alttexturenofocus>
 							<label>$LOCALIZE[587]</label>
 						</control>
@@ -225,8 +239,15 @@
 				</control>
 
 				<control type="label" id="300">
-					<include>MediaMenuLabelCommon</include>
-					<label>$LOCALIZE[36605]</label>
+					<width>470</width>
+					<textoffsetx>20</textoffsetx>
+					<textoffsety>15</textoffsety>
+					<height>50</height>
+					<radioposx>300</radioposx>
+					<font>font25_title</font>
+					<aligny>top</aligny>
+					<textcolor>FF12A0C7</textcolor>
+					<label>$LOCALIZE[40211]</label>
 				</control>
 				<control type="grouplist" id="9600"> <!--Reset-->
 					<top>0</top>
@@ -245,10 +266,10 @@
 							<textoffsetx>20</textoffsetx>
 							<height>80</height>
 							<aligny>center</aligny>
-							<invalidcolor>invalid</invalidcolor>
-							<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>
+							<invalidcolor>FFFF0000</invalidcolor>
+							<texturefocus colordiffuse="FF12A0C7">lists/focus.png</texturefocus>
 							<texturenofocus />
-							<alttexturefocus colordiffuse="button_focus">lists/focus.png</alttexturefocus>
+							<alttexturefocus colordiffuse="FF12A0C7">lists/focus.png</alttexturefocus>
 							<alttexturenofocus></alttexturenofocus>
 							<label>$LOCALIZE[19185]</label>
 						</control>
