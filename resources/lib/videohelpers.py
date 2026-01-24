@@ -135,7 +135,9 @@ class VideoHelpers:
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
         if activateKeymap:
-            self.player.set_keymap(self.keymap)
+            self.player.set_stop_callback(self.player_stopped)
+            self.keymap.activate()
+#            self.player.set_keymap(self.keymap)
 
     def __add_event_info(self, playItem: xbmcgui.ListItem, channel: Channel, event: Event):
         if event is not None:
@@ -187,12 +189,7 @@ class VideoHelpers:
 
     def __update_event_signal(self):
         xbmc.log('UPDATE EVENT TIMER EXPIRED', xbmc.LOGDEBUG)
-        self.updateeventsignal.stop()
-        try:
-            self.updateeventsignal.join()
-        except RuntimeError:
-            xbmc.log('Failed to join thread of current timer', xbmc.LOGERROR)
-        self.updateeventsignal = None
+        self.__stop_updateeventsignal()
         if xbmc.Player().isPlaying() and self.currentchannel is not None:
             channel: Channel = self.currentchannel
             event: Event = channel.events.get_current_event()
@@ -203,6 +200,8 @@ class VideoHelpers:
                 xbmc.log('EventEndTime {0}, now: {1}, secondstogo: {2}'.format(
                     endTime.strftime('%H:%M'), utils.DatetimeHelper.from_unix(now).strftime('%H:%M'),
                     secondstogo), xbmc.LOGDEBUG)
+            else:
+                secondstogo = 0  # check again in 5 minutes
             if secondstogo <= 0:
                 secondstogo=60
             self.update_event(channel, event)
@@ -237,7 +236,7 @@ class VideoHelpers:
 #            self.__add_event_info(item.playItem, channel, event)
             self.__start_play(item, activateKeymap=True)
             self.currentchannel = channel
-            self.updateeventsignal = utils.TimeSignal(0,self.__update_event_signal)
+            self.updateeventsignal = utils.TimeSignal(1,self.__update_event_signal)
             self.updateeventsignal.start()
             return item.playItem
         except WebException as webExc:
@@ -408,11 +407,22 @@ class VideoHelpers:
 #                del self.player
         while xbmc.Player().isPlaying():
             xbmc.sleep(500)
-        if self.updateeventsignal is not None:
-            self.updateeventsignal.stop()
-            self.updateeventsignal.join()
-        self.updateeventsignal = None
+        self.player_stopped()
+        # if self.updateeventsignal is not None:
+        #     self.updateeventsignal.stop()
+        #     self.updateeventsignal.join()
+        # self.updateeventsignal = None
+        # self.currentchannel = None
+
+    def player_stopped(self):
+        """
+        Callback function that is called when playback stops
+        """
+        xbmc.log("VIDEOHELPER player_stopped callback called", xbmc.LOGDEBUG)
+        self.__stop_updateeventsignal()
         self.currentchannel = None
+        if self.keymap is not None:
+            self.keymap.deactivate()
 
     def play_movie(self, movie: Union[Movie,Episode], resumePoint) -> xbmcgui.ListItem:
         """
@@ -510,8 +520,15 @@ class VideoHelpers:
                                 '\n status: ' + webExc.status)
         return False
 
-    def __del__(self):
+    def __stop_updateeventsignal(self):
         if self.updateeventsignal is not None:
+            xbmc.log('UPDATE EVENT TIMER STOPPED', xbmc.LOGDEBUG)
             self.updateeventsignal.stop()
-            self.updateeventsignal.join()
-            self.updateeventsignal = None
+            try:
+                self.updateeventsignal.join()
+            except RuntimeError:
+                xbmc.log('Failed to join thread of current timer', xbmc.LOGERROR)
+        self.updateeventsignal = None
+
+    def __del__(self):
+        self.__stop_updateeventsignal()

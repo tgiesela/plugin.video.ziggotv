@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+    <include name="header">
+        <param name="breadcrumbstitle" value="Ziggo/$LOCALIZE[19019]"/>
+        <definition>
+            <!-- Background -->
+            <control type="image">
+                <left>0</left>
+                <top>0</top>
+                <width>100%</width>
+                <height>100%</height>
+                <aspectratio>scale</aspectratio>
+                <texture colordiffuse="primary_background">backgrounds/primary.jpg</texture>
+            </control>
+            <!-- Header -->
+            <control type="label">
+                <top>0</top>
+                <left>10</left>
+                <shadowcolor>text_shadow</shadowcolor>
+                <font>font36_title</font>
+                <height>100</height>
+                <align>left</align>
+                <width>350</width>
+                <label>$PARAM[breadcrumbstitle]</label>
+            </control>
+            <control type="label">
+                <top>0</top>
+                <right>10</right>
+                <shadowcolor>text_shadow</shadowcolor>
+                <height>200</height>
+                <align>right</align>
+                <width>200</width>
+                <label>$INFO[System.Time]</label>
+            </control>
+            <control type="label">
+                <top>40</top>
+                <right>10</right>
+                <align>right</align>
+                <shadowcolor>text_shadow</shadowcolor>
+                <height>40</height>
+                <width>400</width>
+                <label>$INFO[System.Date]</label>
+            </control>
+
+        </definition>
+    </include>
+    <include name="footer">
+        <definition>
+            <control type="button" id="9001">
+                <bottom>20</bottom>
+                <left>12</left>
+                <width>36</width>
+                <height>36</height>
+                <onup>50</onup>
+                <ondown>50</ondown>
+                <texturefocus colordiffuse="button_focus">icons/menu-nofo.png</texturefocus>
+                <texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
+                <animation effect="fade" time="200">VisibleChange</animation>
+                <onclick></onclick>
+                <visible>true</visible>
+            </control>
+            <control type="button" id="9002">
+                <bottom>16</bottom>
+                <left>64</left>
+                <width>300</width>
+                <height>44</height>
+                <shadowcolor>text_shadow</shadowcolor>
+                <label>$LOCALIZE[33063]</label>
+                <onclick></onclick>
+                <texturefocus />
+                <texturenofocus />
+            </control>
+        </definition>
+    </include>
+
+	<include name="InfoDialogButton">
+		<param name="width" value="264"/>
+        <param name="visible" value="true"/>
+		<definition>
+			<control type="radiobutton" id="$PARAM[id]">
+				<width>$PARAM[width]</width>
+				<height>142</height>
+				<align>center</align>
+				<aligny>top</aligny>
+				<texturefocus border="21" colordiffuse="button_focus">buttons/button-fo.png</texturefocus>
+				<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+				<textoffsetx>22</textoffsetx>
+				<textoffsety>82</textoffsety>
+				<radioposx>108</radioposx>
+				<radioposy>28</radioposy>
+				<radiowidth>48</radiowidth>
+				<font>font12</font>
+				<textureradioonfocus colordiffuse="D0FFFFFF">$PARAM[icon]</textureradioonfocus>
+				<textureradioonnofocus colordiffuse="D0FFFFFF">$PARAM[icon]</textureradioonnofocus>
+				<textureradioofffocus colordiffuse="D0FFFFFF">$PARAM[icon]</textureradioofffocus>
+				<textureradiooffnofocus colordiffuse="D0FFFFFF">$PARAM[icon]</textureradiooffnofocus>
+				<textureradiooffdisabled colordiffuse="disabled">$PARAM[icon]</textureradiooffdisabled>
+				<textureradioondisabled colordiffuse="disabled">$PARAM[icon]</textureradioondisabled>
+				<label>$PARAM[label]</label>
+				<visible>$PARAM[visible]</visible>
+				<animation effect="fade" start="100" end="0" time="300" delay="300">Hidden</animation>
+			</control>
+		</definition>
+	</include>
+
+</includes>

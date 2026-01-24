@@ -1,49 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">50</defaultcontrol>
-	<backgroundcolor>FF000000</backgroundcolor>
-	<menucontrol>9000</menucontrol>
+	<backgroundcolor>background</backgroundcolor>
+	<menucontrol>9001</menucontrol>
 	<controls>
-		<!-- Background -->
-		<control type="image">
-			<depth>-0.80</depth>
-			<left>0</left>
-			<top>0</top>
-			<width>100%</width>
-			<height>100%</height>
-			<aspectratio>scale</aspectratio>
-			<texture colordiffuse="FF0E597E">backgrounds/primary.jpg</texture>
-		</control>
-		<!-- Header -->
-		<control type="label">
-			<top>0</top>
-			<left>10</left>
-			<shadowcolor>22000000</shadowcolor>
-			<height>100</height>
-			<align>left</align>
-			<width>300</width>
-			<label>Ziggo/$LOCALIZE[19017]</label>
-		</control>
-		<control type="label">
-			<top>0</top>
-			<right>10</right>
-			<shadowcolor>22000000</shadowcolor>
-			<height>200</height>
-			<align>right</align>
-			<width>200</width>
-			<label>$INFO[System.Time]</label>
-		</control>
-		<control type="label">
-			<top>40</top>
-			<right>10</right>
-			<align>right</align>
-			<shadowcolor>22000000</shadowcolor>
-			<height>40</height>
-			<width>400</width>
-			<label>$INFO[System.Date]</label>
-		</control>
+		<include name="header">
+			<param name="breadcrumbstitle" value="Ziggo/$LOCALIZE[19017]"/>
+		</include>
 		<!-- Actual form -->
-
 		<control type="group">
 			<control type="group">
 				<control type="label" id="51">
@@ -70,7 +34,7 @@
 					<viewtype label="535">list</viewtype>
 <!--ListitemLayout-->
 					<itemlayout height="100" infoupdate="5000">
-						<control type="image">
+						<control type="image" id="501">
 							<left>29</left>
 							<top>5</top>
 							<width>32</width>
@@ -79,14 +43,23 @@
 							<visible>!ListItem.Property(IsPlayable) + !ListItem.Property(isDeleted)</visible>
 							<texture>icons/filemanager.png</texture>
 						</control>
-						<control type="image">
+						<control type="image" id ="502">
 							<left>29</left>
 							<top>5</top>
 							<width>32</width>
 							<height>32</height>
 							<aspectratio align="center">keep</aspectratio>
-							<visible>ListItem.Property(hasResumepoint) + !ListItem.Property(isDeleted)</visible>
+							<visible>ListItem.Property(hasResumepoint) + !ListItem.Property(isDeleted) + !ListItem.Property(isWatched)</visible>
 							<texture>icons/resume.png</texture>
+						</control>
+						<control type="image" id="503">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>!Control.IsVisible(501) + ListItem.Property(isWatched) + !ListItem.Property(isDeleted)</visible>
+							<texture>icons/enabled.png</texture>
 						</control>
 						<control type="image">
 							<left>29</left>
@@ -124,10 +97,10 @@
 							<top>0</top>
 							<right>0</right>
 							<animation effect="fade" start="100" end="0" time="0">UnFocus</animation>
-							<texture colordiffuse="FF12A0C7">lists/focus.png</texture>
+							<texture colordiffuse="button_focus">lists/focus.png</texture>
 							<visible>Control.HasFocus(50)</visible>
 						</control>
-						<control type="image">
+						<control type="image" id="501">
 							<left>29</left>
 							<top>5</top>
 							<width>32</width>
@@ -135,15 +108,24 @@
 							<aspectratio align="center">keep</aspectratio>
 							<visible>!ListItem.Property(IsPlayable) + !ListItem.Property(isDeleted)</visible>
 							<texture>icons/filemanager.png</texture>
-						</control>					
-						<control type="image">
+						</control>
+						<control type="image" id ="502">
 							<left>29</left>
 							<top>5</top>
 							<width>32</width>
 							<height>32</height>
 							<aspectratio align="center">keep</aspectratio>
-							<visible>ListItem.Property(hasResumepoint) + !ListItem.Property(isDeleted)</visible>
+							<visible>ListItem.Property(hasResumepoint) + !ListItem.Property(isDeleted) + !ListItem.Property(isWatched)</visible>
 							<texture>icons/resume.png</texture>
+						</control>
+						<control type="image" id="503">
+							<left>29</left>
+							<top>5</top>
+							<width>32</width>
+							<height>32</height>
+							<aspectratio align="center">keep</aspectratio>
+							<visible>!Control.IsVisible(501) + ListItem.Property(isWatched) + !ListItem.Property(isDeleted)</visible>
+							<texture>icons/enabled.png</texture>
 						</control>
 						<control type="image">
 							<left>29</left>
@@ -272,30 +254,7 @@
 <!--InfoPanel End-->
 				
 			</control>
-			<control type="button" id="9001">
-				<bottom>20</bottom>
-				<left>12</left>
-				<width>36</width>
-				<height>36</height>
-				<onup>50</onup>
-				<ondown>50</ondown>
-				<texturefocus colordiffuse="FF12A0C7">icons/menu-nofo.png</texturefocus>
-				<texturenofocus colordiffuse="FFCCCCCC">icons/menu-nofo.png</texturenofocus>
-				<animation effect="fade" time="200">VisibleChange</animation>
-				<onclick></onclick>
-				<visible>true</visible>
-			</control>
-			<control type="button" id="9002">
-				<bottom>16</bottom>
-				<left>64</left>
-				<width>300</width>
-				<height>44</height>
-				<shadowcolor>22000000</shadowcolor>
-				<label>$LOCALIZE[33063]</label>
-				<onclick></onclick>
-				<texturefocus />
-				<texturenofocus />
-			</control>
 		</control>
+		<include name="footer"/>
 	</controls>
 </window>

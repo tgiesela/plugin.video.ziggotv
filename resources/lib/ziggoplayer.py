@@ -15,6 +15,7 @@ class ZiggoPlayer(xbmc.Player):
         self.prePadding = None
         xbmc.log("ZIGGOPLAYER CREATED", xbmc.LOGDEBUG)
         self.replay = False
+        self.stop_callback = None
         self.keymap: ZiggoKeyMap = None
 
     def __del__(self):
@@ -36,9 +37,10 @@ class ZiggoPlayer(xbmc.Player):
             xbmc.log("ZIGGOPLAYER STOPPED item ", xbmc.LOGDEBUG)
             self.item = None
 
-        if self.keymap is not None:
-            self.keymap.deactivate()
-            self.keymap = None
+        # if self.keymap is not None:
+        #     self.keymap.deactivate()
+        #     self.keymap = None
+        self.stop_callback()
         xbmc.log("ZIGGOPLAYER STOPPED", xbmc.LOGDEBUG)
 
     def onPlayBackPaused(self) -> None:
@@ -52,9 +54,10 @@ class ZiggoPlayer(xbmc.Player):
 
     def onPlayBackEnded(self) -> None:
         xbmc.log("ZIGGOPLAYER PLAYBACKENDED", xbmc.LOGDEBUG)
-        if self.keymap is not None:
-            self.keymap.deactivate()
-            self.keymap = None
+        self.stop_callback()
+        # if self.keymap is not None:
+        #     self.keymap.deactivate()
+        #     self.keymap = None
 
     def onAVChange(self) -> None:
         xbmc.log("ZIGGOPLAYER AVCHANGE", xbmc.LOGDEBUG)
@@ -84,13 +87,22 @@ class ZiggoPlayer(xbmc.Player):
         """
         self.item = item
 
-    def set_keymap(self, keymap: ZiggoKeyMap):
+    # def set_keymap(self, keymap: ZiggoKeyMap):
+    #     """
+    #     Function to set the keymap. The player will activate/deactive when video stop/starts
+        
+    #     :param self: 
+    #     :param keymap: keymap object
+    #     :type keymap: ZiggoKeyMap
+    #     """
+    #     self.keymap = keymap
+    #     self.keymap.activate()
+
+    def set_stop_callback(self, callback):
         """
-        Function to set the keymap. The player will activate/deactive when video stop/starts
+        Function to set a callback function that will be called when playback stops
         
         :param self: 
-        :param keymap: keymap object
-        :type keymap: ZiggoKeyMap
+        :param callback: callback function
         """
-        self.keymap = keymap
-        self.keymap.activate()
+        self.stop_callback = callback

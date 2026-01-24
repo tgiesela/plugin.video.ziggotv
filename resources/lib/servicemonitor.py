@@ -187,6 +187,9 @@ class ServiceMonitor(xbmc.Monitor):
             return
         xbmc.log("SERVICEMONITOR Notification: {0},{1},{2}".format(sender, method, data), xbmc.LOGDEBUG)
 
+    def onSettingsChanged(self):
+        return super().onSettingsChanged()
+    
     def shutdown(self):
         """
         Function to shut down the service

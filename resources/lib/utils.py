@@ -588,6 +588,8 @@ class ZiggoKeyMap:
         Function to deactivate the keymap for our plugin
         :param self: 
         """
+        if not os.path.exists(self.activefilename):
+            return
         self.remove(self.activefilename)
         xbmc.executebuiltin('Action(reloadkeymaps)', True)
         xbmc.log('Keymap deactivated and reloaded', xbmc.LOGDEBUG)

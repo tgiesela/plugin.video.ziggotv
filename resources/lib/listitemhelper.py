@@ -174,6 +174,8 @@ class ListitemHelper:
         resumePoint = self.savedStateList.get(recording.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
+            if resumePoint/float(recording.duration) > 0.95:
+                li.setProperty('isWatched','true')
         else:
             li.setProperty('hasResumepoint','false')
 
@@ -484,6 +486,8 @@ class ListitemHelper:
         resumePoint = self.savedStateList.get(movie.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
+            if resumePoint/float(movie.asset.duration) > 0.95:
+                li.setProperty('isWatched','true')
         else:
             li.setProperty('hasResumepoint','false')
 
@@ -493,6 +497,8 @@ class ListitemHelper:
         resumePoint = self.savedStateList.get(episode.id)
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
+            if resumePoint/float(episode.source.duration) > 0.95:
+                li.setProperty('isWatched','true')
         else:
             li.setProperty('hasResumepoint','false')
 
