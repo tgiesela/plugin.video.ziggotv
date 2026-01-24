@@ -193,9 +193,13 @@ class SeasonRecording:
         if 'seasons' in recordingJson:
             self.seasons = recordingJson['seasons']
 
-        if self.type == 'season':
-            self.seasonTitle = recordingJson['seasonTitle']
-            self.showId = recordingJson['showId']
+        if self.type in ['season','show']:
+            self.seasonTitle = None
+            if 'seasonTitle' in recordingJson:
+                self.seasonTitle = recordingJson['seasonTitle']
+            self.showId = None
+            if 'showId' in recordingJson:
+                self.showId = recordingJson['showId']
             self.minimumAge = 0
             if 'minimumAge' in recordingJson:
                 self.minimumAge = recordingJson['minimumAge']
@@ -346,7 +350,7 @@ class RecordingList:
                 season = SeasonRecording(data, recordingtype)
                 self.recs.append(season)
             elif data['type'] == 'single':
-                if data['recordingState'] == 'planned':
+                if data['recordingState'] == RecordingType.PLANNED.name.lower():
                     recPlanned = PlannedRecording(data)
                     self.recs.append(recPlanned)
                 else:

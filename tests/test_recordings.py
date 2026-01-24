@@ -7,6 +7,7 @@ from resources.lib.channel import ChannelList, Channel
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.recording import RecordingList, SingleRecording, SeasonRecording, PlannedRecording
+from resources.lib.webcalls import LoginSession
 from tests.test_base import TestBase
 import xbmcgui
 import xbmc
@@ -115,6 +116,29 @@ class TestRecordings(TestBase):
                 li = listitemhelper.listitem_from_recording(rec)
                 print(li.getLabel())
             print(details)
+
+    def test_kanweg(self):
+        self.do_login()
+
+        self.session.refresh_recordings(True)
+        recordings_recorded: RecordingList = self.session.get_recordings_recorded()
+        recordings_planned: RecordingList = self.session.get_recordings_planned()
+
+        recording: SeasonRecording = None
+        for recording in recordings_recorded.get_season_recordings():
+            print(f'SHOW {recording.title} rectype: {recording.type}\n')
+        recording: SingleRecording = None
+        for recording in recordings_recorded.get_recorded_recordings():
+            if isinstance(recording, (SingleRecording)):
+                print(f'SINGLE {recording.title} rectype: {recording.type}\n')
+            else:
+                for recording in recordings_planned.get_planned_recordings():
+                    if isinstance(recording, (SingleRecording)):
+                        print('NOT EXPECTED')
+                    else:
+                        print(f'PLANNED {recording.title} rectype: {recording.type}\n')
+
+
 
 if __name__ == '__main__':
     unittest.main()

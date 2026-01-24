@@ -221,7 +221,7 @@ class RecordingWindow(BaseWindow):
 
         choices.update({self.addon.getLocalizedString(S.MSG_DELETE): 'delete'})
 
-        if isinstance(recording, SeasonRecording) or recording.showId is not None:
+        if isinstance(recording, SeasonRecording):
             choices.update({self.addon.getLocalizedString(S.MSG_DELETE_SEASON): 'deleteseason'})
 
         choices.update({self.addon.getLocalizedString(S.BTN_CANCEL): 'cancel'})
@@ -252,14 +252,18 @@ class RecordingWindow(BaseWindow):
                                           2000)
             xbmc.log("Recording with id {0} deleted".format(id), xbmc.LOGDEBUG)
         elif action == 'deleteseason':
-            if recording.showId is not None:
+            if recording.type in ['season','show']:
+                if recording.showId is not None:
+                    showId = recording.showId
+                else:
+                    showId = recording.id
                 if self.recordingfilter == SharedProperties.TEXTID_GEPLAND:
                     self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                        show=recording.showId,
+                                        show=showId,
                                         channelId=recording.channelId)
                 else:
                     self.helper.dynamic_call(LoginSession.delete_recordings,
-                                        show=recording.showId,
+                                        show=showId,
                                         channelId=recording.channelId)
                 li.setLabel(f'[COLOR red]{li.getLabel()}[/COLOR]')
                 li.setProperty('isDeleted', 'true')
