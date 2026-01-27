@@ -154,7 +154,18 @@ class ListitemHelper:
 
         return li
 
-    def __addrecordingproperties(self, li: xbmcgui.ListItem, recording: Recording):
+    def updateresumepointinfo(self, li: xbmcgui.ListItem, id, duration):
+        self.savedStateList.reload()
+        resumePoint = self.savedStateList.get(id)
+        li.setProperty('isWatched','false')
+        if resumePoint is not None:
+            li.setProperty('hasResumepoint','true')
+            if resumePoint/float(duration) > 0.95:
+                li.setProperty('isWatched','true')
+        else:
+            li.setProperty('hasResumepoint','false')
+
+    def __updaterecordingproperties(self, li: xbmcgui.ListItem, recording: Recording):
         li.setProperty('isrecording','true')
         li.setProperty('typeofrecording',recording.recordingState)
 
@@ -170,14 +181,7 @@ class ListitemHelper:
         li.setProperty('recEventDuration', str(endTime-startTime))
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         tag.setDuration(recording.duration)  # in seconds
-        self.savedStateList.reload()
-        resumePoint = self.savedStateList.get(recording.id)
-        if resumePoint is not None:
-            li.setProperty('hasResumepoint','true')
-            if resumePoint/float(recording.duration) > 0.95:
-                li.setProperty('isWatched','true')
-        else:
-            li.setProperty('hasResumepoint','false')
+        self.updateresumepointinfo(li, recording.id, recording.duration)
 
     def listitem_from_recording(self, recording: Recording) -> xbmcgui.ListItem:
         """
@@ -246,7 +250,7 @@ class ListitemHelper:
         tag.setPlot(recording.synopsis)
         tag.setPlotOutline(recording.synopsis)
 
-        self.__addrecordingproperties(li, recording)
+        self.__updaterecordingproperties(li, recording)
 
         return li
 
@@ -482,25 +486,11 @@ class ListitemHelper:
 
     def __addmovieproperties(self, li: xbmcgui.ListItem, movie: Movie):
         li.setProperty('isMovie','true')
-        self.savedStateList.reload()
-        resumePoint = self.savedStateList.get(movie.id)
-        if resumePoint is not None:
-            li.setProperty('hasResumepoint','true')
-            if resumePoint/float(movie.asset.duration) > 0.95:
-                li.setProperty('isWatched','true')
-        else:
-            li.setProperty('hasResumepoint','false')
+        self.updateresumepointinfo(li, movie.id, movie.asset.duration)
 
     def __addepisodeproperties(self, li: xbmcgui.ListItem, episode: Episode):
         li.setProperty('isEpisode','true')
-        self.savedStateList.reload()
-        resumePoint = self.savedStateList.get(episode.id)
-        if resumePoint is not None:
-            li.setProperty('hasResumepoint','true')
-            if resumePoint/float(episode.source.duration) > 0.95:
-                li.setProperty('isWatched','true')
-        else:
-            li.setProperty('hasResumepoint','false')
+        self.updateresumepointinfo(li, episode.id, episode.asset.duration)
 
     def listitem_from_movie(self, item:Movie):
         """

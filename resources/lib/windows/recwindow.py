@@ -37,6 +37,7 @@ class RecordingWindow(BaseWindow):
         self.inseason = False
         self.thread: threading.Thread = None
         self.recordingfilter = None
+        self.playing_listitem = None
 
     def onInit(self):
         xbmc.sleep(100)
@@ -68,6 +69,7 @@ class RecordingWindow(BaseWindow):
         :param recording: the recording to monitor
         :type recording: SingleRecording
         """
+        self.videoHelper.requestor_callback_stop = self.play_stopped
         self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(recording.id,))
         self.thread.start()
 
@@ -82,6 +84,21 @@ class RecordingWindow(BaseWindow):
             self.thread.join()
             self.thread = None
 
+    def play_stopped(self):
+        self.videoHelper.requestor_callback_stop = None
+        if self.playing_listitem is not None:
+            recording = self.listitemHelper.findrecording(self.playing_listitem, self.recordings, self.recordingfilter)
+            self.listitemHelper.updateresumepointinfo(self.playing_listitem, 
+                                                      recording.id,
+                                                      recording.duration)
+        self.stop_monitor()
+    
+    def play_recording(self, recording, resumePoint, listitem):
+        self.stop_monitor()
+        self.playing_listitem = listitem
+        self.videoHelper.play_recording(recording, resumePoint)
+        self.start_monitor(recording)
+
     def onClick(self, controlId):
         # pylint: disable=no-member
         super().onClick(controlId)
@@ -93,9 +110,7 @@ class RecordingWindow(BaseWindow):
                 if isinstance(recording, SingleRecording):
                     self.videoHelper = VideoHelpers(self.addon)
                     resumePoint = self.videoHelper.get_resume_point(recording.id)
-                    self.stop_monitor()
-                    self.videoHelper.play_recording(recording, resumePoint)
-                    self.start_monitor(recording)
+                    self.play_recording(recording=recording, resumePoint=resumePoint, listitem=li)
                 elif isinstance(recording, SeasonRecording):
                     self.showseasonrecordings(recording)
 
@@ -230,9 +245,9 @@ class RecordingWindow(BaseWindow):
 
         action = choices[choicesList[selected]]
         if action == 'playbeginning':
-            self.videoHelper.play_recording(recording, resumePoint)
+            self.play_recording(recording, resumePoint, li)
         elif action == 'resume':
-            self.videoHelper.play_recording(recording, resumePoint)
+            self.play_recording(recording, resumePoint, li)
         elif action == 'delete':
             if self.recordingfilter == SharedProperties.TEXTID_GEPLAND:
                 self.helper.dynamic_call(LoginSession.delete_recordings_planned,

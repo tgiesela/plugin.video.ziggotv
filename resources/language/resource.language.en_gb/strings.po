@@ -217,3 +217,7 @@ msgstr "Sort by"
 msgctxt "#40036"
 msgid "Recently played channels"
 msgstr "Recently played channels"
+
+msgctxt "#40037"
+msgid "Cannot watch this channel now. Not available yet."
+msgstr ""

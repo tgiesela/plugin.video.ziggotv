@@ -40,7 +40,8 @@ class ZiggoPlayer(xbmc.Player):
         # if self.keymap is not None:
         #     self.keymap.deactivate()
         #     self.keymap = None
-        self.stop_callback()
+        if self.stop_callback is not None:
+            self.stop_callback()
         xbmc.log("ZIGGOPLAYER STOPPED", xbmc.LOGDEBUG)
 
     def onPlayBackPaused(self) -> None:
@@ -54,7 +55,8 @@ class ZiggoPlayer(xbmc.Player):
 
     def onPlayBackEnded(self) -> None:
         xbmc.log("ZIGGOPLAYER PLAYBACKENDED", xbmc.LOGDEBUG)
-        self.stop_callback()
+        if self.stop_callback is not None:
+            self.stop_callback()
         # if self.keymap is not None:
         #     self.keymap.deactivate()
         #     self.keymap = None

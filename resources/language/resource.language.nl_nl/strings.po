@@ -218,3 +218,7 @@ msgstr "Sorteer op"
 msgctxt "#40036"
 msgid "Recently played channels"
 msgstr "Recent gespeelde zenders"
+
+msgctxt "#40037"
+msgid "Cannot watch this channel now. Not available yet."
+msgstr "Kan dit nog niet bekijken. Nog niet beschikbaar."

@@ -115,6 +115,7 @@ class MovieWindow(BaseWindow):
         :param self: 
         :param itemId: The id of the item to be monitored
         """
+        self.videoHelper.requestor_callback_stop = self.play_stopped
         self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(itemId,))
         self.thread.start()
 
@@ -129,7 +130,16 @@ class MovieWindow(BaseWindow):
             self.thread.join()
             self.thread = None
 
-    def __play_movie(self, li: xbmcgui.ListItem):
+    def play_stopped(self):
+        self.videoHelper.requestor_callback_stop = None
+        if self.playing_listitem is not None:
+            vod = self.__get_episode_or_movie(self.playing_listitem)
+            self.listitemHelper.updateresumepointinfo(self.playing_listitem,
+                                                      vod.id,
+                                                      vod.asset.duration)
+        self.stop_monitor()
+
+    def __get_episode_or_movie(self, li: xbmcgui.ListItem):
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         movieid = tag.getUniqueID('ziggomovieid')
         episodeid = tag.getUniqueID('ziggoepisodeid')
@@ -141,9 +151,13 @@ class MovieWindow(BaseWindow):
             vod:Episode = season.find_episode(episodeid)
         else:
             vod: Movie = self.movies.find_movie(movieid)
+        return vod
 
+    def __play_movie(self, li: xbmcgui.ListItem):
+        vod = self.__get_episode_or_movie(li)
         resumePoint = self.videoHelper.get_resume_point(vod.id)
         self.stop_monitor()
+        self.playing_listitem = li
         self.videoHelper.play_movie(vod, resumePoint)
         self.start_monitor(vod.id)
 
@@ -375,6 +389,9 @@ class MovieWindow(BaseWindow):
                 self.currentseasonId = tag.getUniqueID('ziggoseasonid')
                 self.__list_episodes()
             else:
+                if li.getProperty('AvailableAfter') is not None:
+                    xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH_YET))
+                    return 
                 if li.getProperty('isPlayable') == 'false':
                     xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
                     return

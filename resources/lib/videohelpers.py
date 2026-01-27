@@ -84,6 +84,8 @@ class VideoHelpers:
         # Used for updating events when playing a live channel
         self.updateeventsignal: utils.TimeSignal = None
         self.currentchannel = None
+        # This can be set to call a function when the videoplayer stops
+        self.requestor_callback_stop = None
 
     def user_wants_switch(self):
         """
@@ -134,10 +136,10 @@ class VideoHelpers:
         self.player.set_item(item)
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
+        # Request ziggoplayer to call our function when it stops
+        self.player.set_stop_callback(self.player_stopped)
         if activateKeymap:
-            self.player.set_stop_callback(self.player_stopped)
             self.keymap.activate()
-#            self.player.set_keymap(self.keymap)
 
     def __add_event_info(self, playItem: xbmcgui.ListItem, channel: Channel, event: Event):
         if event is not None:
@@ -419,10 +421,15 @@ class VideoHelpers:
         Callback function that is called when playback stops
         """
         xbmc.log("VIDEOHELPER player_stopped callback called", xbmc.LOGDEBUG)
+        if self.player is not None:
+            self.player.set_stop_callback(None)
         self.__stop_updateeventsignal()
         self.currentchannel = None
         if self.keymap is not None:
             self.keymap.deactivate()
+        # if our requestor wants to be informed when player stops, tell them
+        if self.requestor_callback_stop is not None:
+            self.requestor_callback_stop()
 
     def play_movie(self, movie: Union[Movie,Episode], resumePoint) -> xbmcgui.ListItem:
         """
