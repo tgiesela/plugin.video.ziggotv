@@ -126,7 +126,8 @@ class TestBase(unittest.TestCase):
         self.cleanup_savechannelstates()
 
     def do_login(self):
-        with open('c:/temp/credentials.json', 'r', encoding='utf-8') as credfile:
+        
+        with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
             credentials = json.loads(credfile.read())
         self.session.login(credentials['username'], credentials['password'])
         self.assertFalse(len(self.session.customerInfo) == 0)

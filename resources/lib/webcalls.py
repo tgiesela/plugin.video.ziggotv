@@ -1123,6 +1123,27 @@ class LoginSession(Web):
         if 'shortSynopsis' in seasonRecordings:
             recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
 
+    def __extract_seasons_from_planned(self, planned):
+        seasons = {'data': []}
+        for data in planned['data']:
+            if 'type' in data and data['type'] in ['season','show']:
+                seasons['data'].append(data)
+        return seasons
+
+    def __process_recorded(self, recorded, planned):
+        seasons = self.__extract_seasons_from_planned(planned)
+        for data in recorded['data']:
+            if data['type'] == 'single':
+                if data['source'] == 'show':
+                    searchId = data['showId']
+                else:
+                    searchId = data['seasonId']
+                for season in seasons['data']:
+                    if 'showId' in season and season['showId'] == searchId:
+                        recorded['data'].append(season)
+                        recorded['data'].remove(data)
+        return recorded
+    
     def refresh_recordings(self, includeAdult=False):
         """
         Routine to (re)load the recordings.
@@ -1132,27 +1153,27 @@ class LoginSession(Web):
         """
         recJson = {'planned': [], 'recorded': []}
         recordingsPlanned = self.__get_recordings_planned(isAdult=False)
-        for recording in recordingsPlanned['data']:
-            if recording['type'] in ['season','show']:
-                self.__update_recording_season(recording, 'booking')
         if includeAdult:
             adultRecordingsPlanned = self.__get_recordings_planned(isAdult=True)
-            for recording in adultRecordingsPlanned['data']:
-                if recording['type'] in ['season','show']:
-                    self.__update_recording_season(recording,'booking')
             recordingsPlanned['data'].extend(adultRecordingsPlanned['data'])
-        recJson.update({'planned': recordingsPlanned})
+
         recordings = self.__get_recordings_recorded(isAdult=False)
+        if includeAdult:
+            adultRecordings = self.__get_recordings_recorded(isAdult=True)
+            recordings['data'].extend(adultRecordings['data'])
+
+        recordings = self.__process_recorded(recordings, recordingsPlanned)
+
+        for recording in recordingsPlanned['data']:
+            if recording['type'] in ['season','show']:
+                self.__update_recording_season(recording,'booking')
+        recJson.update({'planned': recordingsPlanned})
+
         for recording in recordings['data']:
             if recording['type'] in ['season','show']:
                 self.__update_recording_season(recording,'recording')
-        if includeAdult:
-            adultRecordings = self.__get_recordings_recorded(isAdult=True)
-            for recording in adultRecordings['data']:
-                if recording['type'] in ['season','show']:
-                    self.__update_recording_season(recording,'recording')
-            recordings['data'].extend(adultRecordings['data'])
         recJson.update({'recorded': recordings})
+
         Path(self.pluginpath(G.RECORDINGS_INFO)).write_text(json.dumps(recJson), encoding='utf-8')
 
     def get_recordings_planned(self) -> RecordingList:

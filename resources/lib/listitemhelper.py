@@ -16,7 +16,7 @@ from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.globals import S, G, CONST_BASE_HEADERS
 from resources.lib.movies import Movie, Series, Season, Episode, OfferType
-from resources.lib.recording import Recording, RecordingList, SavedStateList, \
+from resources.lib.recording import Recording, RecordingList, RecordingType, SavedStateList, \
     SingleRecording, SeasonRecording, PlannedRecording
 from resources.lib.utils import ProxyHelper, SharedProperties
 from resources.lib.webcalls import LoginSession
@@ -261,7 +261,11 @@ class ListitemHelper:
         @param recType: the type of recording (planned|recorded)
         @return: listitem
         """
-        description = f'{recording.nrofepisodes}/{len(recording.episodes)} {self.addon.getLocalizedString(S.MSG_EPISODES)}'
+        if recording.recordingtype == RecordingType.PLANNED:
+            count = len(recording.get_episodes('planned'))
+        else:
+            count = len(recording.get_episodes('recorded'))
+        description = f'{count}/{len(recording.episodes)} {self.addon.getLocalizedString(S.MSG_EPISODES)}'
         title = "{0} ({1})".format(recording.title, description)
         li = xbmcgui.ListItem(label=title)
         thumbname = xbmc.getCacheThumbName(recording.poster.url)
