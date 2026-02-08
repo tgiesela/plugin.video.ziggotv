@@ -85,7 +85,7 @@ class VideoHelpers:
         self.updateeventsignal: utils.TimeSignal = None
         self.currentchannel = None
         # This can be set to call a function when the videoplayer stops
-        self.requestor_callback_stop = None
+        self.requestorCallbackStop = None
 
     def user_wants_switch(self):
         """
@@ -160,6 +160,7 @@ class VideoHelpers:
                 tag.setEpisode(event.details.episode)
                 tag.setSeason(event.details.season)
             tag.setArtists(event.details.actors)
+            tag.setDuration(event.duration)
             genres = []
             for genre in event.details.genres:
                 genres.append(genre)
@@ -178,14 +179,6 @@ class VideoHelpers:
         @param event:
         @return:
         """
-        # if event is not None:
-        #     title = event.title
-        # else:
-        #     title = ''
-
-        # if self.player is None:
-        #     return
-
         item: xbmcgui.ListItem = self.player.getPlayingItem()
         self.__add_event_info(item, channel, event)
 
@@ -428,8 +421,8 @@ class VideoHelpers:
         if self.keymap is not None:
             self.keymap.deactivate()
         # if our requestor wants to be informed when player stops, tell them
-        if self.requestor_callback_stop is not None:
-            self.requestor_callback_stop()
+        if self.requestorCallbackStop is not None:
+            self.requestorCallbackStop()
 
     def play_movie(self, movie: Union[Movie,Episode], resumePoint) -> xbmcgui.ListItem:
         """
@@ -534,7 +527,7 @@ class VideoHelpers:
             try:
                 self.updateeventsignal.join()
             except RuntimeError:
-                xbmc.log('Failed to join thread of current timer', xbmc.LOGERROR)
+                xbmc.log('Failed to join thread of current timer', xbmc.LOGDEBUG)
         self.updateeventsignal = None
 
     def __del__(self):

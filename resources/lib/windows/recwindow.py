@@ -7,13 +7,12 @@ import xbmc
 import xbmcgui
 import xbmcaddon
 
-from resources.lib.channel import ChannelList, SavedChannelsList
+from resources.lib.channel import ChannelList
 from resources.lib.globals import S
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import PlannedRecording, Recording, RecordingList, SavedStateList, SeasonRecording, SingleRecording
+from resources.lib.recording import PlannedRecording, Recording, RecordingList, RecordingType, \
+                                    SavedStateList, SeasonRecording, SingleRecording
 from resources.lib.utils import ProxyHelper, SharedProperties
-from resources.lib.videohelpers import VideoHelpers
-from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import BaseWindow
 
 class RecordingWindow(BaseWindow):
@@ -28,18 +27,20 @@ class RecordingWindow(BaseWindow):
         self.addon = addon
         self.helper = ProxyHelper(self.addon)
         self.listitemHelper = ListitemHelper(self.addon)
-        self.videoHelper = VideoHelpers(self.addon)
         self.pos = -1
         self.show()
         self.channels: ChannelList = None
-        self.savedchannelslist = SavedChannelsList(self.addon)
         self.recordings: RecordingList = None
         self.inseason = False
         self.thread: threading.Thread = None
         self.recordingfilter = None
-        self.playing_listitem = None
+        self.playingListitem = None
+        self.recordingtype = RecordingType.RECORDED
 
     def onInit(self):
+        # We will only get recordings the first time we show the window,
+        self.recordings = RecordingList(self.addon)
+        self.recordings.refresh()
         xbmc.sleep(100)
 
     def onAction(self, action: xbmcgui.Action):
@@ -47,8 +48,10 @@ class RecordingWindow(BaseWindow):
         # pylint: disable=no-member
         pos = listbox.getSelectedPosition()
         if pos != self.pos:
-            self.listitemHelper.update_recording_details(listbox.getSelectedItem(), self.recordings, self.recordingfilter)
-            self.pos = pos
+            li = listbox.getSelectedItem()
+            if li is not None:
+                self.listitemHelper.update_recording_details(li, self.recordings, self.recordingtype)
+                self.pos = pos
 
         if action.getId() == xbmcgui.ACTION_STOP:
             xbmc.log('Window onAction STOP', xbmc.LOGDEBUG)
@@ -69,7 +72,7 @@ class RecordingWindow(BaseWindow):
         :param recording: the recording to monitor
         :type recording: SingleRecording
         """
-        self.videoHelper.requestor_callback_stop = self.play_stopped
+        self.videoHelper.requestorCallbackStop = self.play_stopped
         self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(recording.id,))
         self.thread.start()
 
@@ -81,21 +84,29 @@ class RecordingWindow(BaseWindow):
         """
         if self.thread is not None:
             self.videoHelper.stop_player()
-            self.thread.join()
-            self.thread = None
+            if self.thread is not None:
+                self.thread.join()
+                self.thread = None
 
     def play_stopped(self):
-        self.videoHelper.requestor_callback_stop = None
-        if self.playing_listitem is not None:
-            recording = self.listitemHelper.findrecording(self.playing_listitem, self.recordings, self.recordingfilter)
-            self.listitemHelper.updateresumepointinfo(self.playing_listitem, 
+        """
+        Method to stop playing, called when the player is stopped, to save the current position of the recording
+        Also used as callback for the videoHelper to stop the monitoring when the player is stopped from outside 
+        of this window (e.g. from the player itself)
+        
+        :param self: Description
+        """
+        self.videoHelper.requestorCallbackStop = None
+        if self.playingListitem is not None:
+            recording = self.listitemHelper.findrecording(self.playingListitem, self.recordings, self.recordingtype)
+            self.listitemHelper.updateresumepointinfo(self.playingListitem,
                                                       recording.id,
                                                       recording.duration)
         self.stop_monitor()
-    
-    def play_recording(self, recording, resumePoint, listitem):
+
+    def __play_recording(self, recording, resumePoint, listitem):
         self.stop_monitor()
-        self.playing_listitem = listitem
+        self.playingListitem = listitem
         self.videoHelper.play_recording(recording, resumePoint)
         self.start_monitor(recording)
 
@@ -105,12 +116,11 @@ class RecordingWindow(BaseWindow):
         if controlId == self.LISTBOX:
             listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX)
             li = listbox.getSelectedItem()
-            recording = self.listitemHelper.findrecording(li, self.recordings, self.recordingfilter)
+            recording = self.listitemHelper.findrecording(li, self.recordings, self.recordingtype)
             if recording is not None:
                 if isinstance(recording, SingleRecording):
-                    self.videoHelper = VideoHelpers(self.addon)
                     resumePoint = self.videoHelper.get_resume_point(recording.id)
-                    self.play_recording(recording=recording, resumePoint=resumePoint, listitem=li)
+                    self.__play_recording(recording=recording, resumePoint=resumePoint, listitem=li)
                 elif isinstance(recording, SeasonRecording):
                     self.showseasonrecordings(recording)
 
@@ -134,15 +144,10 @@ class RecordingWindow(BaseWindow):
 
         # Iterate through recordings
         recording: Recording = None
-        if self.recordingfilter == SharedProperties.TEXTID_RECORDED:
-            rectype = 'recorded' # 40032
-        else:
-            rectype = 'planned'
-        for recording in seasonrecording.get_episodes(rectype):
-#            rec = self.__findrecording(recording.id)
+        for recording in seasonrecording.get_episodes(self.recordingtype):
             li = self.listitemHelper.listitem_from_recording(recording)
             listing.append(li)
-        
+
         # Apply sorting
         sortby, sortorder = self.sharedproperties.get_sort_options_recordings()
         self.recordings.sort_listitems(listing, sortby, sortorder)
@@ -166,22 +171,21 @@ class RecordingWindow(BaseWindow):
         # Create a list for our items.
         listbox.reset()
         listing = []
-        self.helper.dynamic_call(LoginSession.refresh_recordings,
-                                 includeAdult=self.addon.getSettingBool('adult-allowed'))
+        self.recordings: RecordingList = RecordingList(self.addon)
         if self.recordingfilter == SharedProperties.TEXTID_RECORDED:
-            self.recordings: RecordingList = self.helper.dynamic_call(LoginSession.get_recordings_recorded)
+            self.recordingtype = RecordingType.RECORDED
             typelabel.setLabel(f'[B]{self.addon.getLocalizedString(SharedProperties.TEXTID_RECORDED)}[/B]')
         else:
-            self.recordings: RecordingList = self.helper.dynamic_call(LoginSession.get_recordings_planned)
+            self.recordingtype = RecordingType.PLANNED
             typelabel.setLabel(f'[B]{self.addon.getLocalizedString(SharedProperties.TEXTID_GEPLAND)}[/B]')
 
-        # Iterate through recoordings
+        # Iterate through recordings
         recording: SeasonRecording = None
-        for recording in self.recordings.get_season_recordings():
+        for recording in self.recordings.get_season_recordings(self.recordingtype):
             li = self.listitemHelper.listitem_from_recording_season(recording)
             listing.append(li)
         recording: SingleRecording = None
-        if self.recordingfilter == SharedProperties.TEXTID_RECORDED:
+        if self.recordingtype == RecordingType.RECORDED:
             for recording in self.recordings.get_recorded_recordings():
                 if isinstance(recording, (SingleRecording)):
                     li = self.listitemHelper.listitem_from_recording(recording)
@@ -197,7 +201,7 @@ class RecordingWindow(BaseWindow):
         self.recordings.sort_listitems(listing, sortby, sortorder)
         listbox.addItems(listing)
         listbox.selectItem(0)
-        self.listitemHelper.update_recording_details(listbox.getSelectedItem(), self.recordings, self.recordingfilter)
+        self.listitemHelper.update_recording_details(listbox.getSelectedItem(), self.recordings, self.recordingtype)
         self.setFocusId(self.LISTBOX)
 
     def show_context_menu(self):
@@ -217,7 +221,7 @@ class RecordingWindow(BaseWindow):
         #  3:   SeasonRecording (Planned/recorded)
         #       deleteseason (if applicable)
 
-        recording = self.listitemHelper.findrecording(li, self.recordings, self.recordingfilter)
+        recording = self.listitemHelper.findrecording(li, self.recordings, self.recordingtype)
         if recording is None:
             xbmc.log('Recording not found while processing context menu', xbmc.LOGDEBUG)
             return
@@ -245,48 +249,25 @@ class RecordingWindow(BaseWindow):
 
         action = choices[choicesList[selected]]
         if action == 'playbeginning':
-            self.play_recording(recording, resumePoint, li)
+            self.__play_recording(recording, resumePoint, li)
         elif action == 'resume':
-            self.play_recording(recording, resumePoint, li)
+            self.__play_recording(recording, resumePoint, li)
         elif action == 'delete':
-            if self.recordingfilter == SharedProperties.TEXTID_GEPLAND:
-                self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                    event=recording.id,
-                                    show=None,
-                                    channelId=recording.channelId)
-            else:
-                self.helper.dynamic_call(LoginSession.delete_recordings,
-                                    event=recording.id,
-                                    show=None,
-                                    channelId=recording.channelId)
-            li.setLabel(f'[COLOR red]{li.getLabel()}[/COLOR]')
-            li.setProperty('isDeleted', 'true')
+            self.recordings.delete_recording(recording)
+            listctrl.removeItem(listctrl.getSelectedPosition())
+            self.recordings.refresh()
             xbmcgui.Dialog().notification('Info',
                                           self.addon.getLocalizedString(S.MSG_DELETE_RECORDING_COMPLETE),
                                           xbmcgui.NOTIFICATION_INFO,
                                           2000)
-            xbmc.log("Recording with id {0} deleted".format(id), xbmc.LOGDEBUG)
         elif action == 'deleteseason':
-            if recording.type in ['season','show']:
-                if recording.showId is not None:
-                    showId = recording.showId
-                else:
-                    showId = recording.id
-                if self.recordingfilter == SharedProperties.TEXTID_GEPLAND:
-                    self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                        show=showId,
-                                        channelId=recording.channelId)
-                else:
-                    self.helper.dynamic_call(LoginSession.delete_recordings,
-                                        show=showId,
-                                        channelId=recording.channelId)
-                li.setLabel(f'[COLOR red]{li.getLabel()}[/COLOR]')
-                li.setProperty('isDeleted', 'true')
-                xbmcgui.Dialog().notification('Info',
-                                      self.addon.getLocalizedString(S.MSG_DELETE_SEASON_COMPLETE),
-                                      xbmcgui.NOTIFICATION_INFO,
-                                      2000)
-                xbmc.log("Recording of complete show with id {0} deleted".format(recording.showId), xbmc.LOGDEBUG)
+            self.recordings.delete_season_recording(recording)
+            listctrl.removeItem(listctrl.getSelectedPosition())
+            self.recordings.refresh()
+            xbmcgui.Dialog().notification('Info',
+                                    self.addon.getLocalizedString(S.MSG_DELETE_SEASON_COMPLETE),
+                                    xbmcgui.NOTIFICATION_INFO,
+                                    2000)
         elif action == 'cancel':
             pass
 

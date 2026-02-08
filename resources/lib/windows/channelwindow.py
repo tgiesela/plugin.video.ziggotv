@@ -8,7 +8,6 @@ import xbmcaddon
 from resources.lib.channel import Channel, ChannelList, SavedChannelsList
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.utils import ProxyHelper
-from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import BaseWindow
 
@@ -23,7 +22,6 @@ class ChannelWindow(BaseWindow):
         self.addon = addon
         self.helper = ProxyHelper(self.addon)
         self.listitemHelper = ListitemHelper(self.addon)
-        self.videoHelper = VideoHelpers(self.addon)
         self.pos = -1
         self.show()
         self.channels: ChannelList = None
@@ -44,14 +42,6 @@ class ChannelWindow(BaseWindow):
         if pos != self.pos:
             self.listitemHelper.update_event_details(listbox.getSelectedItem())
             self.pos = pos
-
-        if action.getId() == xbmcgui.ACTION_STOP:
-            xbmc.log('Window onAction STOP', xbmc.LOGDEBUG)
-            return
-
-        if action.getId() == xbmcgui.ACTION_PREVIOUS_MENU or action.getId() == xbmcgui.ACTION_NAV_BACK:
-            xbmc.log('Window onAction PREVIOUS or BACK', xbmc.LOGDEBUG)
-            return
 
     def onClick(self, controlId):
         super().onClick(controlId)

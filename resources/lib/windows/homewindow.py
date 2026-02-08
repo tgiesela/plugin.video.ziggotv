@@ -8,7 +8,6 @@ import xbmcaddon
 from resources.lib.channel import Channel, ChannelList, SavedChannelsList
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.utils import KeyMapMonitor, ProxyHelper, check_service
-from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import BaseWindow
 from resources.lib.windows.channelwindow import load_channelwindow
@@ -37,13 +36,13 @@ class HomeWindow(BaseWindow):
         self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
         self.channellist:ChannelList = ChannelList(self.channels,self.entitlements)
         self.listitemHelper:ListitemHelper = ListitemHelper(self.addon)
-        self.videoHelper:VideoHelpers = VideoHelpers(self.addon)
         self.keyboardmonitor:KeyMapMonitor = KeyMapMonitor(self.addon, self.switch_tochannel)
 
     def __del__(self):
         self.keyboardmonitor.waitForAbort(1)
         self.keyboardmonitor = None
         xbmc.log('HOMEWINDOW Destroyed', xbmc.LOGDEBUG)
+        super().__del__()
 
     def __get_current_channel(self):
         item: xbmcgui.ListItem = xbmc.Player().getPlayingItem()
@@ -174,3 +173,7 @@ def load_homewindow(addon: xbmcaddon.Addon):
     check_service(addon)
     window = HomeWindow('ziggohome.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
     window.doModal()
+    # Following is needed to stop any pending thrreads from the videoHelper which might prevent stopping Kodi
+    # after the window is closed
+    window.videoHelper.requestorCallbackStop = None
+    window.videoHelper.player_stopped()

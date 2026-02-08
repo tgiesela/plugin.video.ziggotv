@@ -262,9 +262,9 @@ class ListitemHelper:
         @return: listitem
         """
         if recording.recordingtype == RecordingType.PLANNED:
-            count = len(recording.get_episodes('planned'))
+            count = len(recording.get_episodes(RecordingType.PLANNED))
         else:
-            count = len(recording.get_episodes('recorded'))
+            count = len(recording.get_episodes(RecordingType.RECORDED))
         description = f'{count}/{len(recording.episodes)} {self.addon.getLocalizedString(S.MSG_EPISODES)}'
         title = "{0} ({1})".format(recording.title, description)
         li = xbmcgui.ListItem(label=title)
@@ -327,7 +327,7 @@ class ListitemHelper:
                 duration = time.strftime("%H:%M", time.gmtime(nextevent.duration))
                 li.setProperty('epgNextEventDuration', duration)
 
-    def findrecording(self, li: xbmcgui.ListItem, recordings: RecordingList, recfilter):
+    def findrecording(self, li: xbmcgui.ListItem, recordings: RecordingList, rectype: RecordingType):
         """
         Function to find a recording episode from the list of recordings
         
@@ -341,10 +341,6 @@ class ListitemHelper:
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         ziggoid = tag.getUniqueID('ziggoRecordingId')
         recording: Recording = None
-        if recfilter == SharedProperties.TEXTID_RECORDED:
-            rectype = 'recorded'
-        else:
-            rectype = 'planned'
 
         for recording in recordings.recs:
             if ziggoid == recording.id:
@@ -356,7 +352,7 @@ class ListitemHelper:
                         return episode
         return None
 
-    def update_recording_details(self, li: xbmcgui.ListItem, recordings: RecordingList, recfilter):
+    def update_recording_details(self, li: xbmcgui.ListItem, recordings: RecordingList, rectype: RecordingType):
         """
         function to update the details of the recording
         
@@ -367,7 +363,7 @@ class ListitemHelper:
         :type recordings: RecordingList
         :param recfilter: Description
         """
-        recording = self.findrecording(li, recordings, recfilter)
+        recording = self.findrecording(li, recordings, rectype)
         details = None
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         if isinstance(recording, (SingleRecording, PlannedRecording)):

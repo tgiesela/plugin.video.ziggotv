@@ -6,12 +6,15 @@ from enum import IntEnum
 import json
 import os
 import datetime
+from pathlib import Path
 
 import xbmcaddon
 import xbmcvfs
+import xbmc
 
 from resources.lib import utils
 from resources.lib.globals import G
+from resources.lib.webcalls import LoginSession
 
 
 @dataclasses.dataclass
@@ -160,8 +163,7 @@ class Recording:
         Returns True if the state of the Recording is recorded
         @return: True/False
         """
-        return self.recordingState == 'recorded'
-
+        return self.recordingState in ['recorded','ongoing']
 
 class SeasonRecording:
     """
@@ -230,7 +232,7 @@ class SeasonRecording:
             self.episodes = []
             self.showId = self.id
 
-    def get_episodes(self, recType):
+    def get_episodes(self, recType: RecordingType):
         """
 
         @param recType: one 'planned|recorded'
@@ -239,10 +241,10 @@ class SeasonRecording:
         retList = []
         episode: Recording = None
         for episode in self.episodes:
-            if recType == 'planned':
+            if recType == RecordingType.PLANNED:
                 if episode.recordingState == 'planned':
                     retList.append(episode)
-            elif recType in ['recorded', 'ongoing']:
+            else:
                 if episode.recordingState != 'planned':
                     retList.append(episode)
         return retList
@@ -308,18 +310,38 @@ class RecordingList:
     container class for a list of recordings of any type
     """
     # pylint: disable=too-few-public-methods
-    def __init__(self, recordingsJson=None, recordingtype:RecordingType=None):
+    def __init__(self, addon: xbmcaddon.Addon):
+        self.addon = addon
+        self.helper = utils.ProxyHelper(addon)
         self.recs = []
-        if recordingsJson is None:
-            self.total = 0
-            self.size = 0
-            self.quota = 0
-            self.occupied = 0
-            return
+        self.total = 0
+        self.quota = 0
+        self.size = 0
+        self.occupied = 0
+        self.recordingDetails = {}
 
-        self.total = recordingsJson['total']
-        self.size = recordingsJson['size']
-        self.quota = recordingsJson['quota']['quota']
+        self.file = xbmcvfs.translatePath(self.addon.getAddonInfo('profile')) + G.RECORDINGS_INFO
+        self.__load_and_parse()
+
+    def __load_and_parse(self):
+        """
+        function to load the recordings details from file and parse it to fill the recordings list
+        @return:
+        """
+        if Path(self.file).exists():
+            self.recs = []
+            self.total = 0
+            self.quota = 0
+            self.size = 0
+            recordings = json.loads(Path(self.file).read_text(encoding='utf-8'))
+            self.__parse(recordings['planned'], RecordingType.PLANNED)
+            self.__parse(recordings['recorded'], RecordingType.RECORDED)
+
+    def __parse(self, recordingsJson, recordingtype: str):
+
+        self.total += recordingsJson['total']
+        self.size += recordingsJson['size']
+        self.quota += recordingsJson['quota']['quota']
         self.occupied = recordingsJson['quota']['occupied']
         for data in recordingsJson['data']:
             if data['type'] in ['season', 'show']:
@@ -333,29 +355,31 @@ class RecordingList:
                     recSingle = SingleRecording(data)
                     self.recs.append(recSingle)
 
-    def append(self, recordingsJson, recordingtype=RecordingType.PLANNED|RecordingType.RECORDED):
+    def __save_recordings_details(self):
         """
-        function to append recordings received in a webcall
+        Function to save the captured details of a series
         
         :param self: 
-        :param recordingsJson: the received data containing recordings to append to the list
-        :param recordingtype: type of recordings, can either planned or recorded
         """
-        self.total += recordingsJson['total']
-        self.size += recordingsJson['size']
-        self.quota += recordingsJson['quota']['quota']
-        self.occupied += recordingsJson['quota']['occupied']
-        for data in recordingsJson['data']:
-            if data['type'] in ['season', 'show']:
-                season = SeasonRecording(data, recordingtype)
-                self.recs.append(season)
-            elif data['type'] == 'single':
-                if data['recordingState'] == RecordingType.PLANNED.name.lower():
-                    recPlanned = PlannedRecording(data)
-                    self.recs.append(recPlanned)
-                else:
-                    recSingle = SingleRecording(data)
-                    self.recs.append(recSingle)
+        Path(self.file).write_text(json.dumps(self.recordingDetails), encoding='utf-8')
+
+    def save(self):
+        """
+        Save all captured detailed information
+        
+        :param self: Description
+        """
+        self.__save_recordings_details()
+
+    def cleanup(self):
+        """
+        clean/remove all captured detailed information
+        
+        :param self: Description
+        """
+        self.recordingDetails = []
+        self.__save_recordings_details()
+        self.__load_and_parse()
 
     def find(self, eventId):
         """
@@ -382,20 +406,20 @@ class RecordingList:
         """
         plannedRecs = []
         for rec in self.recs:
-            if isinstance(rec, PlannedRecording):
+            if isinstance(rec, PlannedRecording) and rec.isPlanned:
                 recording: PlannedRecording = rec
                 if recording.isPlanned:
                     plannedRecs.append(recording)
         return plannedRecs
 
-    def get_recorded_recordings(self):
+    def get_recorded_recordings(self) -> list:
         """
         function to get all recorded recordings
         @return: list of recorded recordings
         """
         recordedRecs = []
         for rec in self.recs:
-            if isinstance(rec, SingleRecording):
+            if isinstance(rec, SingleRecording) and rec.isRecorded:
                 recording: SingleRecording = rec
                 if recording.isRecorded:
                     recordedRecs.append(recording)
@@ -420,7 +444,7 @@ class RecordingList:
                 allRecs.append(recording)
         return allRecs
 
-    def get_season_recordings(self):
+    def get_season_recordings(self, rectype: RecordingType):
         """
         function to get all season recordings, i.e. recordings of type SeasonRecording
         a season recording is a container for multiple recordings of a series/season
@@ -428,7 +452,7 @@ class RecordingList:
         """
         seasonRecs = []
         for rec in self.recs:
-            if isinstance(rec, SeasonRecording):
+            if isinstance(rec, SeasonRecording) and rec.recordingtype == rectype:
                 season: SeasonRecording = rec
                 seasonRecs.append(season)
         return seasonRecs
@@ -458,6 +482,75 @@ class RecordingList:
                 listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')))
             else:
                 listing.sort(key=lambda x: int(x.getVideoInfoTag().getUniqueID('ziggoRecordingId')), reverse=True)
+
+    def refresh(self):
+        """
+        function to refresh the recordings list by reloading the details from file and re-parsing it
+        @return:
+        """
+        recordings = self.helper.dynamic_call(LoginSession.refresh_recordings, includeAdult=self.addon.getSettingBool('adult-allowed'))
+        self.recordingDetails = recordings
+        self.__save_recordings_details()
+        self.__load_and_parse()
+
+    def delete_recording(self, plannedrec: Recording):
+        """
+        function to delete a recording
+        @param recording: the recording to delete
+        @return:
+         """
+        if plannedrec.isPlanned:
+            self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                    event=plannedrec.id,
+                                    show=None,
+                                    channelId=plannedrec.channelId)
+        else:
+            self.helper.dynamic_call(LoginSession.delete_recordings,
+                                    event=plannedrec.id,
+                                    show=None,
+                                    channelId=plannedrec.channelId)
+        for rec in self.recs:
+            if isinstance(rec, SeasonRecording):
+                season: SeasonRecording = rec
+                for seasonrec in season.episodes:
+                    if seasonrec.id == plannedrec.id:
+                        season.episodes.remove(seasonrec)
+                        xbmc.log("Episode with id {0} deleted".format(seasonrec.id), xbmc.LOGDEBUG)
+            elif isinstance(rec, SingleRecording):
+                plannedrec: SingleRecording = rec
+                if plannedrec.id == plannedrec.id:
+                    self.recs.remove(plannedrec)
+                    xbmc.log("Recording with id {0} deleted".format(seasonrec.id), xbmc.LOGDEBUG)
+            elif isinstance(rec, PlannedRecording):
+                plannedrec: PlannedRecording = rec
+                if plannedrec.id == plannedrec.id:
+                    self.recs.remove(plannedrec)
+                    xbmc.log("Planned recording with id {0} deleted".format(seasonrec.id), xbmc.LOGDEBUG)
+
+    def delete_season_recording(self, recording: SeasonRecording):
+        """
+        function to delete a season recording
+        @param recording: the season recording to delete
+        @return:
+        """
+        for rec in self.recs:
+            if isinstance(rec, SeasonRecording):
+                season: SeasonRecording = rec
+                if season.id == recording.id:
+                    if recording.showId is not None:
+                        showId = recording.showId
+                    else:
+                        showId = recording.id
+                    if season.recordingtype == RecordingType.PLANNED:
+                        self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                                show=showId,
+                                                channelId=season.channelId)
+                    else:
+                        self.helper.dynamic_call(LoginSession.delete_recordings,
+                                            show=showId,
+                                            channelId=season.channelId)
+                    self.recs.remove(season)
+                    xbmc.log("Recording of complete show with id {0} deleted".format(recording.showId), xbmc.LOGDEBUG)
 
 class SavedStateList:
     """

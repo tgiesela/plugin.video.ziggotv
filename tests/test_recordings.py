@@ -5,13 +5,9 @@ import unittest
 
 from resources.lib.channel import ChannelList, Channel
 from resources.lib.channelguide import ChannelGuide
-from resources.lib.globals import G
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import RecordingList, SingleRecording, SeasonRecording, PlannedRecording
-from resources.lib.webcalls import LoginSession
+from resources.lib.recording import RecordingList, RecordingType, SingleRecording, SeasonRecording, PlannedRecording
 from tests.test_base import TestBase
-import xbmcgui
-import xbmc
 
 class TestRecordings(TestBase):
 
@@ -33,9 +29,9 @@ class TestRecordings(TestBase):
                 elif isinstance(rec, SeasonRecording):
                     season: SeasonRecording = rec
                     print('Season {0} #: {1}'.format(season.title, season.episodes))
-                    for episode in season.get_episodes('planned'):
+                    for episode in season.get_episodes(RecordingType.PLANNED):
                         print(season.title + ' ' + episode.startTime)
-                    for episode in season.get_episodes('recorded'):
+                    for episode in season.get_episodes(RecordingType.RECORDED):
                         print(season.title + ' ' + episode.startTime)
         else:
             for rec in recs:
@@ -48,10 +44,11 @@ class TestRecordings(TestBase):
 
     def test_planned(self):
         self.do_login()
-        self.session.refresh_recordings(True)
-        recs = self.session.get_recordings_planned()
+        recordings: RecordingList = RecordingList(self.addon)
+        recordings.refresh()
+        recs = recordings.get_planned_recordings()
         self.print_recordings(recs)
-        for rec in recs.recs:
+        for rec in recs:
             if isinstance(rec, SeasonRecording):
                 print('SHOW ' + rec.title + '\n')
                 season: SeasonRecording = rec
@@ -60,16 +57,20 @@ class TestRecordings(TestBase):
 
     def test_recorded(self):
         self.do_login()
-        self.session.refresh_recordings(True)
-        recs = self.session.get_recordings_recorded()
+        # self.session.refresh_recordings(True)
+        recordings: RecordingList = RecordingList(self.addon)
+        recordings.refresh()
+        recs = recordings.get_recorded_recordings()
         self.print_recordings(recs)
 
     def test_record(self):
         self.do_login()
         self.session.refresh_channels()
         self.session.refresh_entitlements()
-        self.session.refresh_recordings(True)
-        recs = self.session.get_recordings_recorded()
+        # self.session.refresh_recordings(True)
+        recordings: RecordingList = RecordingList(self.addon)
+        recordings.refresh()
+        recs = recordings.get_recorded_recordings()
         self.assertIsNotNone(recs)
         self.print_recordings(recs)
         epg = ChannelGuide(self.addon, self.session.get_channels())
@@ -91,10 +92,12 @@ class TestRecordings(TestBase):
         print(rec1)
         rec2 = self.session.record_event(windowEvents[1].id)
         print(rec2)
-        self.session.refresh_recordings(True)
-        recs = self.session.get_recordings_recorded()
+        # self.session.refresh_recordings(True)
+        recordings: RecordingList = RecordingList(self.addon)
+        recordings.refresh()
+        recs = recordings.get_recorded_recordings()
         self.print_recordings(recs)
-        recs = self.session.get_recordings_planned()
+        recs = recordings.get_planned_recordings()
         self.print_recordings(recs)
         rslt = self.session.delete_recordings(event=windowEvents[0].id)
         print(rslt)
@@ -103,20 +106,56 @@ class TestRecordings(TestBase):
 
     def test_getdetails(self):
         self.do_login()
+        # self.session.refresh_recordings(True)
         self.session.refresh_recordings(True)
-        recs = self.session.get_recordings_recorded()
+        recordings: RecordingList = RecordingList(self.addon)
+        recordings.refresh()
+        recs = recordings.get_season_recordings(RecordingType.RECORDED)
+        recs.extend(recordings.get_recorded_recordings())
         listitemhelper = ListitemHelper(self.addon)
-        for rec in recs.recs:
+        for rec in recs:
             if isinstance(rec, SeasonRecording):
-                for recording in rec.episodes:
+                print(f'SEASON: {rec.title}')
+                for recording in rec.get_episodes(RecordingType.RECORDED):
+                    _ = listitemhelper.listitem_from_recording(recording)
+                    if hasattr(recording, 'episodeTitle'):
+                        episode = f'E{recording.episodeNumber}-{recording.episodeTitle}'
+                    else:
+                        if hasattr(recording, 'episodeNumber'):
+                            episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
+                        else:
+                            episode = f'S{recording.seasonNumber}-E?'
+                    print(f'\tEPISODE: {episode}' )
+                continue
+            else:
+                details = self.session.get_recording_details(recordingId=rec.id)
+                _ = listitemhelper.listitem_from_recording(rec)
+                print(f'SINGLE: {rec.title}' )
+            print(details)
+
+        recs = recordings.get_season_recordings(RecordingType.PLANNED)
+        recs.extend(recordings.get_recorded_recordings())
+        listitemhelper = ListitemHelper(self.addon)
+        for rec in recs:
+            if isinstance(rec, SeasonRecording):
+                print(f'SEASON: {rec.title}')
+                for recording in rec.get_episodes(RecordingType.PLANNED):
                     li = listitemhelper.listitem_from_recording(recording)
-                    print(li.getLabel())
+                    if hasattr(recording, 'episodeTitle'):
+                        episode = f'E{recording.episodeNumber}-{recording.episodeTitle}'
+                    else:
+                        if hasattr(recording, 'episodeNumber'):
+                            episode = f'S{recording.seasonNumber}-E{recording.episodeNumber}'
+                        else:
+                            episode = f'S{recording.seasonNumber}-E?'
+                    print(f'\tEPISODE: {episode}' )
                 continue
             else:
                 details = self.session.get_recording_details(recordingId=rec.id)
                 li = listitemhelper.listitem_from_recording(rec)
-                print(li.getLabel())
+                print(f'SINGLE: {rec.title}' )
             print(details)
+
 
 if __name__ == '__main__':
     unittest.main()

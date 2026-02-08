@@ -1,3 +1,7 @@
+"""
+Module containing the EpgWindow class which represents the EPG screen of the addon.
+"""
+import xbmc
 import xbmcgui
 import xbmcaddon
 from xbmcgui import Action, Control
@@ -14,23 +18,19 @@ class EpgWindow(BaseWindow):
     Class representing Epg Window defined in screen-epg.xml.
     Ids used in this file correspond to the .xml file
     """
-
-    def __new__(cls, *args, **kwargs):
-        return super().__new__(cls, args[0], args[1])
-
-    def __init__(self, xmlFilename: str, scriptPath: str, my_addon: xbmcaddon.Addon):
-        super().__init__(xmlFilename, scriptPath)
+    def __init__(self, xmlFilename, scriptPath, defaultSkin = "Default", defaultRes = "720p",
+                 isMedia = False, addon=''):
+        super().__init__(xmlFilename, scriptPath, defaultSkin, defaultRes, isMedia, addon)
         self.initDone = False
         self.grid: ProgramEventGrid = None
         self.currentFocusedNode = None
         self.epgDatetime = None  # date in local timezone
         self.epgEndDatetime = None  # last date in local timezone
-        self.addon = my_addon
-        self.helper = ProxyHelper(my_addon)
+        self.helper = ProxyHelper(self.addon)
         self.channels = None
         self.__initialize_session()
         self.channelList = ChannelList(self.channels, self.entitlements)
-        self.channelList.entitledOnly = my_addon.getSettingBool('allowed-channels-only')
+        self.channelList.entitledOnly = self.addon.getSettingBool('allowed-channels-only')
         self.channelList.apply_filter()
         self.mediaFolder = self.addon.getAddonInfo('path') + 'resources/skins/Default/media/'
 
@@ -94,6 +94,17 @@ class EpgWindow(BaseWindow):
         """
         self.onInit()
 
+    def shutdown(self):
+        """
+        Method to stop any pending threads from the videoHelper which might 
+        prevent stopping Kodi after the window is closed
+        
+        :param self: 
+        """
+        xbmc.log('EPGWINDOW shutdown', xbmc.LOGDEBUG)
+        self.grid.videoHelper.requestorCallbackStop = None
+        self.grid.videoHelper.player_stopped()
+
 def load_epgwindow(addon:xbmcaddon.Addon):
     """
     Function to create, populate and display the epg form
@@ -105,9 +116,6 @@ def load_epgwindow(addon:xbmcaddon.Addon):
     from resources.lib.utils import invoke_debugger
     invoke_debugger(False, 'vscode')
     check_service(addon)
-    window = EpgWindow('screen-epg.xml', addon.getAddonInfo('path'), addon)
+    window = EpgWindow('screen-epg.xml', addon.getAddonInfo('path'), defaultRes='1080i', addon=addon)
     window.doModal()
-
-    # epgwindow = epgWindow('test-screen-epg.xml', CWD, defaultRes='1080i',addon=addon)
-    # epgwindow.showepg()
-    # epgwindow.doModal()
+    window.shutdown()

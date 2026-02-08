@@ -59,6 +59,7 @@ class TestBase(unittest.TestCase):
         self.addon.setSettingBool('print-request-content', False)
         self.addon.setSettingNumber('connection-timeout', 10)
         self.addon.setSettingNumber('data-timeout', 10)
+        self.addon.setSettingBool('adult-allowed', True)
         self.cleanup_all()
         self.session = LoginSession(self.addon)
         self.session.printNetworkTraffic = False

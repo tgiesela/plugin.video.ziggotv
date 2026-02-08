@@ -15,7 +15,6 @@ from resources.lib.globals import S
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.movies import SeriesList, MovieList, Series, Season, Episode, Movie
 from resources.lib.utils import ProxyHelper, WebException, check_service
-from resources.lib.videohelpers import VideoHelpers
 from resources.lib.webcalls import LoginSession
 from resources.lib.windows.basewindow import BaseWindow
 from resources.lib import utils
@@ -47,7 +46,6 @@ class MovieWindow(BaseWindow):
         self.helper = ProxyHelper(self.addon)
         self.screens = None
         self.listitemHelper = ListitemHelper(self.addon)
-        self.videoHelper = VideoHelpers(self.addon)
         self.movieOverviews = []
         self.seriesOverviews = []
         self.addonpath = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
@@ -60,6 +58,7 @@ class MovieWindow(BaseWindow):
         self.series: SeriesList = None
         self.inepisodes = False
         self.inseasons = False
+        self.playingListitem = None
 
     def __showmoviecategories(self):
         listing = []
@@ -115,7 +114,7 @@ class MovieWindow(BaseWindow):
         :param self: 
         :param itemId: The id of the item to be monitored
         """
-        self.videoHelper.requestor_callback_stop = self.play_stopped
+        self.videoHelper.requestorCallbackStop = self.play_stopped
         self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(itemId,))
         self.thread.start()
 
@@ -131,10 +130,16 @@ class MovieWindow(BaseWindow):
             self.thread = None
 
     def play_stopped(self):
-        self.videoHelper.requestor_callback_stop = None
-        if self.playing_listitem is not None:
-            vod = self.__get_episode_or_movie(self.playing_listitem)
-            self.listitemHelper.updateresumepointinfo(self.playing_listitem,
+        """
+        Method to be called when the player is stopped. It will reset the playing 
+        listitem and stop the monitor thread if needed
+        
+        :param self: Description
+        """
+        self.videoHelper.requestorCallbackStop = None
+        if self.playingListitem is not None:
+            vod = self.__get_episode_or_movie(self.playingListitem)
+            self.listitemHelper.updateresumepointinfo(self.playingListitem,
                                                       vod.id,
                                                       vod.asset.duration)
         self.stop_monitor()
@@ -144,7 +149,6 @@ class MovieWindow(BaseWindow):
         movieid = tag.getUniqueID('ziggomovieid')
         episodeid = tag.getUniqueID('ziggoepisodeid')
 
-        self.videoHelper = VideoHelpers(self.addon)
         if episodeid is not None and episodeid != '':
             serie = self.series.find_serie(self.currentseriesId)
             season = serie.find_season(self.currentseasonId)
@@ -157,7 +161,7 @@ class MovieWindow(BaseWindow):
         vod = self.__get_episode_or_movie(li)
         resumePoint = self.videoHelper.get_resume_point(vod.id)
         self.stop_monitor()
-        self.playing_listitem = li
+        self.playingListitem = li
         self.videoHelper.play_movie(vod, resumePoint)
         self.start_monitor(vod.id)
 
@@ -389,9 +393,9 @@ class MovieWindow(BaseWindow):
                 self.currentseasonId = tag.getUniqueID('ziggoseasonid')
                 self.__list_episodes()
             else:
-                if li.getProperty('AvailableAfter') is not None:
+                if li.getProperty('AvailableAfter') is not None and li.getProperty('AvailableAfter') != '':
                     xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH_YET))
-                    return 
+                    return
                 if li.getProperty('isPlayable') == 'false':
                     xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
                     return

@@ -19,7 +19,6 @@ import xbmcvfs
 from resources.lib.utils import b2ah, WebException
 from resources.lib.channel import Channel
 from resources.lib.globals import G, CONST_BASE_HEADERS, ALLOWED_LICENSE_HEADERS
-from resources.lib.recording import RecordingList, RecordingType
 from resources.lib.streaminginfo import StreamingInfo, ReplayStreamingInfo, VodStreamingInfo, RecordingStreamingInfo
 from resources.lib.utils import DatetimeHelper
 
@@ -1123,33 +1122,61 @@ class LoginSession(Web):
         if 'shortSynopsis' in seasonRecordings:
             recording.update({'shortSynopsis': seasonRecordings['shortSynopsis']})
 
-    def __extract_seasons_from_planned(self, planned):
+    def __extract_seasons(self, recordings):
         seasons = {'data': []}
-        for data in planned['data']:
+        for data in recordings['data']:
             if 'type' in data and data['type'] in ['season','show']:
                 seasons['data'].append(data)
         return seasons
 
     def __process_recorded(self, recorded, planned):
-        seasons = self.__extract_seasons_from_planned(planned)
+        seasons = self.__extract_seasons(planned)
         for data in recorded['data']:
             if data['type'] == 'single':
                 if data['source'] == 'show':
                     searchId = data['showId']
                 else:
-                    searchId = data['seasonId']
+                    if data['source'] == 'single': # it is a single recording
+                        if 'showId' in data:
+                            searchId = data['showId'] # Maybe it is a single recording of
+                                                      # a show/series/season, so we can link it to the season/show
+                        else:
+                            continue # it is a single recording of an event, so we cannot link it to a season/show
+                    else:
+                        searchId = data['seasonId']
                 for season in seasons['data']:
                     if 'showId' in season and season['showId'] == searchId:
                         recorded['data'].append(season)
                         recorded['data'].remove(data)
         return recorded
-    
-    def refresh_recordings(self, includeAdult=False):
+
+    def __process_planned(self, recorded, planned):
+        seasons = self.__extract_seasons(recorded)
+        for data in planned['data']:
+            if data['type'] == 'single':
+                if data['source'] == 'show':
+                    searchId = data['showId']
+                else:
+                    if data['source'] == 'single': # it is a single recording
+                        if 'showId' in data:
+                            searchId = data['showId'] # Maybe it is a single recording of a
+                                                      # show/series/season, so we can link it to the season/show
+                        else:
+                            continue # it is a single recording of an event, so we cannot link it to a season/show
+                    else:
+                        searchId = data['seasonId']
+                for season in seasons['data']:
+                    if 'showId' in season and season['showId'] == searchId:
+                        planned['data'].append(season)
+                        planned['data'].remove(data)
+        return planned
+
+    def refresh_recordings(self, includeAdult=False) -> str:
         """
         Routine to (re)load the recordings.
-        They will be stored in recordings.json
         @param includeAdult:
-        @return: nothing
+        @return: the recordings in json format, with the planned and recorded recordings 
+                 merged and with the seasons updated with the episode details
         """
         recJson = {'planned': [], 'recorded': []}
         recordingsPlanned = self.__get_recordings_planned(isAdult=False)
@@ -1163,6 +1190,7 @@ class LoginSession(Web):
             recordings['data'].extend(adultRecordings['data'])
 
         recordings = self.__process_recorded(recordings, recordingsPlanned)
+        recordingsPlanned = self.__process_planned(recordings, recordingsPlanned)
 
         for recording in recordingsPlanned['data']:
             if recording['type'] in ['season','show']:
@@ -1173,26 +1201,7 @@ class LoginSession(Web):
             if recording['type'] in ['season','show']:
                 self.__update_recording_season(recording,'recording')
         recJson.update({'recorded': recordings})
-
-        Path(self.pluginpath(G.RECORDINGS_INFO)).write_text(json.dumps(recJson), encoding='utf-8')
-
-    def get_recordings_planned(self) -> RecordingList:
-        """
-        @return: list of planned recordings
-        """
-        if Path(self.pluginpath(G.RECORDINGS_INFO)).exists():
-            recordingsInfo = json.loads(Path(self.pluginpath(G.RECORDINGS_INFO)).read_text(encoding='utf-8'))
-            return RecordingList(recordingsInfo['planned'],RecordingType.PLANNED)
-        return RecordingList()
-
-    def get_recordings_recorded(self) -> RecordingList:
-        """
-        @return: list of recorded recordings
-        """
-        if Path(self.pluginpath(G.RECORDINGS_INFO)).exists():
-            recordingsInfo = json.loads(Path(self.pluginpath(G.RECORDINGS_INFO)).read_text(encoding='utf-8'))
-            return RecordingList(recordingsInfo['recorded'],RecordingType.RECORDED)
-        return None
+        return recJson
 
     def get_event_details(self, eventId):
         """

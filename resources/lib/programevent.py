@@ -54,9 +54,13 @@ class ProgramEventGrid:
         self.__update_events()
         self.player = ZiggoPlayer()
         self.videoHelper = VideoHelpers(self.addon)
-        self.helper.dynamic_call(LoginSession.refresh_recordings,
-                                 includeAdult=self.addon.getSettingBool('adult-allowed'))
-        self.plannedRecordings: RecordingList = self.helper.dynamic_call(LoginSession.get_recordings_planned)
+        self.plannedRecordings: RecordingList = RecordingList(self.addon)
+        self.plannedRecordings.refresh()
+
+    def __del__(self):
+        self.videoHelper.requestorCallbackStop = None
+        self.videoHelper.player_stopped()
+        xbmc.log('ProgramEventGrid Destroyed', xbmc.LOGDEBUG)
 
     def __set_epg_date(self, date: datetime.datetime):
         # 1011 EPG Date
@@ -136,7 +140,6 @@ class ProgramEventGrid:
             pixelsPerMinute = pixelsForWindow / self.MINUTES_IN_GRID
             delta = currentTime - self.startWindow
             deltaMinutes = int(delta.total_seconds() / 60)
-            # width = int(deltaMinutes * pixelsPerMinute)
             timeBar.setPosition(int(deltaMinutes * pixelsPerMinute), 0)
             timeBar.setVisible(True)
 
@@ -225,13 +228,9 @@ class ProgramEventGrid:
         @return:
         """
         if action.getId() == xbmcgui.ACTION_STOP:
-            # if xbmc.Player().isPlaying():
-            #    xbmc.Player().stop()
             return
 
         if action.getId() == xbmcgui.ACTION_PREVIOUS_MENU or action.getId() == xbmcgui.ACTION_NAV_BACK:
-            # if xbmc.Player().isPlaying():
-            #    xbmc.Player().stop()
             return
 
         if action.getId() == xbmcgui.ACTION_MOVE_LEFT:
