@@ -57,22 +57,35 @@ class VideoItem:
         Function to stop streaming the video
         @return:
         """
+        xbmc.log(f'VIDEOITEM stop',xbmc.LOGDEBUG)
         helper = ProxyHelper(self.addon)
         helper.dynamic_call(StreamSession.stop_stream, token=self.streamInfo.token)
-
+        xbmc.log(f'VIDEOITEM stop complete',xbmc.LOGDEBUG)
 
 class VideoHelpers:
     """
     class with helper functions to prepare playing a video/recording etc.
     Note all video play actions must be performed via this class, this includes 
     starting and stopping of playing video/live tv.
+    This is a singleton class, so only one instance can exist at the same time. 
+    This is necessary to properly handle the state of the video player and avoid 
+    conflicts between different instances.
     """
+    _INSTANCE = None
+    _INITIALIZED = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._INSTANCE is None:
+            cls._INSTANCE = super(VideoHelpers, cls).__new__(cls)
+        return cls._INSTANCE
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, addon: xbmcaddon.Addon):
+        if self._INITIALIZED:
+            return
         self.addon = addon
         self.helper = ProxyHelper(addon)
-        self.player: ZiggoPlayer = None
+        self.player: ZiggoPlayer = ZiggoPlayer()
         self.liHelper: ListitemHelper = ListitemHelper(addon)
         self.customerInfo = self.helper.dynamic_call(LoginSession.get_customer_info)
         self.entitlements = self.helper.dynamic_call(LoginSession.get_entitlements)
@@ -86,6 +99,7 @@ class VideoHelpers:
         self.currentchannel = None
         # This can be set to call a function when the videoplayer stops
         self.requestorCallbackStop = None
+        self.videoitem: VideoItem = None
 
     def user_wants_switch(self):
         """
@@ -127,13 +141,12 @@ class VideoHelpers:
             tag.setSeason(int(overview['seasonNumber']))
 
     def __start_play(self, item: VideoItem, startposition=None,activateKeymap: bool=False):
-        self.player = ZiggoPlayer()
         self.helper.dynamic_call(StreamSession.start_stream, token=item.streamInfo.token)
         if startposition is None:
             self.player.set_replay(False, 0)
         else:
             self.player.set_replay(True, startposition)
-        self.player.set_item(item)
+        self.videoitem = item
         self.player.play(item=item.url, listitem=item.playItem)
         self.__wait_for_player()
         # Request ziggoplayer to call our function when it stops
@@ -227,8 +240,6 @@ class VideoHelpers:
                 return None
             item = VideoItem(self.addon, streamInfo, locator)
             item.playItem.setProperty('ziggochannelid', channel.id)
-#            event = channel.events.get_current_event()
-#            self.__add_event_info(item.playItem, channel, event)
             self.__start_play(item, activateKeymap=True)
             self.currentchannel = channel
             self.updateeventsignal = utils.TimeSignal(1,self.__update_event_signal)
@@ -299,6 +310,7 @@ class VideoHelpers:
             else:
                 position = 0
             self.__start_play(item, startposition=position,activateKeymap=False)
+            self.monitor_state(movie.id)
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
@@ -320,6 +332,7 @@ class VideoHelpers:
             else:
                 position = streamInfo.prePaddingTime
             self.__start_play(item, startposition=position, activateKeymap=False)
+            self.monitor_state(recording.id)
             return item.playItem
         # pylint: disable=broad-exception-caught
         except Exception as exc:
@@ -390,24 +403,21 @@ class VideoHelpers:
         Function to stop a playing video. Notice we use executebuiltin to avoid a timeout on stop().
         @return:
         """
+        xbmc.log("VIDEOHELPER stop_player", xbmc.LOGDEBUG)
         if self.player is None:
             if xbmc.Player().isPlaying():
                 xbmc.log("VIDEOHELPER executebuiltin(Playercontrol(stop))", xbmc.LOGDEBUG)
                 xbmc.executebuiltin('PlayerControl(stop)')
-                # xbmc.sleep(2500)  # Wait is necessary because it takes some time to stop all activity
+                while xbmc.Player().isPlaying():
+                    xbmc.sleep(500)
         else:
             if self.player.isPlaying():
                 xbmc.log("VIDEOHELPER executebuiltin(Playercontrol(stop))", xbmc.LOGDEBUG)
                 xbmc.executebuiltin('PlayerControl(stop)')
-#                del self.player
-        while xbmc.Player().isPlaying():
-            xbmc.sleep(500)
+                while self.player.isPlaying():
+                    xbmc.sleep(500)
         self.player_stopped()
-        # if self.updateeventsignal is not None:
-        #     self.updateeventsignal.stop()
-        #     self.updateeventsignal.join()
-        # self.updateeventsignal = None
-        # self.currentchannel = None
+        xbmc.log("VIDEOHELPER stop_player complete", xbmc.LOGDEBUG)
 
     def player_stopped(self):
         """
@@ -416,6 +426,11 @@ class VideoHelpers:
         xbmc.log("VIDEOHELPER player_stopped callback called", xbmc.LOGDEBUG)
         if self.player is not None:
             self.player.set_stop_callback(None)
+        # Note: although we have stopped the player, the onPlayBackStopped event might not yet have been processed, 
+        # so we delete the videoitem and set the it to None
+        if self.videoitem is not None:
+            self.videoitem.stop()
+            self.videoitem = None
         self.__stop_updateeventsignal()
         self.currentchannel = None
         if self.keymap is not None:

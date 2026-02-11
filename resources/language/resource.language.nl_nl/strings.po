@@ -222,3 +222,7 @@ msgstr "Recent gespeelde zenders"
 msgctxt "#40037"
 msgid "Cannot watch this channel now. Not available yet."
 msgstr "Kan dit nog niet bekijken. Nog niet beschikbaar."
+
+msgctxt "#40038"
+msgid "Delete both booked and recorded recordings?"
+msgstr "Zowel geplande als opgenomen opnamen verwijderen?"

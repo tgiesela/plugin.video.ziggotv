@@ -11,7 +11,6 @@ import xbmcgui
 from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
-from resources.lib.ziggoplayer import ZiggoPlayer
 from resources.lib.videohelpers import VideoHelpers
 from resources.lib.events import Event
 from resources.lib.globals import A
@@ -52,7 +51,6 @@ class ProgramEventGrid:
         self.addon = addon
         self.guide = ChannelGuide(addon, channels.channels)
         self.__update_events()
-        self.player = ZiggoPlayer()
         self.videoHelper = VideoHelpers(self.addon)
         self.plannedRecordings: RecordingList = RecordingList(self.addon)
         self.plannedRecordings.refresh()

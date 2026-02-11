@@ -11,7 +11,6 @@ class ZiggoPlayer(xbmc.Player):
 
     def __init__(self):
         super().__init__()
-        self.item = None
         self.prePadding = None
         xbmc.log("ZIGGOPLAYER CREATED", xbmc.LOGDEBUG)
         self.replay = False
@@ -21,30 +20,12 @@ class ZiggoPlayer(xbmc.Player):
     def __del__(self):
         if self.stopCallback is not None:
             self.stopCallback()
-        if self.item is not None:
-            try:
-                self.item.stop()
-            except WebException as exc:
-                xbmc.log("ZIGGOPLAYER WEBEXC {0}".format(exc), xbmc.LOGERROR)
-            xbmc.log("ZIGGOPLAYER DELETED item " + self.item.url, xbmc.LOGDEBUG)
-            self.item = None
         xbmc.log("ZIGGOPLAYER DELETED", xbmc.LOGDEBUG)
 
     def onPlayBackStopped(self) -> None:
-        if self.item is not None:
-            try:
-                self.item.stop()
-            except WebException as exc:
-                xbmc.log("ZIGGOPLAYER WEBEXC {0}".format(exc),xbmc.LOGERROR)
-            xbmc.log("ZIGGOPLAYER STOPPED item ", xbmc.LOGDEBUG)
-            self.item = None
-
-        # if self.keymap is not None:
-        #     self.keymap.deactivate()
-        #     self.keymap = None
         if self.stopCallback is not None:
             self.stopCallback()
-        xbmc.log("ZIGGOPLAYER STOPPED", xbmc.LOGDEBUG)
+        xbmc.log("ZIGGOPLAYER PLAYBACK STOPPED", xbmc.LOGDEBUG)
 
     def onPlayBackPaused(self) -> None:
         xbmc.log("ZIGGOPLAYER PAUSED", xbmc.LOGDEBUG)
@@ -78,15 +59,6 @@ class ZiggoPlayer(xbmc.Player):
         """
         self.replay = isReplay
         self.prePadding = time
-
-    def set_item(self, item):
-        """
-        Function to set the listitem of the current playing video
-        
-        :param self: 
-        :param item: this is VideoItem object. We cannot import it here due to circular imports
-        """
-        self.item = item
 
     def set_stop_callback(self, callback):
         """

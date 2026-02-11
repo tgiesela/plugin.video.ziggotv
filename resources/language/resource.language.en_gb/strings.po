@@ -221,3 +221,7 @@ msgstr "Recently played channels"
 msgctxt "#40037"
 msgid "Cannot watch this channel now. Not available yet."
 msgstr ""
+
+msgctxt "#40038"
+msgid "Delete both booked and recorded recordings?"
+msgstr ""

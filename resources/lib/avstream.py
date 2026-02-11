@@ -55,7 +55,7 @@ class StreamSession:
         """
         stream = self.find_stream(token)
         if stream is not None:
-            stream.stop()
+#            stream.stop()
             self.streamList.stop_stream(stream)
             del stream
 
@@ -90,7 +90,7 @@ class AvStream:
         self.tokenTimer.start()
 
     def __del__(self):
-        xbmc.log('AVSTREAM DELETE {0}'.format(self.token))
+        xbmc.log('AVSTREAM DELETE {0}'.format(self.token),xbmc.LOGDEBUG)
         if self.tokenTimer is not None:
             self.tokenTimer.stop()
 
@@ -287,6 +287,7 @@ class AVStreamList:
         @param stream: the stream to remove (AvStream)
         @return:
         """
+        stream.stop()
         self.streams.remove(stream)
         xbmc.log('AVSTREAMLIST SIZE is now {0}'.format(len(self.streams)), xbmc.LOGDEBUG)
         del stream

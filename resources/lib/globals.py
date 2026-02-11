@@ -41,6 +41,7 @@ class StringIds:
     MSG_FALLBACK_HD = 40029
     MSG_DELETE_RECORDING_COMPLETE = 40033
     MSG_DELETE_SEASON_COMPLETE = 40034
+    MSG_DELETE_SEASON_ALL = 40038
 
     def __init__(self):
         pass

@@ -108,7 +108,7 @@ class RecordingWindow(BaseWindow):
         self.stop_monitor()
         self.playingListitem = listitem
         self.videoHelper.play_recording(recording, resumePoint)
-        self.start_monitor(recording)
+#        self.start_monitor(recording)
 
     def onClick(self, controlId):
         # pylint: disable=no-member
@@ -201,7 +201,9 @@ class RecordingWindow(BaseWindow):
         self.recordings.sort_listitems(listing, sortby, sortorder)
         listbox.addItems(listing)
         listbox.selectItem(0)
-        self.listitemHelper.update_recording_details(listbox.getSelectedItem(), self.recordings, self.recordingtype)
+        li = listbox.getSelectedItem()
+        if li is not None:
+            self.listitemHelper.update_recording_details(li, self.recordings, self.recordingtype)
         self.setFocusId(self.LISTBOX)
 
     def show_context_menu(self):
@@ -261,7 +263,9 @@ class RecordingWindow(BaseWindow):
                                           xbmcgui.NOTIFICATION_INFO,
                                           2000)
         elif action == 'deleteseason':
-            self.recordings.delete_season_recording(recording)
+            delallchoice = xbmcgui.Dialog().yesno('Delete',
+                                                   self.addon.getLocalizedString(S.MSG_DELETE_SEASON_ALL))
+            self.recordings.delete_season_recording(recording, delallchoice)
             listctrl.removeItem(listctrl.getSelectedPosition())
             self.recordings.refresh()
             xbmcgui.Dialog().notification('Info',

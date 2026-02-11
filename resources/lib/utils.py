@@ -519,7 +519,7 @@ class KeyMapMonitor(xbmc.Monitor):
                     if self.keypresses == '':
                         self.keypresses = numberkey
                         self.firstkeypress = datetime.now()
-                        self.keytimer = TimeSignal(3, self.__keypress_completed)
+                        self.keytimer = TimeSignal(2, self.__keypress_completed)
                         self.keytimer.start()
                         xbmc.log('KEYMAPMONITOR keypress time started', xbmc.LOGDEBUG)
                     else:

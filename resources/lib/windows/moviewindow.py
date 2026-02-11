@@ -114,9 +114,9 @@ class MovieWindow(BaseWindow):
         :param self: 
         :param itemId: The id of the item to be monitored
         """
-        self.videoHelper.requestorCallbackStop = self.play_stopped
-        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(itemId,))
-        self.thread.start()
+#        self.videoHelper.requestorCallbackStop = self.play_stopped
+#        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(itemId,))
+#        self.thread.start()
 
     def stop_monitor(self):
         """
