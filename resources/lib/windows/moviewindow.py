@@ -106,28 +106,21 @@ class MovieWindow(BaseWindow):
         moviecategorieslist.selectItem(0)
         self.setFocusId(self.MOVIECATEGORIESLIST)
 
-    def start_monitor(self, itemId):
+    def start_monitor(self):
         """
-        Function to start a thread which can do monitoring of the position in the current playing item.
-        The position will be saved and can be used to position the playing item at that position if required.
+        Function to set callback for when the player is stopped.
         
         :param self: 
-        :param itemId: The id of the item to be monitored
         """
-#        self.videoHelper.requestorCallbackStop = self.play_stopped
-#        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(itemId,))
-#        self.thread.start()
+        self.videoHelper.requestorCallbackStop = self.play_stopped
 
     def stop_monitor(self):
         """
-        Function to stop the monitor
+        Stop the monitoring of the player
         
         :param self: 
         """
-        if self.thread is not None:
-            self.videoHelper.stop_player()
-            self.thread.join()
-            self.thread = None
+        self.videoHelper.requestorCallbackStop = None
 
     def play_stopped(self):
         """
@@ -136,13 +129,12 @@ class MovieWindow(BaseWindow):
         
         :param self: Description
         """
-        self.videoHelper.requestorCallbackStop = None
+        self.stop_monitor()
         if self.playingListitem is not None:
             vod = self.__get_episode_or_movie(self.playingListitem)
             self.listitemHelper.updateresumepointinfo(self.playingListitem,
                                                       vod.id,
                                                       vod.asset.duration)
-        self.stop_monitor()
 
     def __get_episode_or_movie(self, li: xbmcgui.ListItem):
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
@@ -163,7 +155,7 @@ class MovieWindow(BaseWindow):
         self.stop_monitor()
         self.playingListitem = li
         self.videoHelper.play_movie(vod, resumePoint)
-        self.start_monitor(vod.id)
+        self.start_monitor()
 
     def __list_seasons(self):
         # pylint: disable=no-member

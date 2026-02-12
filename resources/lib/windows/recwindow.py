@@ -64,29 +64,21 @@ class RecordingWindow(BaseWindow):
                 return
         super().onAction(action)
 
-    def start_monitor(self, recording:SingleRecording):
+    def start_monitor(self):
         """
-        Function to start monitoring a playing recording to capture the current position.
+        Function to set callback for when the player is stopped.
         
         :param self: 
-        :param recording: the recording to monitor
-        :type recording: SingleRecording
         """
         self.videoHelper.requestorCallbackStop = self.play_stopped
-        self.thread = threading.Thread(target=self.videoHelper.monitor_state,args=(recording.id,))
-        self.thread.start()
 
     def stop_monitor(self):
         """
-        Stop the monitoring of the recording
+        Stop the monitoring of the player
         
         :param self: Description
         """
-        if self.thread is not None:
-            self.videoHelper.stop_player()
-            if self.thread is not None:
-                self.thread.join()
-                self.thread = None
+        self.videoHelper.requestorCallbackStop = None
 
     def play_stopped(self):
         """
@@ -96,19 +88,18 @@ class RecordingWindow(BaseWindow):
         
         :param self: Description
         """
-        self.videoHelper.requestorCallbackStop = None
+        self.stop_monitor()
         if self.playingListitem is not None:
             recording = self.listitemHelper.findrecording(self.playingListitem, self.recordings, self.recordingtype)
             self.listitemHelper.updateresumepointinfo(self.playingListitem,
                                                       recording.id,
                                                       recording.duration)
-        self.stop_monitor()
 
     def __play_recording(self, recording, resumePoint, listitem):
         self.stop_monitor()
         self.playingListitem = listitem
         self.videoHelper.play_recording(recording, resumePoint)
-#        self.start_monitor(recording)
+        self.start_monitor()
 
     def onClick(self, controlId):
         # pylint: disable=no-member
