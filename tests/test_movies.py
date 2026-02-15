@@ -21,16 +21,7 @@ class TestMovies(TestBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.proxyServer: ProxyServer = None
         self.thread: threading.Thread = None
-        self.helper = ProxyHelper(self.addon)
-
-    def logon_via_proxy(self):
-        with open('c:/temp/credentials.json', 'r', encoding='utf-8') as credfile:
-            credentials = json.loads(credfile.read())
-        rslt = self.helper.dynamic_call(LoginSession.login, username=credentials['username'],
-                                        password=credentials['password'])
-        print(rslt)
 
     def test_series(self):
         self.addon.setSettingBool('print-response-content', False)

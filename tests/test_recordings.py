@@ -11,43 +11,25 @@ from tests.test_base import TestBase
 
 class TestRecordings(TestBase):
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-
-    def print_recordings(self, recs: RecordingList):
-        self.do_login()
-        if isinstance(recs, RecordingList):
-            print('#: {0}, size: {1}, quota: {2}, used: {3}'.format(recs.total,
-                                                                    recs.size,
-                                                                    recs.quota,
-                                                                    recs.occupied))
-            for rec in recs.recs:
-                if isinstance(rec, SingleRecording):
-                    print('Single {0}: {1}'.format(rec.title, rec.recordingState))
-                elif isinstance(rec, PlannedRecording):
-                    print('Planned {0}: {1}'.format(rec.title, rec.recordingState))
-                elif isinstance(rec, SeasonRecording):
-                    season: SeasonRecording = rec
-                    print('Season {0} #: {1}'.format(season.title, season.episodes))
-                    for episode in season.get_episodes(RecordingType.PLANNED):
-                        print(season.title + ' ' + episode.startTime)
-                    for episode in season.get_episodes(RecordingType.RECORDED):
-                        print(season.title + ' ' + episode.startTime)
-        else:
-            for rec in recs:
-                if isinstance(rec, SingleRecording):
-                    print('Single {0}: {1}'.format(rec.title, rec.recordingState))
-                elif isinstance(rec, PlannedRecording):
-                    print('Planned {0}: {1}'.format(rec.title, rec.recordingState))
-                elif isinstance(rec, SeasonRecording):
-                    print('Season recording not expected here')
+    def print_recordings(self, recs, rectype: RecordingType):
+        for rec in recs:
+            if isinstance(rec, SingleRecording):
+                print('Single {0}: {1}'.format(rec.title, rec.recordingState))
+            elif isinstance(rec, PlannedRecording):
+                print('Planned {0}: {1}'.format(rec.title, rec.recordingState))
+            elif isinstance(rec, SeasonRecording):
+                season: SeasonRecording = rec
+                print('Season {0} #: {1}'.format(season.title, len(season.episodes)))
+                for episode in season.get_episodes(rectype):
+                    print(season.title + ' ' + episode.startTime)
 
     def test_planned(self):
         self.do_login()
+        self.logon_via_proxy()
         recordings: RecordingList = RecordingList(self.addon)
         recordings.refresh()
         recs = recordings.get_planned_recordings()
-        self.print_recordings(recs)
+        self.print_recordings(recs, RecordingType.PLANNED)
         for rec in recs:
             if isinstance(rec, SeasonRecording):
                 print('SHOW ' + rec.title + '\n')
@@ -57,14 +39,18 @@ class TestRecordings(TestBase):
 
     def test_recorded(self):
         self.do_login()
+        self.logon_via_proxy()
         # self.session.refresh_recordings(True)
         recordings: RecordingList = RecordingList(self.addon)
         recordings.refresh()
         recs = recordings.get_recorded_recordings()
-        self.print_recordings(recs)
+        self.print_recordings(recs, RecordingType.RECORDED)
+        recs = recordings.get_season_recordings(RecordingType.RECORDED)
+        self.print_recordings(recs, RecordingType.RECORDED)
 
     def test_record(self):
         self.do_login()
+        self.logon_via_proxy()
         self.session.refresh_channels()
         self.session.refresh_entitlements()
         # self.session.refresh_recordings(True)
@@ -72,7 +58,7 @@ class TestRecordings(TestBase):
         recordings.refresh()
         recs = recordings.get_recorded_recordings()
         self.assertIsNotNone(recs)
-        self.print_recordings(recs)
+        self.print_recordings(recs, RecordingType.RECORDED)
         epg = ChannelGuide(self.addon, self.session.get_channels())
         epg.load_stored_events()
         epg.obtain_events()
@@ -96,9 +82,9 @@ class TestRecordings(TestBase):
         recordings: RecordingList = RecordingList(self.addon)
         recordings.refresh()
         recs = recordings.get_recorded_recordings()
-        self.print_recordings(recs)
+        self.print_recordings(recs, RecordingType.RECORDED)
         recs = recordings.get_planned_recordings()
-        self.print_recordings(recs)
+        self.print_recordings(recs, RecordingType.PLANNED)
         rslt = self.session.delete_recordings(event=windowEvents[0].id)
         print(rslt)
         rslt = self.session.delete_recordings(event=windowEvents[1].id)
@@ -106,6 +92,7 @@ class TestRecordings(TestBase):
 
     def test_getdetails(self):
         self.do_login()
+        self.logon_via_proxy()
         # self.session.refresh_recordings(True)
         self.session.refresh_recordings(True)
         recordings: RecordingList = RecordingList(self.addon)

@@ -42,6 +42,7 @@ class RecordingWindow(BaseWindow):
         self.recordings = RecordingList(self.addon)
         self.recordings.refresh()
         xbmc.sleep(100)
+        self.showrecordings()
 
     def onAction(self, action: xbmcgui.Action):
         listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX)
@@ -275,7 +276,7 @@ def load_recordingwindow(addon:xbmcaddon.Addon):
     """
     cwd: str=addon.getAddonInfo('path')
     recwindow = RecordingWindow('recordings.xml', cwd, defaultRes='1080i',addon=addon)
-    recwindow.showrecordings()
+#    recwindow.showrecordings()
     recwindow.doModal()
     recwindow.stop_monitor() # make sure thread is stopped at the end
     del recwindow

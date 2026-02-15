@@ -8,7 +8,9 @@ from time import sleep
 import xbmcaddon
 
 from resources.lib.globals import G
+from resources.lib.proxyserver import ProxyServer
 from resources.lib.servicemonitor import HttpProxyService
+from resources.lib.utils import ProxyHelper
 from resources.lib.webcalls import LoginSession
 
 
@@ -66,6 +68,8 @@ class TestBase(unittest.TestCase):
         self.svc = HttpProxyService(threading.Lock(), self.addon)
         self.svc.set_address((self.addon.getSetting('proxy-ip'), self.addon.getSettingInt('proxy-port')))
         sleep(1)
+        self.proxyServer: ProxyServer = None
+        self.helper = ProxyHelper(self.addon)
 
     def setUp(self):
         self.session = LoginSession(self.addon)
@@ -127,9 +131,15 @@ class TestBase(unittest.TestCase):
         self.cleanup_savechannelstates()
 
     def do_login(self):
-        
         with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
             credentials = json.loads(credfile.read())
         self.session.login(credentials['username'], credentials['password'])
         self.assertFalse(len(self.session.customerInfo) == 0)
         # self.session.obtain_customer_info()
+
+    def logon_via_proxy(self):
+        with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
+            credentials = json.loads(credfile.read())
+        rslt = self.helper.dynamic_call(LoginSession.login, username=credentials['username'],
+                                        password=credentials['password'])
+        print(rslt)
