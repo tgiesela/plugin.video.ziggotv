@@ -36,13 +36,13 @@ class RecordingWindow(BaseWindow):
         self.recordingfilter = None
         self.playingListitem = None
         self.recordingtype = RecordingType.RECORDED
+        self.recordings = RecordingList(self.addon)
+        self.recordings.refresh()
+        self.showrecordings()
 
     def onInit(self):
         # We will only get recordings the first time we show the window,
-        self.recordings = RecordingList(self.addon)
-        self.recordings.refresh()
         xbmc.sleep(100)
-        self.showrecordings()
 
     def onAction(self, action: xbmcgui.Action):
         listbox: xbmcgui.ControlList = self.getControl(self.LISTBOX)

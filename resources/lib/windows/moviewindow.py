@@ -4,7 +4,6 @@ Module with functions to load movies/series window and the window class itself
 from enum import IntEnum
 import os
 
-import threading
 import traceback
 import xbmc
 import xbmcgui
@@ -59,6 +58,8 @@ class MovieWindow(BaseWindow):
         self.inepisodes = False
         self.inseasons = False
         self.playingListitem = None
+        self.show()
+        self.__showmoviecategories()
 
     def __showmoviecategories(self):
         listing = []
@@ -324,7 +325,6 @@ class MovieWindow(BaseWindow):
     def onInit(self):
         # give kodi a bit of (processing) time to add all items to the container
         xbmc.sleep(100)
-        self.__showmoviecategories()
 
     def onFocus(self, controlId):
         # pylint: disable=no-member
