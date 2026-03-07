@@ -255,6 +255,8 @@ class RecordingWindow(BaseWindow):
                                           xbmcgui.NOTIFICATION_INFO,
                                           2000)
         elif action == 'deleteseason':
+## TODO: if there are multiple episodes, ask if all episodes need to be deleted or only the selected one
+#         but all recordings are deleted not only the selected one
             delallchoice = xbmcgui.Dialog().yesno('Delete',
                                                    self.addon.getLocalizedString(S.MSG_DELETE_SEASON_ALL))
             self.recordings.delete_season_recording(recording, delallchoice)

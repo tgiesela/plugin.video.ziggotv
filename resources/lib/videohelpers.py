@@ -57,10 +57,10 @@ class VideoItem:
         Function to stop streaming the video
         @return:
         """
-        xbmc.log(f'VIDEOITEM stop',xbmc.LOGDEBUG)
+        xbmc.log('VIDEOITEM stop',xbmc.LOGDEBUG)
         helper = ProxyHelper(self.addon)
         helper.dynamic_call(StreamSession.stop_stream, token=self.streamInfo.token)
-        xbmc.log(f'VIDEOITEM stop complete',xbmc.LOGDEBUG)
+        xbmc.log('VIDEOITEM stop complete',xbmc.LOGDEBUG)
 
 class VideoHelpers:
     """
@@ -233,52 +233,53 @@ class VideoHelpers:
                     return get_token(True)
                 return get_token.locator, None
 
-        streamInfo = None
+        streaminfo = None
         try:
-            locator, streamInfo = get_token()
-            if streamInfo is None:
+            locator, streaminfo = get_token()
+            if streaminfo is None:
                 return None
-            item = VideoItem(self.addon, streamInfo, locator)
+            item = VideoItem(self.addon, streaminfo, locator)
             item.playItem.setProperty('ziggochannelid', channel.id)
             self.__start_play(item, activateKeymap=True)
             self.currentchannel = channel
             self.updateeventsignal = utils.TimeSignal(1,self.__update_event_signal)
             self.updateeventsignal.start()
             return item.playItem
-        except WebException as webExc:
-            self.__handle_web_exception(webExc)
+        except WebException as webexc:
+            self.__handle_web_exception(webexc)
+            return None
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_channel: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
-            if streamInfo is not None and streamInfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
+            xbmc.log(f'Error in __play_channel: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
+            if streaminfo is not None and streaminfo.token is not None:
+                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streaminfo.token)
             return None
 
     def __replay_event(self, event: Event, channel: Channel):
         if not event.canReplay:
             xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_REPLAY_NOT_AVAIALABLE))
             return
-        streamInfo: ReplayStreamingInfo = None
+        streaminfo: ReplayStreamingInfo = None
         try:
-            streamInfo = self.helper.dynamic_call(LoginSession.obtain_replay_streaming_token,
+            streaminfo = self.helper.dynamic_call(LoginSession.obtain_replay_streaming_token,
                                                   path=event.details.eventId)
-            item = VideoItem(self.addon, streamInfo)
+            item = VideoItem(self.addon, streaminfo)
             item.playItem.setProperty('ziggoeventid', event.id)
             self.__add_event_info(item.playItem, channel, event)
             resumePoint = self.get_resume_point(event.id)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:
-                position = streamInfo.prePaddingTime
+                position = streaminfo.prePaddingTime
             self.__start_play(item, startposition=position,activateKeymap=False)
             self.monitor_state(event.id)
-        except WebException as webExc:
-            self.__handle_web_exception(webExc)
+        except WebException as webexc:
+            self.__handle_web_exception(webexc)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __replay_event: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
-            if streamInfo is not None and streamInfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
+            xbmc.log(f'Error in __replay_event: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
+            if streaminfo is not None and streaminfo.token is not None:
+                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streaminfo.token)
 
     def __play_vod(self, movie: Union[Movie,Episode], resumePoint, instance:Instance=None) -> xbmcgui.ListItem:
         '''
@@ -312,9 +313,12 @@ class VideoHelpers:
             self.__start_play(item, startposition=position,activateKeymap=False)
             self.monitor_state(movie.id)
             return item.playItem
+        except WebException as webexc:
+            self.__handle_web_exception(webexc)
+            return None
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            xbmc.log('Error in __play_vod: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
+            xbmc.log(f'Error in __play_vod: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
             if streamInfo is not None and streamInfo.token is not None:
                 self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
             return None
@@ -334,6 +338,9 @@ class VideoHelpers:
             self.__start_play(item, startposition=position, activateKeymap=False)
             self.monitor_state(recording.id)
             return item.playItem
+        except WebException as webExc:
+            self.__handle_web_exception(webExc)
+            return None
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Error in __play_recording: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
@@ -520,7 +527,8 @@ class VideoHelpers:
         xbmc.log(webExc.response.decode('utf-8'), xbmc.LOGERROR)
         if webExc.status == 403:
             errorMsg = json.loads(webExc.response)
-            if not suppressHD:
+            statusCode = errorMsg['error']['statusCode'] if 'error' in errorMsg and 'statusCode' in errorMsg['error'] else 0
+            if not suppressHD and statusCode == 1111:  # HD stream not allowed, try SD stream if available
                 xbmcgui.Dialog().notification('Info',
                                               self.addon.getLocalizedString(S.MSG_FALLBACK_HD),
                                               xbmcgui.NOTIFICATION_INFO,

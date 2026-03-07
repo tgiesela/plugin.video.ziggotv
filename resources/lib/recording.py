@@ -541,23 +541,35 @@ class RecordingList:
                         showId = recording.showId
                     else:
                         showId = recording.id
-                    if season.recordingtype == RecordingType.PLANNED:
-                        self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                                show=showId,
-                                                channelId=season.channelId)
-                        if deleteBookedAndRecorded:
+
+                    if not deleteBookedAndRecorded:
+                        # Unfortunately the API does not support to delete only the recorded season recordings (afaik)
+                        # or only the planned season recordings, i.e. we cannot delete the season recording as a whole
+                        # So we need to delete the single recordings one by one
+                        episode: Recording = None
+                        for episode in season.episodes:
+                            if season.recordingtype == RecordingType.PLANNED and episode.isPlanned:
+                                self.delete_recording(episode)
+                            elif season.recordingtype == RecordingType.RECORDED and episode.isRecorded:
+                                self.delete_recording(episode)
+                    else:
+                        if season.recordingtype == RecordingType.PLANNED:
+                            self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                                    show=showId,
+                                                    channelId=season.channelId)
+                            if deleteBookedAndRecorded:
+                                self.helper.dynamic_call(LoginSession.delete_recordings,
+                                                    show=showId,
+                                                    channelId=season.channelId)
+                        else:
                             self.helper.dynamic_call(LoginSession.delete_recordings,
                                                 show=showId,
                                                 channelId=season.channelId)
-                    else:
-                        self.helper.dynamic_call(LoginSession.delete_recordings,
-                                            show=showId,
-                                            channelId=season.channelId)
-                        if deleteBookedAndRecorded:
-                            self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                                show=showId,
-                                                channelId=season.channelId)
-                    self.recs.remove(season)
+                            if deleteBookedAndRecorded:
+                                self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                                    show=showId,
+                                                    channelId=season.channelId)
+                        self.recs.remove(season)
                     xbmc.log("Recording of complete show with id {0} deleted".format(recording.showId), xbmc.LOGDEBUG)
 
 class SavedStateList:
