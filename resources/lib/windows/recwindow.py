@@ -232,7 +232,7 @@ class RecordingWindow(BaseWindow):
                 choices.update({self.addon.getLocalizedString(
                     S.MSG_RESUME_FROM).format(t.strftime('%H:%M:%S')): 'resume'})
 
-        choices.update({self.addon.getLocalizedString(S.MSG_DELETE): 'delete'})
+            choices.update({self.addon.getLocalizedString(S.MSG_DELETE): 'delete'})
 
         if isinstance(recording, SeasonRecording):
             choices.update({self.addon.getLocalizedString(S.MSG_DELETE_SEASON): 'deleteseason'})

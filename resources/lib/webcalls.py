@@ -999,6 +999,8 @@ class LoginSession(Web):
     def __get_recordings_season(self, channelId, showId, sourcetype):
         """
         get a list of recordings in a series/show
+        although we supply the sourcetype, the service will return both planned and recorded episodes, 
+        so we need to filter them ourselves
         @param channelId:
         @param showId:
         @param sourcetype: one of 'booking'|'recording'

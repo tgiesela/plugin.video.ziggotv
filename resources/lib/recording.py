@@ -175,7 +175,7 @@ class SeasonRecording:
     # pylint: disable=too-many-instance-attributes, too-few-public-methods
     def __init__(self, recordingJson, recordingtype:RecordingType):
         self.poster = Poster(posterJson=recordingJson['poster'])
-        self.recordingtype = recordingtype
+        self.recordingType = recordingtype
         self.title = recordingJson['title']
         self.source = recordingJson['source']
         self.nrofepisodes = recordingJson['noOfEpisodes']
@@ -452,7 +452,7 @@ class RecordingList:
         """
         seasonRecs = []
         for rec in self.recs:
-            if isinstance(rec, SeasonRecording) and rec.recordingtype == rectype:
+            if isinstance(rec, SeasonRecording) and rec.recordingType == rectype:
                 season: SeasonRecording = rec
                 seasonRecs.append(season)
         return seasonRecs
@@ -527,50 +527,74 @@ class RecordingList:
                     self.recs.remove(bookedrec)
                     xbmc.log("Planned recording with id {0} deleted".format(seasonrec.id), xbmc.LOGDEBUG)
 
-    def delete_season_recording(self, recording: SeasonRecording, deleteBookedAndRecorded: bool):
+    def __can_delete_whole_season(self, season: SeasonRecording, deleteBookedAndRecorded: bool):
+        """
+        function to check if a whole season recording can be deleted
+        @param season: the season recording to check
+        @param deleteBookedAndRecorded: whether to delete booked and recorded episodes
+        @return: True if the season recording can be deleted, False otherwise
+        """
+        # Implementation for checking if the whole season can be deleted
+        plannedEpisodes = season.get_episodes(RecordingType.PLANNED)
+        recordedEpisodes = season.get_episodes(RecordingType.RECORDED)
+        if deleteBookedAndRecorded:
+            return True
+        else:
+            if season.recordingType == RecordingType.PLANNED:
+                if len(recordedEpisodes) == 0:
+                    return True
+            elif season.recordingType == RecordingType.RECORDED:
+                if len(plannedEpisodes) == 0:
+                    return True
+        return False
+
+    def delete_season_recording(self, season: SeasonRecording, deleteBookedAndRecorded: bool):
         """
         function to delete a season recording
         @param recording: the season recording to delete
         @return:
         """
-        for rec in self.recs:
-            if isinstance(rec, SeasonRecording):
-                season: SeasonRecording = rec
-                if season.id == recording.id:
-                    if recording.showId is not None:
-                        showId = recording.showId
-                    else:
-                        showId = recording.id
+        if season.showId is not None:
+            showId = season.showId
+        else:
+            showId = season.id
 
-                    if not deleteBookedAndRecorded:
-                        # Unfortunately the API does not support to delete only the recorded season recordings (afaik)
-                        # or only the planned season recordings, i.e. we cannot delete the season recording as a whole
-                        # So we need to delete the single recordings one by one
-                        episode: Recording = None
-                        for episode in season.episodes:
-                            if season.recordingtype == RecordingType.PLANNED and episode.isPlanned:
-                                self.delete_recording(episode)
-                            elif season.recordingtype == RecordingType.RECORDED and episode.isRecorded:
-                                self.delete_recording(episode)
-                    else:
-                        if season.recordingtype == RecordingType.PLANNED:
-                            self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                                    show=showId,
-                                                    channelId=season.channelId)
-                            if deleteBookedAndRecorded:
-                                self.helper.dynamic_call(LoginSession.delete_recordings,
-                                                    show=showId,
-                                                    channelId=season.channelId)
-                        else:
-                            self.helper.dynamic_call(LoginSession.delete_recordings,
-                                                show=showId,
-                                                channelId=season.channelId)
-                            if deleteBookedAndRecorded:
-                                self.helper.dynamic_call(LoginSession.delete_recordings_planned,
-                                                    show=showId,
-                                                    channelId=season.channelId)
-                        self.recs.remove(season)
-                    xbmc.log("Recording of complete show with id {0} deleted".format(recording.showId), xbmc.LOGDEBUG)
+        if not self.__can_delete_whole_season(season, deleteBookedAndRecorded):
+            # This means that we only want to delete the recordings of the current season type,
+            # i.e. only the planned episodes or only the recorded episodes, and keep the season recording itself.
+            #
+            # Unfortunately the API does not support to delete only the recorded season recordings (afaik)
+            # or only the planned season recordings, i.e. we cannot delete the season recording as a whole
+            # So we need to delete the single recordings one by one
+            episode: Recording = None
+            for episode in season.episodes:
+                if season.recordingType == RecordingType.PLANNED and episode.isPlanned:
+                    self.delete_recording(episode)
+                elif season.recordingType == RecordingType.RECORDED and episode.isRecorded:
+                    self.delete_recording(episode)
+        else:
+            if season.recordingType == RecordingType.PLANNED:
+                self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                        show=showId,
+                                        channelId=season.channelId)
+                # With the current API there is no need to delete the recordings, because they
+                # are automatically deleted when the planned season recording is deleted, but we do it anyway to be sure
+                # to delete all recordings of the season, including the recorded ones
+                self.helper.dynamic_call(LoginSession.delete_recordings,
+                                    show=showId,
+                                    channelId=season.channelId)
+            else:
+                self.helper.dynamic_call(LoginSession.delete_recordings,
+                                    show=showId,
+                                    channelId=season.channelId)
+                # With the current API there is no need to delete the plannedrecordings, because they
+                # are automatically deleted when the season recording is deleted, but we do it anyway to be sure
+                # to delete all recordings of the season, including the recorded ones
+                self.helper.dynamic_call(LoginSession.delete_recordings_planned,
+                                    show=showId,
+                                    channelId=season.channelId)
+            self.recs.remove(season)
+        xbmc.log(f"Recording of complete show with id {season.showId} deleted", xbmc.LOGDEBUG)
 
 class SavedStateList:
     """

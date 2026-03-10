@@ -261,7 +261,7 @@ class ListitemHelper:
         @param recType: the type of recording (planned|recorded)
         @return: listitem
         """
-        if recording.recordingtype == RecordingType.PLANNED:
+        if recording.recordingType == RecordingType.PLANNED:
             count = len(recording.get_episodes(RecordingType.PLANNED))
         else:
             count = len(recording.get_episodes(RecordingType.RECORDED))
@@ -343,9 +343,9 @@ class ListitemHelper:
         recording: Recording = None
 
         for recording in recordings.recs:
-            if ziggoid == recording.id:
+            if ziggoid == recording.id and recording.recordingType == rectype:
                 return recording
-            elif isinstance(recording, SeasonRecording):
+            elif isinstance(recording, SeasonRecording) and recording.recordingType == rectype:
                 episode: Recording
                 for episode in recording.get_episodes(rectype):
                     if ziggoid == episode.id:

@@ -37,6 +37,17 @@ class TestRecordings(TestBase):
                 for episode in season.episodes:
                     print(season.title + ' ' + episode.startTime)
 
+    def test_test(self):
+        self.do_login()
+        self.logon_via_proxy()
+        recJson = self.session.refresh_recordings(True)
+        recordings: RecordingList = RecordingList(self.addon)
+#        recordings.refresh()
+        recs = recordings.get_planned_recordings()
+        self.print_recordings(recs, RecordingType.PLANNED)
+        recs = recordings.get_season_recordings(RecordingType.PLANNED)
+        self.print_recordings(recs, RecordingType.PLANNED)
+
     def test_recorded(self):
         self.do_login()
         self.logon_via_proxy()
