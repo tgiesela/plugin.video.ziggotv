@@ -343,13 +343,21 @@ class ListitemHelper:
         recording: Recording = None
 
         for recording in recordings.recs:
-            if ziggoid == recording.id and recording.recordingType == rectype:
-                return recording
-            elif isinstance(recording, SeasonRecording) and recording.recordingType == rectype:
-                episode: Recording
-                for episode in recording.get_episodes(rectype):
-                    if ziggoid == episode.id:
-                        return episode
+            if isinstance(recording, SeasonRecording):
+                if ziggoid == recording.id: # It is a season recording, so we can return it if the type matches
+                    if recording.recordingType == rectype:
+                        return recording
+                else: # Maybe it is an episode recording, so we need to check the episodes if the type matches
+                    if recording.recordingType == rectype:
+                        episode: Recording
+                        for episode in recording.get_episodes(rectype):
+                            if ziggoid == episode.id:
+                                return episode
+            elif ziggoid == recording.id:
+                if rectype == RecordingType.PLANNED and recording.isPlanned:
+                    return recording
+                elif rectype == RecordingType.RECORDED and not recording.isPlanned:
+                    return recording
         return None
 
     def update_recording_details(self, li: xbmcgui.ListItem, recordings: RecordingList, rectype: RecordingType):

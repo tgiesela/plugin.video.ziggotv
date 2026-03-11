@@ -1133,6 +1133,8 @@ class LoginSession(Web):
 
     def __process_recorded(self, recorded, planned):
         seasons = self.__extract_seasons(planned)
+        seasonsToAdd = []
+        recordingsToDelete = []
         for data in recorded['data']:
             if data['type'] == 'single':
                 if data['source'] == 'show':
@@ -1148,8 +1150,12 @@ class LoginSession(Web):
                         searchId = data['seasonId']
                 for season in seasons['data']:
                     if 'showId' in season and season['showId'] == searchId:
-                        recorded['data'].append(season)
-                        recorded['data'].remove(data)
+                        seasonsToAdd.append(season)
+                        recordingsToDelete.append(data)
+        for season in seasonsToAdd:
+            recorded['data'].append(season)
+        for data in recordingsToDelete:
+            recorded['data'].remove(data)
         return recorded
 
     def __process_planned(self, recorded, planned):
@@ -1195,12 +1201,12 @@ class LoginSession(Web):
         recordingsPlanned = self.__process_planned(recordings, recordingsPlanned)
 
         for recording in recordingsPlanned['data']:
-            if recording['type'] in ['season','show']:
+            if recording['source'] in ['season','show']:
                 self.__update_recording_season(recording,'booking')
         recJson.update({'planned': recordingsPlanned})
 
         for recording in recordings['data']:
-            if recording['type'] in ['season','show']:
+            if recording['source'] in ['season','show']:
                 self.__update_recording_season(recording,'recording')
         recJson.update({'recorded': recordings})
         return recJson
