@@ -129,16 +129,34 @@ class VideoHelpers:
             tag.setEpisode(int(episode.episodenumber))
             tag.setSeason(int(episode.season.seasonnumber))
 
-    @staticmethod
-    def __add_recording_info(playItem: xbmcgui.ListItem, overview):
+    def __add_recording_info(self, playItem: xbmcgui.ListItem, recording: SingleRecording):
         tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
-        playItem.setLabel(overview['title'])
-        tag.setPlot(overview['synopsis'])
-        tag.setGenres(overview['genres'])
-        if 'episode' in overview:
-            tag.setEpisode(int(overview['episodeNumber']))
-        if 'season' in overview:
-            tag.setSeason(int(overview['seasonNumber']))
+        details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
+        if details is None:
+            return
+
+        tag.setGenres(details['genres'])
+        cast = []
+        if 'cast' in details:
+            for person in details['cast']:
+                cast.append(xbmc.Actor(name=person, role=''))
+        tag.setCast(cast)
+        if 'synopsis' in details:
+            tag.setPlot(details['synopsis'])
+        else:
+            if recording.season is not None:
+                tag.setPlot(recording.season.shortSynopsis)
+        if 'shortSynopsis' in details:
+            tag.setPlotOutline(details['shortSynopsis'])
+        else:
+            if recording.season is not None:
+                tag.setPlotOutline(recording.season.shortSynopsis)
+        if 'episode' in details:
+            tag.setEpisode(int(details['episodeNumber']))
+        if 'season' in details:
+            tag.setSeason(int(details['seasonNumber']))
+
+        playItem.setLabel(details['title'])
 
     def __start_play(self, item: VideoItem, startposition=None,activateKeymap: bool=False):
         self.helper.dynamic_call(StreamSession.start_stream, token=item.streamInfo.token)
@@ -329,8 +347,7 @@ class VideoHelpers:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_recording_streaming_token, streamid=recording.id)
             item = VideoItem(self.addon, streamInfo)
             item.playItem.setProperty('ziggorecordingid', recording.id)
-            details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
-            self.__add_recording_info(item.playItem, details)
+            self.__add_recording_info(item.playItem, recording)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:

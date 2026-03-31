@@ -387,8 +387,14 @@ class ListitemHelper:
             tag.setCast(cast)
             if 'synopsis' in details:
                 tag.setPlot(details['synopsis'])
+            else:
+                if recording.season is not None:
+                    tag.setPlot(recording.season.shortSynopsis)
             if 'shortSynopsis' in details:
                 tag.setPlotOutline(details['shortSynopsis'])
+            else:
+                if recording.season is not None:
+                    tag.setPlotOutline(recording.season.shortSynopsis)
             if 'episode' in details:
                 tag.setEpisode(int(details['episodeNumber']))
             if 'season' in details:
