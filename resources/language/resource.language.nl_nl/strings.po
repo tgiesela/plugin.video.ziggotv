@@ -42,8 +42,8 @@ msgid "Trace network traffic"
 msgstr "Trace network traffic"
 
 msgctxt "#41006"
-msgid "Use proxy"
-msgstr "Gebruik proxy"
+msgid "Proxy"
+msgstr "Proxy"
 
 msgctxt "#41007"
 msgid "Allow adult"
@@ -54,7 +54,7 @@ msgid "Port"
 msgstr "Poortnummer"
 
 msgctxt "#41009"
-msgid "Proxy IP-address"
+msgid "IP-address"
 msgstr "IP-address"
 
 msgctxt "#41010"

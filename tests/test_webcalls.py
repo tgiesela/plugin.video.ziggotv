@@ -23,13 +23,6 @@ class TestWebCalls(TestBase):
         super().__init__(*args, **kwargs)
         self.do_login()
 
-    def __check_cookies(self):
-        cookies = self.session.load_cookies()
-        cookiesDict = requests.utils.dict_from_cookiejar(cookies)
-        if 'ACCESSTOKEN' in cookiesDict and 'CLAIMSTOKEN' in cookiesDict:
-            pass
-        else:
-            self.fail('Expected cookies not found')
 
     def test_login(self):
         self.cleanup_all()
@@ -40,7 +33,6 @@ class TestWebCalls(TestBase):
             print(exc.response)
             print(exc.status)
         self.do_login()
-        self.__check_cookies()
         self.session.dump_cookies()
         # Test expired accesstoken in sessionInfo
         self.session.sessionInfo['accessToken'] = \
@@ -49,7 +41,6 @@ class TestWebCalls(TestBase):
              'Dk3ZTg4NGIzMzkzIiwiaWF0IjoxNzA1NzM2Mjc0LCJleHAiOjE3MDU3NDM0NzQsInN1YiI6Ijg2NTQ4MDdfbmwifQ.SAD1RuDYX60_tq7'
              'Zt0v-Zh3iKKS2hU6nv34-zAEKl2w')
         self.do_login()
-        self.__check_cookies()
         # Test without ACCESSTOKEN cookie
         for _cookie in self.session.cookies:
             c: Cookie = _cookie
@@ -61,7 +52,6 @@ class TestWebCalls(TestBase):
              'Dk3ZTg4NGIzMzkzIiwiaWF0IjoxNzA1NzM2Mjc0LCJleHAiOjE3MDU3NDM0NzQsInN1YiI6Ijg2NTQ4MDdfbmwifQ.SAD1RuDYX60_tq7'
              'Zt0v-Zh3iKKS2hU6nv34-zAEKl2w')
         self.do_login()
-        self.__check_cookies()
         # Test with expired accessToken
         accessToken = self.session.sessionInfo['accessToken']
         parts = accessToken.split('.')
@@ -71,9 +61,6 @@ class TestWebCalls(TestBase):
         accessToken = '.'.join(parts)
         self.session.sessionInfo['accessToken'] = accessToken
         self.do_login()
-        self.__check_cookies()
-        self.do_login()
-        self.__check_cookies()
 
     def test_channels(self):
         self.do_login()

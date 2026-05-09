@@ -42,7 +42,7 @@ msgid "Trace network traffic"
 msgstr ""
 
 msgctxt "#41006"
-msgid "Use proxy"
+msgid "Proxy"
 msgstr ""
 
 msgctxt "#41007"
@@ -54,7 +54,7 @@ msgid "Port"
 msgstr ""
 
 msgctxt "#41009"
-msgid "Proxy IP-address"
+msgid "IP-address"
 msgstr ""
 
 msgctxt "#41010"

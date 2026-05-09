@@ -55,7 +55,6 @@ class TestBase(unittest.TestCase):
         self.addon.setSettingBool('print-network-traffic', False)
         self.addon.setSetting('proxy-ip', '127.0.0.1')
         self.addon.setSetting('proxy-port', '6868')
-        self.addon.setSettingBool('use-proxy', True)
         self.addon.setSettingBool('full-hd', True)
         self.addon.setSettingBool('print-response-content', False)
         self.addon.setSettingBool('print-request-content', False)

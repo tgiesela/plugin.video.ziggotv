@@ -36,7 +36,7 @@ class Web(requests.Session):
         self.addonPath = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
         self.connectTimeout = addon.getSettingNumber('connection-timeout')
         self.dataTimeout = addon.getSettingNumber('data-timeout')
-        self.load_cookies()
+#        self.load_cookies()
 
     def pluginpath(self, name):
         """returns full path for the plugin to store a file"""
@@ -48,32 +48,32 @@ class Web(requests.Session):
             c: Cookie = _cookie
             xbmc.log('Cookie: {0}, domain: {1}, value: {2}, path: {3}'.format(c.name, c.domain, c.value, c.path))
 
-    def save_cookies(self, response):
-        """save cookies to a file"""
-        newCookies = requests.utils.dict_from_cookiejar(response.cookies)
-        if Path(self.pluginpath(G.COOKIES_INFO)).exists():
-            savedCookies = json.loads(Path(self.pluginpath(G.COOKIES_INFO)).read_text(encoding='utf-8'))
-        else:
-            savedCookies = {}
+    # def save_cookies(self, response):
+    #     """save cookies to a file"""
+    #     newCookies = requests.utils.dict_from_cookiejar(response.cookies)
+    #     if Path(self.pluginpath(G.COOKIES_INFO)).exists():
+    #         savedCookies = json.loads(Path(self.pluginpath(G.COOKIES_INFO)).read_text(encoding='utf-8'))
+    #     else:
+    #         savedCookies = {}
 
-        savedCookies = self.merge(newCookies, savedCookies)
-        Path(self.pluginpath(G.COOKIES_INFO)).write_text(json.dumps(savedCookies), encoding='utf-8')
+    #     savedCookies = self.merge(newCookies, savedCookies)
+    #     Path(self.pluginpath(G.COOKIES_INFO)).write_text(json.dumps(savedCookies), encoding='utf-8')
 
-    def load_cookies(self):
-        """load cookies from disk"""
-        if Path(self.pluginpath(G.COOKIES_INFO)).exists():
-            cookies = json.loads(Path(self.pluginpath(G.COOKIES_INFO)).read_text(encoding='utf-8'))
-        else:
-            cookies = {}
-        cookies = requests.utils.cookiejar_from_dict(cookies)  # turn dict to cookiejar
-        self.cookies.update(cookies)
-        return cookies
+    # def load_cookies(self):
+    #     """load cookies from disk"""
+    #     if Path(self.pluginpath(G.COOKIES_INFO)).exists():
+    #         cookies = json.loads(Path(self.pluginpath(G.COOKIES_INFO)).read_text(encoding='utf-8'))
+    #     else:
+    #         cookies = {}
+    #     cookies = requests.utils.cookiejar_from_dict(cookies)  # turn dict to cookiejar
+    #     self.cookies.update(cookies)
+    #     return cookies
 
-    @staticmethod
-    def merge(dict1, dict2):
-        """merge two dictionaries"""
-        dict2.update(dict1)
-        return dict2
+    # @staticmethod
+    # def merge(dict1, dict2):
+    #     """merge two dictionaries"""
+    #     dict2.update(dict1)
+    #     return dict2
 
     @staticmethod
     def __print_request(response):
@@ -149,7 +149,6 @@ class Web(requests.Session):
         response = super().post(url, data=data, json=jsonData, headers=headers, params=params,
                                 timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
-        self.save_cookies(response)
         return response
 
     def do_get(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
@@ -172,8 +171,6 @@ class Web(requests.Session):
         response = super().get(url, data=data, json=jsonData, headers=headers, params=params,
                                timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
-        # self.dump_cookies()
-        self.save_cookies(response)
         return response
 
     def do_head(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
@@ -196,8 +193,6 @@ class Web(requests.Session):
         response = super().head(url, data=data, json=jsonData, headers=headers, params=params,
                                 timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
-        # self.dump_cookies()
-        self.save_cookies(response)
         return response
 
     def do_delete(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
@@ -220,8 +215,6 @@ class Web(requests.Session):
         response = super().delete(url, data=data, json=jsonData, headers=headers, params=params,
                                   timeout=(self.connectTimeout, self.dataTimeout))
         self.print_dialog(response)
-        # self.dump_cookies()
-        self.save_cookies(response)
         return response
 
 
@@ -411,7 +404,7 @@ class LoginSession(Web):
             if self.__refresh_token_valid():
                 xbmc.log("Login: Accesstoken expired, refresh token still valid, refreshing login", xbmc.LOGDEBUG)
                 # Als het token niet meer geldig is moet het ACCESSTOKEN-cookie worden verwijderd!
-                self.__delete_cookie('ACCESSTOKEN')
+#                self.__delete_cookie('ACCESSTOKEN')
                 response = super().do_post(G.AUTHENTICATION_URL + "/refresh",
                                            jsonData={"refreshToken": self.sessionInfo['refreshToken'],
                                                      "username": username})

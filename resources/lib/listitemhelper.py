@@ -1,6 +1,7 @@
 """
 Listitem helpers
 """
+import json
 import os
 from datetime import datetime
 import time
@@ -35,7 +36,6 @@ class ListitemHelper:
 
     def __init__(self, addon):
         self.addon: xbmcaddon.Addon = addon
-        self.uuId = SharedProperties(addon=self.addon).get_uuid()
         self.helper = ProxyHelper(addon)
         self.customerInfo = self.helper.dynamic_call(LoginSession.get_customer_info)
         self.home = SharedProperties(addon=self.addon)
@@ -61,6 +61,70 @@ class ListitemHelper:
 
         return contents
 
+    def __set_widevine_license_properties_old(self, li: xbmcgui.ListItem, streamingToken, drmContentId):
+        # See: https://github.com/xbmc/inputstream.adaptive/wiki/Integration-DRM
+        # Old method to set the widevine license properties, using a property. This is still needed for Kodi 19, 20 and 21.
+        li.setProperty(
+            key='inputstream.adaptive.license_flags',
+            value='persistent_storage')
+        li.setProperty(
+            key='inputstream.adaptive.license_type',
+            value=G.DRM)
+        widevineCertificate = self.__get_widevine_license()
+        li.setProperty(
+            key='inputstream.adaptive.server_certificate',
+            value=widevineCertificate)
+        port = self.addon.getSetting('proxy-port')
+        ip = self.addon.getSetting('proxy-ip')
+        url = 'http://{0}:{1}/license'.format(ip, port)
+        params = {'ContentId': drmContentId}
+        url = (url + '?' + urlencode(params) +
+               '|' + urlencode({"x-streaming-token": streamingToken}) +
+               '|R{SSM}'
+               '|')
+        # Prefix for request {SSM|SID|KID|PSSH}
+        #   R - The data will be kept as is raw
+        #   b - The data will be base64 encoded
+        #   B - The data will be base64 encoded and URL encoded
+        #   D - The data will be decimal converted (each char converted as integer concatenated by comma)
+        #   H - The data will be hexadecimal converted (each character converted as hexadecimal and concatenated)
+        # Prefix for response
+        # -  Not specified, or, R if the response payload is in binary raw format
+        # B if the response payload is encoded as base64
+        # J[license tokens] if the response payload is in JSON format. You must specify the license tokens
+        #    names to allow inputstream.adaptive searches for the license key and optionally the HDCP limit.
+        #    The tokens must be separated by ;. The first token must be for the key license, the second one,
+        #    optional, for the HDCP limit. The HDCP limit is the result of resolution width multiplied for
+        #    its height. For example to limit until to 720p: 1280x720 the result will be 921600.
+        # BJ[license tokens] same meaning of J[license tokens] but the JSON is encoded as base64.
+        # HB if the response payload is after two return chars \r\n\r\n in binary raw format.
+
+        li.setProperty(
+            key='inputstream.adaptive.license_key',
+            value=url)
+
+    def __set_widevine_license_properties_new(self, li: xbmcgui.ListItem, streamingToken, drmContentId):
+        # New method to set the widevine license properties, using a property. This is still needed for Kodi 19, 20 and 21.
+        # See: https://github.com/xbmc/inputstream.adaptive/wiki/Integration-DRM
+        port = self.addon.getSetting('proxy-port')
+        ip = self.addon.getSetting('proxy-ip')
+        url = f"http://{ip}:{port}/license?ContentId={drmContentId}"
+
+        drm_configs = {
+            # This is Widevine DRM Key System
+            "com.widevine.alpha": {
+                "license": {
+                    "server_url": url,
+                    "server_certificate": self.__get_widevine_license(),
+                    "req_headers": urlencode({'x-streaming-token': streamingToken}),
+                    "wrapper": "none",
+                    "unwrapper": "none",
+                    "persistent_storage": True
+                }
+            }
+        }
+        li.setProperty('inputstream.adaptive.drm', json.dumps(drm_configs))
+        
     def listitem_from_url(self, requesturl, streamingToken, drmContentId) -> xbmcgui.ListItem:
         """
         create a listitem from an url
@@ -79,78 +143,21 @@ class ListitemHelper:
         tag.setMediaType('video')
         li.setMimeType('application/dash+xml')
         li.setContentLookup(False)
+
         if self.kodiMajorVersion >= 19:
-            li.setProperty(
-                key='inputstream',
-                value=isHelper.inputstream_addon)
+            li.setProperty(key='inputstream',value=isHelper.inputstream_addon)
         else:
-            li.setProperty(
-                key='inputstreamaddon',
-                value=isHelper.inputstream_addon)
+            li.setProperty(key='inputstreamaddon',value=isHelper.inputstream_addon)
 
-        li.setProperty(
-            key='inputstream.adaptive.license_flags',
-            value='persistent_storage')
-        # See wiki of InputStream Adaptive. Also depends on header in manifest response. See Proxyserver.
-        if self.kodiMajorVersion < 21:
-            li.setProperty(
-                key='inputstream.adaptive.manifest_type',
-                value=G.PROTOCOL)
-        li.setProperty(
-            key='inputstream.adaptive.license_type',
-            value=G.DRM)
-        licenseHeaders = dict(CONST_BASE_HEADERS)
-        # 'Content-Type': 'application/octet-stream',
-        licenseHeaders.update({
-            'Host': G.ZIGGO_HOST,
-            'x-streaming-token': streamingToken,
-            'X-cus': self.customerInfo['customerId'],
-            'x-go-dev': self.uuId,
-            'x-drm-schemeId': 'edef8ba9-79d6-4ace-a3c8-27dcd51d21ed',
-            'deviceName': 'Firefox'
-        })
-        extraHeaders = ProxyHelper(self.addon).dynamic_call(LoginSession.get_extra_headers)
-        for key in extraHeaders:
-            licenseHeaders.update({key: extraHeaders[key]})
+        if self.kodiMajorVersion >= 22:
+            self.__set_widevine_license_properties_new(li, streamingToken, drmContentId)
+        else:
+            self.__set_widevine_license_properties_old(li, streamingToken, drmContentId)
 
-        port = self.addon.getSetting('proxy-port')
-        ip = self.addon.getSetting('proxy-ip')
-        url = 'http://{0}:{1}/license'.format(ip, port)
-        params = {'ContentId': drmContentId,
-                  'addon': self.addon.getAddonInfo('id')}
-        url = (url + '?' + urlencode(params) +
-               '|' + urlencode(licenseHeaders) +
-               '|R{SSM}'
-               '|')
-        # Prefix for request {SSM|SID|KID|PSSH}
-        # R - The data will be kept as is raw
-        # b - The data will be base64 encoded
-        # B - The data will be base64 encoded and URL encoded
-        # D - The data will be decimal converted (each char converted as integer concatenated by comma)
-        # H - The data will be hexadecimal converted (each character converted as hexadecimal and concatenated)
-        # Prefix for response
-        # -  Not specified, or, R if the response payload is in binary raw format
-        # B if the response payload is encoded as base64
-        # J[license tokens] if the response payload is in JSON format. You must specify the license tokens
-        #    names to allow inputstream.adaptive searches for the license key and optionally the HDCP limit.
-        #    The tokens must be separated by ;. The first token must be for the key license, the second one,
-        #    optional, for the HDCP limit. The HDCP limit is the result of resolution width multiplied for
-        #    its height. For example to limit until to 720p: 1280x720 the result will be 921600.
-        # BJ[license tokens] same meaning of J[license tokens] but the JSON is encoded as base64.
-        # HB if the response payload is after two return chars \r\n\r\n in binary raw format.
-
-        li.setProperty(
-            key='inputstream.adaptive.license_key',
-            value=url)
-        # Test
-        # server certificate to be used to encrypt messages to the license server. Should be encoded as Base64
-        widevineCertificate = self.__get_widevine_license()
-        li.setProperty(
-            key='inputstream.adaptive.server_certificate',
-            value=widevineCertificate)
-        li.setProperty(
-            key='inputstream.adaptive.stream_headers',
-            value='x-streaming-token={0}'.format(streamingToken))
+        # Note: x-streaming-token is needed in both manifest and stream headers to identify the stream. The name used here is
+        #       a bit confusing, as it is only used to identify the stream ans is not the actual streaming token. 
+        li.setProperty(key='inputstream.adaptive.manifest_headers', value=f'x-streaming-token={streamingToken}')
+        li.setProperty(key='inputstream.adaptive.stream_headers', value=f'x-streaming-token={streamingToken}')
 
         return li
 

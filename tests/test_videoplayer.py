@@ -14,11 +14,6 @@ class TestVideoPlayer(TestBase):
         self.do_login()
         self.session.refresh_entitlements()
 
-    #        self.cleanup_all()
-    #        self.session = LoginSession(xbmcaddon.Addon())
-    #        self.session.print_network_traffic = 'false'
-    #        self.do_login()
-
     def test_widevine_license(self):
         self.session.refresh_widevine_license()
         self.session.close()
@@ -35,7 +30,6 @@ class TestVideoPlayer(TestBase):
         url = 'http://wp-obc1-live-nl-prod.prod.cdn.dmdsdp.com/dash/go-dash-hdready-avc/NL_000001_019401/manifest.mpd'
         expectedUrl = ('http://127.0.0.1:6868/manifest?'
                        'path=%2Fdash%2Fgo-dash-hdready-avc%2FNL_000001_019401%2Fmanifest.mpd&'
-                       'token=0123456789ABCDEF&'
                        'hostname=wp-obc1-live-nl-prod.prod.cdn.dmdsdp.com')
         expectedManifestUrl = ('https://wp-obc1-live-nl-prod.prod.cdn.dmdsdp.com/dash,'
                                'vxttoken=0123456789ABCDEF/go-dash-hdready-avc'
@@ -43,7 +37,7 @@ class TestVideoPlayer(TestBase):
         redirectedUrl = (
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/dash,'
             'vxttoken=0123456789ABCDEF/go-dash-hdready-avc/NL_000001_019401/manifest.mpd')
-        createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        createdUrl = urlHelper.build_proxy_url(url)
         stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
@@ -69,8 +63,8 @@ class TestVideoPlayer(TestBase):
         url = ('http://wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash/LIVE$NL_000001_019401/index.mpd'
                '/Manifest?device=AVC-OTT-DASH-PR-WV&start=2023-12-15T14%3A16%3A00Z&end=2023-12-15T14%3A51%3A00Z')
         expectedUrl = ('http://127.0.0.1:6868/manifest?path=%2Fsdash%2FLIVE%24NL_000001_019401%2Findex.mpd%2FManifest'
-                       '&token=0123456789ABCDEF&hostname=wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com&device'
-                       '=AVC-OTT-DASH-PR-WV&start=2023-12-15T14%3A16%3A00Z&end=2023-12-15T14%3A51%3A00Z')
+                       '&hostname=wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com'
+                       '&device=AVC-OTT-DASH-PR-WV&start=2023-12-15T14%3A16%3A00Z&end=2023-12-15T14%3A51%3A00Z')
         expectedManifestUrl = (
             'https://wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash,'
             'vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd'
@@ -79,7 +73,7 @@ class TestVideoPlayer(TestBase):
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/wp/wp-pod3-replay-vxtoken-nl'
             '-prod.prod.cdn.dmdsdp.com/sdash,vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd/Manifest'
         )
-        createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        createdUrl = urlHelper.build_proxy_url(url)
         stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
@@ -113,7 +107,7 @@ class TestVideoPlayer(TestBase):
             '/0e378a707155514f39851ab1e45b6560_734142457f0da3caf957ba97e73249e6/index.mpd/Manifest?device=BR-AVC-DASH')
         expectedUrl = ('http://127.0.0.1:6868/manifest?path=%2Fsdash'
                        '%2F0e378a707155514f39851ab1e45b6560_734142457f0da3caf957ba97e73249e6%2Findex.mpd%2FManifest'
-                       '&token=0123456789ABCDEF&hostname=wp-pod1-vod-vxtoken-nl-prod.prod.cdn.dmdsdp.com&device=BR'
+                       '&hostname=wp-pod1-vod-vxtoken-nl-prod.prod.cdn.dmdsdp.com&device=BR'
                        '-AVC-DASH')
         expectedManifestUrl = (
             'https://wp-pod1-vod-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash,'
@@ -123,7 +117,7 @@ class TestVideoPlayer(TestBase):
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/wp/wp-pod3-replay-vxtoken-nl'
             '-prod.prod.cdn.dmdsdp.com/sdash,vxttoken=0123456789ABCDEF/LIVE$NL_000001_019401/index.mpd/Manifest'
         )
-        createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        createdUrl = urlHelper.build_proxy_url(url)
         stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')
@@ -139,7 +133,7 @@ class TestVideoPlayer(TestBase):
         url = ('http://wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live/disk1/'
                'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd')
         expectedUrl = ('http://127.0.0.1:6868/manifest?path=/live/disk1/NL_000011_019563/go-dash-hdready-avc/'
-                       'NL_000011_019563.mpd&token=0123456789ABCDEF&'
+                       'NL_000011_019563.mpd&'
                        'hostname=wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com')
         expectedManifestUrl = (
             'https://wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,vxttoken=0123456789ABCDEF/disk1/'
@@ -149,7 +143,7 @@ class TestVideoPlayer(TestBase):
             'wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,vxttoken=0123456789ABCDEF/disk1/'
             'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd'
         )
-        createdUrl = urlHelper.build_url('0123456789ABCDEF', url)
+        createdUrl = urlHelper.build_proxy_url(url)
         stream = AvStream(self.session, '0123456789ABCDEF')
         self.assertEqual(unquote(createdUrl), expectedUrl, 'URL not as expected')
         s = createdUrl.find('/manifest')

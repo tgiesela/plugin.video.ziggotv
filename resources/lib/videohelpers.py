@@ -42,11 +42,11 @@ class VideoItem:
         self.addon = addon
         if locator is None:
             if hasattr(streamInfo, 'url'):
-                self.url = self.urlHelper.build_url(streamInfo.token, streamInfo.url)
+                self.url = self.urlHelper.build_proxy_url(streamInfo.url)
             else:
                 raise RuntimeError('url or locator missing')
         else:
-            self.url = self.urlHelper.build_url(streamInfo.token, locator)
+            self.url = self.urlHelper.build_proxy_url(locator)
         self.playItem:xbmcgui.ListItem = \
             self.liHelper.listitem_from_url(requesturl=self.url,
                                             streamingToken=streamInfo.token,

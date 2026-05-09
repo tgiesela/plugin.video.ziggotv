@@ -19,6 +19,7 @@ from xml.dom import minidom
 
 import xbmc
 
+from resources.lib.globals import CONST_BASE_HEADERS, G
 from resources.lib.webcalls import LoginSession
 from resources.lib.utils import WebException, SharedProperties
 
@@ -78,7 +79,6 @@ class ProxyServer(http.server.ThreadingHTTPServer):
     # pylint: disable=too-many-instance-attributes
     def __init__(self, addon, server_address, lock):
         http.server.ThreadingHTTPServer.__init__(self, server_address, HTTPRequestHandler)
-        self.latestToken = None
         self.lock = lock
         self.addon = addon
         self.session = LoginSession(self.addon)
@@ -87,6 +87,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         self.kodiMajorVersion = self.home.get_kodi_version_major()
         self.kodiMinorVersion = self.home.get_kodi_version_minor()
         self.connectionTimeout = self.addon.getSettingNumber('connection-timeout')
+        self.uuId = SharedProperties(addon=self.addon).get_uuid()
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
     def send_error(self, exc: Exception, request: HTTPRequestHandler):
@@ -120,8 +121,9 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         """
         parsedUrl = urlparse(request.path)
         qs = parse_qs(parsedUrl.query)
-        if 'path' in qs and 'hostname' in qs and 'token' in qs:
-            stream = self.streamsession.find_stream(qs['token'][0])
+        if 'path' in qs and 'hostname' in qs and 'x-streaming-token' in request.headers:
+            token = request.headers['x-streaming-token']
+            stream = self.streamsession.find_stream(token)
             if stream is None:
                 raise RuntimeError('Stream not found for token: {0}'.format(qs['token'][0]))
             manifestUrl = stream.get_manifest_url(proxyUrl=request.path)
@@ -140,7 +142,6 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 request.send_header('content-type', 'application/dash+xml')
             request.end_headers()
             request.wfile.write(response.content)
-            self.latestToken = stream.latestToken
 
         else:
             request.send_response(404)
@@ -276,18 +277,31 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             parsedUrl = urlparse(request.path)
             contentId = parse_qs(parsedUrl.query)['ContentId'][0]
 
-            with self.lock:
-                self.session.load_cookies()
+            licenseHeaders = dict(CONST_BASE_HEADERS)
+            # 'Content-Type': 'application/octet-stream',
+            licenseHeaders.update({
+                'Host': G.ZIGGO_HOST,
+                'x-streaming-token': token,
+                'x-go-dev': self.uuId,
+                'x-drm-schemeId': 'edef8ba9-79d6-4ace-a3c8-27dcd51d21ed',
+                'deviceName': 'Firefox'
+            })
+            
+            extraHeaders = self.session.get_extra_headers()
+            for key in extraHeaders:
+                licenseHeaders.update({key: extraHeaders[key]})
+
             hdrs = {}
-            for key in request.headers:
+            for key in request.headers: # Headers set by InputStream Adaptive (requesting license)
                 hdrs[key] = request.headers[key]
-            hdrs['x-streaming-token'] = token
+            for key in licenseHeaders:  # Headers required for license request to work. 
+                hdrs[key] = licenseHeaders[key]
             with self.lock:
                 response = self.session.get_license(contentId, receivedData, hdrs)
+
             for key in response.headers:
                 request.headers.add_header(key, response.headers[key])
-                # if key.lower() == 'x-streaming-token':
-                #     self.set_streaming_token(response.headers[key])
+
             request.send_response(response.status_code)
             request.end_headers()
             request.wfile.write(response.content)

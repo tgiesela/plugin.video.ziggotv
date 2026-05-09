@@ -202,9 +202,6 @@ class AvStream:
             self.proxyUrl = proxyUrl
             self.origPath = unquote(origParams['path'][0])
             self.origHostname = unquote(origParams['hostname'][0])
-            initialToken = unquote(origParams['token'][0])
-            if initialToken != self.token:
-                xbmc.log('token in manifest request not identical to initial token !!!', xbmc.LOGERROR)
             self.redirectedUrl = None
 
         if self.redirectedUrl is not None:
