@@ -13,6 +13,7 @@ from tests.test_base import TestBase
 from tests.testinputstreamhelper import Helper
 
 class VideoHelperSingleton():
+# pylint: disable=too-many-instance-attributes, too-few-public-methods
     """
     Singleton class example
     """

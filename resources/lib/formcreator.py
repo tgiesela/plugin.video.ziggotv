@@ -80,6 +80,7 @@ class FormCreator:
             self.includes.update({includename: (contentname, params, definition)})
 
     def processxml(self, formname: str):
+        # pylint: disable=too-many-locals
         """
         Function to process the XML form template and generate the final XML form.
         Also includes color replacement based on skin settings.
@@ -121,7 +122,7 @@ class FormCreator:
             for elemid in useincludeparams.keys():
                 newnodetext = newnodetext.replace(f'$PARAM[{elemid}]', useincludeparams[elemid])
 
-            # Now for the explicitly defined ones there is no long '$PARAM[elemid]' in the text, 
+            # Now for the explicitly defined ones there is no long '$PARAM[elemid]' in the text,
             # so we only replace the remaining ones
 
             for elemid in definedparams.keys():
@@ -145,6 +146,7 @@ class FormCreator:
         tree.write(outputfile, encoding='utf-8', xml_declaration=True)
 
     def __skinrelatedprocessing(self, root: ET.Element, skindir: str):
+        # pylint: disable=too-many-branches
         self.state['skindir'] = skindir
 #        skindir = 'skin.estuary'
         if skindir == 'skin.estuary': # fonts and params are set

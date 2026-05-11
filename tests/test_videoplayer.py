@@ -9,17 +9,15 @@ from tests.test_base import TestBase
 
 
 class TestVideoPlayer(TestBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def test_widevine_license(self):
         self.do_login()
         self.session.refresh_entitlements()
-
-    def test_widevine_license(self):
         self.session.refresh_widevine_license()
-        self.session.close()
 
     def test_buildurl(self):
-        # pylint: disable=too-many-statements
+        self.do_login()
+        self.session.refresh_entitlements()
+        # pylint: disable=too-many-statements, too-many-locals
         urlHelper = UrlTools(self.addon)
         helpers = ListitemHelper(self.addon)
         self.session.refresh_widevine_license()

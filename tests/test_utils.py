@@ -32,11 +32,13 @@ class TestUtils(unittest.TestCase):
 
         rslt = utils.DatetimeHelper.to_unix('2026-01-05T15:50:00Z', '%Y-%m-%dT%H:%M:%SZ')
         print(rslt)
-        startTime = utils.DatetimeHelper.from_unix(utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
+        startTime = utils.DatetimeHelper.from_unix(
+            utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
         self.assertEqual('2021-06-03', startTime.strftime('%Y-%m-%d'))
         self.assertEqual('18:01', startTime.strftime('%H:%M'))
-        
-        startTime = utils.DatetimeHelper.from_unix(utils.DatetimeHelper.to_unix('2025-12-31T21:20:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
+
+        startTime = utils.DatetimeHelper.from_unix(
+            utils.DatetimeHelper.to_unix('2025-12-31T21:20:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ'))
         newtime = utils.DatetimeHelper.from_utc_to_local(startTime)
         self.assertEqual('2025-12-31', newtime.strftime('%Y-%m-%d'))
         self.assertEqual('22:20', newtime.strftime('%H:%M'))
@@ -63,33 +65,54 @@ class TestUtils(unittest.TestCase):
 
 
 class TestSavedStates(TestBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.do_login()
-
     def test_states(self):
+        self.do_login()
+        self.logon_via_proxy()
         recList = SavedStateList(self.addon)
         recList.add('crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000~~2F237133469,'
                     'imi:517366be71fa5106c9215d9f1367cbacef4a4772', 350.000)
+        self.assertEqual(len(recList.states), 1)
         recList.add('crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000~~2F237133469,'
                     'imi:517366be71fa5106c9215d9f1367cbacef4a4772', 400.000)
+        self.assertEqual(len(recList.states), 1)
         recList.add('crid:~~2F~~2Fgn.tv~~3F817615~~2FSH010806510000~~2F237133469,'
                     'imi:517366be71fa5106c9215d9f1367cbacef4a4772', 350.000)
+        self.assertEqual(len(recList.states), 2)
         recList.delete('unknown')
+        self.assertEqual(len(recList.states), 2)
         recList.delete('crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000~~2F237133469,'
                        'imi:517366be71fa5106c9215d9f1367cbacef4a4772')
+        self.assertEqual(len(recList.states), 1)
+        sleep(1)
         recList.cleanup(0)
+        self.assertEqual(len(recList.states), 0)
         recList = SavedStateList(self.addon)
+        self.assertEqual(len(recList.states), 0)
         recList.cleanup()
+        self.assertEqual(len(recList.states), 0)
 
     def test_saved_channels(self):
+        self.do_login()
+        self.logon_via_proxy()
+        savedchannels = SavedChannelsList(self.addon)
+        savedchannels.states = {'NL_000001_019401': {'name': 'NPO-1', 
+                                                     'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now())}}
+        savedchannels.save()
+        savedchannels = SavedChannelsList(self.addon)
+        savedchannels.states = {}
+        savedchannels.save()
         savedchannels = SavedChannelsList(self.addon)
         savedchannels.add('NL_000001_019401', 'NPO-1')
+        self.assertEqual(len(savedchannels.states), 1)
         savedchannels.add('NL_000003_019405', 'NPO-3')
+        self.assertEqual(len(savedchannels.states), 2)
         savedchannels.add('NL_000005_019462', 'RTL-5')
+        self.assertEqual(len(savedchannels.states), 3)
         savedchannels.delete('NL_000005_019462')
+        self.assertEqual(len(savedchannels.states), 2)
+        sleep(1)
         savedchannels.cleanup(0,1)
-        self.assertEqual(len(savedchannels.get_all()),2)
+        self.assertEqual(len(savedchannels.states), 1)
         savedchannels = SavedChannelsList(self.addon)
         savedchannels.cleanup()
 

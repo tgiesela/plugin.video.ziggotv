@@ -148,6 +148,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             request.end_headers()
 
     def handle_default(self, request: HTTPRequestHandler):
+        # pylint: disable=too-many-locals, too-many-branches
         """
         Handles get requests which are not manifest/license request. This concerns the video/audio requests.
         Also here the url for the real host must be constructed and the streaming token must be inserted.
@@ -246,6 +247,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             self.send_error(exc, request)
 
     def handle_post(self, request: HTTPRequestHandler):
+        # pylint: disable=too-many-locals, too-many-statements
         """
         Function to handle the license request. The request is forwarded to the real host.
         @param request:
@@ -286,16 +288,16 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 'x-drm-schemeId': 'edef8ba9-79d6-4ace-a3c8-27dcd51d21ed',
                 'deviceName': 'Firefox'
             })
-            
+
             extraHeaders = self.session.get_extra_headers()
-            for key in extraHeaders:
-                licenseHeaders.update({key: extraHeaders[key]})
+            for key, value in extraHeaders.items():
+                licenseHeaders.update({key: value})
 
             hdrs = {}
             for key in request.headers: # Headers set by InputStream Adaptive (requesting license)
                 hdrs[key] = request.headers[key]
-            for key in licenseHeaders:  # Headers required for license request to work. 
-                hdrs[key] = licenseHeaders[key]
+            for key, value in licenseHeaders.items():  # Headers required for license request to work.
+                hdrs[key] = value
             with self.lock:
                 response = self.session.get_license(contentId, receivedData, hdrs)
 
@@ -505,3 +507,22 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                     return None
                 return baseURL[0].childNodes[0].data
         return None
+
+    def run(self):
+        try:
+            self.serve_forever(poll_interval=0.5)
+        except KeyboardInterrupt as exc:
+            xbmc.log('Exception in StopableHttpServer: {0}'.format(exc), xbmc.LOGERROR)
+        finally:
+            xbmc.log('Proxy server shutting down', xbmc.LOGINFO)
+            self.server_close()
+            xbmc.log('Proxy server closed', xbmc.LOGINFO)
+            
+    def stop(self):
+        self.shutdown()
+        try:
+            import socket
+            with socket.create_connection(self.server_address, timeout=1):
+                pass
+        except Exception:
+            pass # Is expected here because the server is already down

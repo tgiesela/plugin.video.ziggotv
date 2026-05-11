@@ -40,7 +40,7 @@ class TestRecordings(TestBase):
     def test_test(self):
         self.do_login()
         self.logon_via_proxy()
-        recJson = self.session.refresh_recordings(True)
+        self.session.refresh_recordings(True)
         recordings: RecordingList = RecordingList(self.addon)
 #        recordings.refresh()
         recs = recordings.get_planned_recordings()
@@ -125,10 +125,9 @@ class TestRecordings(TestBase):
                             episode = f'S{recording.seasonNumber}-E?'
                     print(f'\tEPISODE: {episode}' )
                 continue
-            else:
-                details = self.session.get_recording_details(recordingId=rec.id)
-                _ = listitemhelper.listitem_from_recording(rec)
-                print(f'SINGLE: {rec.title}' )
+            details = self.session.get_recording_details(recordingId=rec.id)
+            _ = listitemhelper.listitem_from_recording(rec)
+            print(f'SINGLE: {rec.title}' )
             print(details)
 
         recs = recordings.get_season_recordings(RecordingType.PLANNED)
@@ -139,6 +138,7 @@ class TestRecordings(TestBase):
                 print(f'SEASON: {rec.title}')
                 for recording in rec.get_episodes(RecordingType.PLANNED):
                     li = listitemhelper.listitem_from_recording(recording)
+                    self.assertIsNotNone(li)
                     if hasattr(recording, 'episodeTitle'):
                         episode = f'E{recording.episodeNumber}-{recording.episodeTitle}'
                     else:
@@ -148,10 +148,9 @@ class TestRecordings(TestBase):
                             episode = f'S{recording.seasonNumber}-E?'
                     print(f'\tEPISODE: {episode}' )
                 continue
-            else:
-                details = self.session.get_recording_details(recordingId=rec.id)
-                li = listitemhelper.listitem_from_recording(rec)
-                print(f'SINGLE: {rec.title}' )
+            details = self.session.get_recording_details(recordingId=rec.id)
+            li = listitemhelper.listitem_from_recording(rec)
+            print(f'SINGLE: {rec.title}' )
             print(details)
 
 

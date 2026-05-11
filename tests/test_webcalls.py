@@ -8,15 +8,11 @@ from http.cookiejar import Cookie
 
 from xml.dom import minidom
 
-import requests
-
 from resources.lib.avstream import StreamSession
 from resources.lib.globals import G
-from resources.lib.urltools import UrlTools
 from resources.lib.utils import WebException, DatetimeHelper
 from resources.lib.webcalls import LoginSession
 from tests.test_base import TestBase
-
 
 class TestWebCalls(TestBase):
     def __init__(self, *args, **kwargs):
@@ -188,7 +184,6 @@ class TestWebCalls(TestBase):
         baseURL = self.baseurl_from_manifest(response.content)
         if baseURL is None:
             print('BaseURL not found')
-            return
 
     def test_voor_jou(self):
         self.do_login()

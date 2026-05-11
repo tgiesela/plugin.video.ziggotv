@@ -7,9 +7,6 @@ import unittest
 
 from resources.lib.globals import G
 from resources.lib.movies import Episode, MovieList, SeriesList
-from resources.lib.proxyserver import ProxyServer
-from resources.lib.utils import ProxyHelper
-from resources.lib.webcalls import LoginSession
 from tests.test_base import TestBase
 
 class InvalidAgeError(Exception):

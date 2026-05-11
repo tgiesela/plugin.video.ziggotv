@@ -2,10 +2,9 @@
 module containing classes for recordings
 """
 import dataclasses
+import datetime
 from enum import IntEnum
 import json
-import os
-import datetime
 from pathlib import Path
 
 import xbmcaddon
@@ -14,6 +13,7 @@ import xbmc
 
 from resources.lib import utils
 from resources.lib.globals import G
+from resources.lib.savedstates import BaseSavedStateList
 from resources.lib.webcalls import LoginSession
 
 
@@ -172,7 +172,7 @@ class SeasonRecording:
     The recordings itself are stored in the episodes attribute and can be of type PlannedRecording or SingleRecording
     """
 
-    # pylint: disable=too-many-instance-attributes, too-few-public-methods
+    # pylint: disable=too-many-instance-attributes, too-few-public-methods, too-many-branches, too-many-statements
     def __init__(self, recordingJson, recordingtype:RecordingType):
         self.poster = Poster(posterJson=recordingJson['poster'])
         self.recordingType = recordingtype
@@ -309,7 +309,7 @@ class RecordingList:
     """
     container class for a list of recordings of any type
     """
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes
     def __init__(self, addon: xbmcaddon.Addon):
         self.addon = addon
         self.helper = utils.ProxyHelper(addon)
@@ -488,7 +488,8 @@ class RecordingList:
         function to refresh the recordings list by reloading the details from file and re-parsing it
         @return:
         """
-        recordings = self.helper.dynamic_call(LoginSession.refresh_recordings, includeAdult=self.addon.getSettingBool('adult-allowed'))
+        recordings = self.helper.dynamic_call(LoginSession.refresh_recordings,
+                                              includeAdult=self.addon.getSettingBool('adult-allowed'))
         self.recordingDetails = recordings
         self.__save_recordings_details()
         self.__load_and_parse()
@@ -539,13 +540,12 @@ class RecordingList:
         recordedEpisodes = season.get_episodes(RecordingType.RECORDED)
         if deleteBookedAndRecorded:
             return True
-        else:
-            if season.recordingType == RecordingType.PLANNED:
-                if len(recordedEpisodes) == 0:
-                    return True
-            elif season.recordingType == RecordingType.RECORDED:
-                if len(plannedEpisodes) == 0:
-                    return True
+        if season.recordingType == RecordingType.PLANNED:
+            if len(recordedEpisodes) == 0:
+                return True
+        elif season.recordingType == RecordingType.RECORDED:
+            if len(plannedEpisodes) == 0:
+                return True
         return False
 
     def delete_season_recording(self, season: SeasonRecording, deleteBookedAndRecorded: bool):
@@ -596,30 +596,17 @@ class RecordingList:
             self.recs.remove(season)
         xbmc.log(f"Recording of complete show with id {season.showId} deleted", xbmc.LOGDEBUG)
 
-class SavedStateList:
+class SavedStateList(BaseSavedStateList):
     """
-    class to keep the state of played recording. This is used to resume a recording at the point where
-    playback was stopped the last time
+    class to keep the list of recordings/movies which are currently being played. 
+    This is used to stop the playback of a recording/movie when it is deleted from 
+    the recordings list, and to prevent that a recording/movie is deleted while it 
+    is being played.
     """
 
     def __init__(self, addon: xbmcaddon.Addon):
-        self.addon = addon
-        self.addonPath = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
-        self.states = {}
-        self.fileName = self.addonPath + G.PLAYBACK_INFO
-        targetdir = os.path.dirname(self.fileName)
-        if targetdir == '':
-            targetdir = os.getcwd()
-        if not os.path.exists(targetdir):
-            os.makedirs(targetdir)
-        if not os.path.exists(self.fileName):
-            with open(self.fileName, 'w', encoding='utf-8') as file:
-                json.dump(self.states, file)
-        self.__load()
-
-    def __load(self):
-        with open(self.fileName, 'r+', encoding='utf-8') as file:
-            self.states = json.load(file)
+        fileName = G.PLAYBACK_INFO
+        super().__init__(addon, fileName)
 
     def add(self, itemId, position):
         """
@@ -630,45 +617,15 @@ class SavedStateList:
         """
         self.states.update({itemId: {'position': position,
                                      'dateAdded': utils.DatetimeHelper.unix_datetime(datetime.datetime.now())}})
-        with open(self.fileName, 'w', encoding='utf-8') as file:
-            json.dump(self.states, file)
+        self.save()
 
-    def delete(self, itemId):
+    def get_position(self, itemId):
         """
-        function to delete the recording from the state list
+        function to find a position of a recording by its id
         @param itemId:
         @return:
         """
-        if itemId in self.states:
-            self.states.pop(itemId)
-
-    def get(self, itemId):
-        """
-       function to find a recording by its id
-       @param itemId:
-       @return:
-        """
-        for item in self.states:
-            if item == itemId:
-                return self.states[item]['position']
+        item = super().get(itemId)
+        if item is not None:
+            return item['position']
         return None
-
-    def cleanup(self, daysToKeep=365):
-        """
-        function to clean up saved recording states
-        @param daysToKeep: 
-        @return: 
-        """
-        expDate = datetime.datetime.now() - datetime.timedelta(days=daysToKeep)
-        for item in list(self.states):
-            if self.states[item]['dateAdded'] < utils.DatetimeHelper.unix_datetime(expDate):
-                self.delete(item)
-        with open(self.fileName, 'w', encoding='utf-8') as file:
-            json.dump(self.states, file)
-
-    def reload(self):
-        """
-        function to reload the saved states from file
-        @return:
-        """
-        self.__load()

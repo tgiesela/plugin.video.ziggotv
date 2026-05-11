@@ -15,7 +15,7 @@ import xbmcaddon
 from resources.lib import utils
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.channelguide import ChannelGuide
-from resources.lib.globals import S, G, CONST_BASE_HEADERS
+from resources.lib.globals import S, G
 from resources.lib.movies import Movie, Series, Season, Episode, OfferType
 from resources.lib.recording import Recording, RecordingList, RecordingType, SavedStateList, \
     SingleRecording, SeasonRecording, PlannedRecording
@@ -29,6 +29,7 @@ except Exception as excpt:
     from tests.testinputstreamhelper import Helper
 
 class ListitemHelper:
+    # pylint: disable=too-many-instance-attributes
     """
     Class holding several methods to create listitems for a specific purpose
     When used for channels, the caller must set the channelList property.
@@ -63,7 +64,8 @@ class ListitemHelper:
 
     def __set_widevine_license_properties_old(self, li: xbmcgui.ListItem, streamingToken, drmContentId):
         # See: https://github.com/xbmc/inputstream.adaptive/wiki/Integration-DRM
-        # Old method to set the widevine license properties, using a property. This is still needed for Kodi 19, 20 and 21.
+        # Old method to set the widevine license properties, using a property. This is still needed
+        # for Kodi 19, 20 and 21.
         li.setProperty(
             key='inputstream.adaptive.license_flags',
             value='persistent_storage')
@@ -104,13 +106,13 @@ class ListitemHelper:
             value=url)
 
     def __set_widevine_license_properties_new(self, li: xbmcgui.ListItem, streamingToken, drmContentId):
-        # New method to set the widevine license properties, using a property. This is still needed for Kodi 19, 20 and 21.
+        # New method to set the widevine license properties, using a property. This is still needed for Kodi 22 and up.
         # See: https://github.com/xbmc/inputstream.adaptive/wiki/Integration-DRM
         port = self.addon.getSetting('proxy-port')
         ip = self.addon.getSetting('proxy-ip')
         url = f"http://{ip}:{port}/license?ContentId={drmContentId}"
 
-        drm_configs = {
+        drmConfigs = {
             # This is Widevine DRM Key System
             "com.widevine.alpha": {
                 "license": {
@@ -123,8 +125,8 @@ class ListitemHelper:
                 }
             }
         }
-        li.setProperty('inputstream.adaptive.drm', json.dumps(drm_configs))
-        
+        li.setProperty('inputstream.adaptive.drm', json.dumps(drmConfigs))
+
     def listitem_from_url(self, requesturl, streamingToken, drmContentId) -> xbmcgui.ListItem:
         """
         create a listitem from an url
@@ -154,16 +156,26 @@ class ListitemHelper:
         else:
             self.__set_widevine_license_properties_old(li, streamingToken, drmContentId)
 
-        # Note: x-streaming-token is needed in both manifest and stream headers to identify the stream. The name used here is
-        #       a bit confusing, as it is only used to identify the stream ans is not the actual streaming token. 
+        # Note: x-streaming-token is needed in both manifest and stream headers to identify
+        # the stream. The name used here is a bit confusing, as it is only used to identify
+        # the stream ans is not the actual streaming token.
         li.setProperty(key='inputstream.adaptive.manifest_headers', value=f'x-streaming-token={streamingToken}')
         li.setProperty(key='inputstream.adaptive.stream_headers', value=f'x-streaming-token={streamingToken}')
 
         return li
 
-    def updateresumepointinfo(self, li: xbmcgui.ListItem, id, duration):
+    def updateresumepointinfo(self, li: xbmcgui.ListItem, resumeid, duration):
+        """ 
+        Function to update the resumepoint information in a listitem, based on the resumeid 
+        and duration of the recording.
+
+        Args:
+            li (xbmcgui.ListItem): The listitem to be updated
+            resumeid (str): the id of the item to find the resumepoint for
+            duration (str|float): the duration of the recording/movie/episode
+        """
         self.savedStateList.reload()
-        resumePoint = self.savedStateList.get(id)
+        resumePoint = self.savedStateList.get_position(resumeid)
         li.setProperty('isWatched','false')
         if resumePoint is not None:
             li.setProperty('hasResumepoint','true')
@@ -191,6 +203,7 @@ class ListitemHelper:
         self.updateresumepointinfo(li, recording.id, recording.duration)
 
     def listitem_from_recording(self, recording: Recording) -> xbmcgui.ListItem:
+        # pylint: disable=too-many-statements, too-many-branches
         """
         Creates a ListItem from a SingleRecording
         @param season: the information of the season to which the recording belongs
@@ -349,6 +362,7 @@ class ListitemHelper:
         ziggoid = tag.getUniqueID('ziggoRecordingId')
         recording: Recording = None
 
+        # pylint: disable=too-many-nested-blocks
         for recording in recordings.recs:
             if isinstance(recording, SeasonRecording):
                 if ziggoid == recording.id: # It is a season recording, so we can return it if the type matches
@@ -363,9 +377,42 @@ class ListitemHelper:
             elif ziggoid == recording.id:
                 if rectype == RecordingType.PLANNED and recording.isPlanned:
                     return recording
-                elif rectype == RecordingType.RECORDED and not recording.isPlanned:
+                if rectype == RecordingType.RECORDED and not recording.isPlanned:
                     return recording
         return None
+
+    def update_single_recording_details(self, li: xbmcgui.ListItem, recording: SingleRecording|PlannedRecording):
+        """Function to update the details of a single recording
+
+        Args:
+            li (xbmcgui.ListItem): the listitem with the recording
+            recording (SingleRecording | PlannedRecording): the recording 
+        """
+        tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
+        details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
+        if details is None:
+            return
+
+        tag.setGenres(details['genres'])
+        cast = []
+        if 'cast' in details:
+            for person in details['cast']:
+                cast.append(xbmc.Actor(name=person, role=''))
+        tag.setCast(cast)
+        if 'synopsis' in details:
+            tag.setPlot(details['synopsis'])
+        else:
+            if recording.season is not None:
+                tag.setPlot(recording.season.shortSynopsis)
+        if 'shortSynopsis' in details:
+            tag.setPlotOutline(details['shortSynopsis'])
+        else:
+            if recording.season is not None:
+                tag.setPlotOutline(recording.season.shortSynopsis)
+        if 'episode' in details:
+            tag.setEpisode(int(details['episodeNumber']))
+        if 'season' in details:
+            tag.setSeason(int(details['seasonNumber']))
 
     def update_recording_details(self, li: xbmcgui.ListItem, recordings: RecordingList, rectype: RecordingType):
         """
@@ -379,33 +426,9 @@ class ListitemHelper:
         :param recfilter: Description
         """
         recording = self.findrecording(li, recordings, rectype)
-        details = None
         tag: xbmc.InfoTagVideo = li.getVideoInfoTag()
         if isinstance(recording, (SingleRecording, PlannedRecording)):
-            details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
-            if details is None:
-                return
-
-            tag.setGenres(details['genres'])
-            cast = []
-            if 'cast' in details:
-                for person in details['cast']:
-                    cast.append(xbmc.Actor(name=person, role=''))
-            tag.setCast(cast)
-            if 'synopsis' in details:
-                tag.setPlot(details['synopsis'])
-            else:
-                if recording.season is not None:
-                    tag.setPlot(recording.season.shortSynopsis)
-            if 'shortSynopsis' in details:
-                tag.setPlotOutline(details['shortSynopsis'])
-            else:
-                if recording.season is not None:
-                    tag.setPlotOutline(recording.season.shortSynopsis)
-            if 'episode' in details:
-                tag.setEpisode(int(details['episodeNumber']))
-            if 'season' in details:
-                tag.setSeason(int(details['seasonNumber']))
+            self.update_single_recording_details(li, recording)
         elif isinstance(recording, SeasonRecording):
             srec: SeasonRecording = recording
             tag.setGenres(srec.genres)

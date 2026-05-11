@@ -458,7 +458,6 @@ def invoke_debugger(enableDebug: bool, debugType:str):
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Could not connect to debugger: {0}'.format(exc), xbmc.LOGERROR)
-    return
 
 def check_service(addon: xbmcaddon.Addon):
     """

@@ -14,6 +14,7 @@ from resources.lib.utils import ProxyHelper
 from resources.lib.webcalls import LoginSession
 
 class GridLink:
+    # pylint: disable=too-few-public-methods
     """
     class containing the gridLink Information. Used to display icon/poster 
     """
@@ -24,6 +25,7 @@ class GridLink:
         self.theme      = gridlinkJson['theme']
 
 class Offer:
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes
     """
     class containing the offer information of an instance which could be played.
     """
@@ -46,6 +48,7 @@ class Offer:
         self.entitled = offer['entitled']
 
 class Instance:
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes
     """
     class containing of instance from which we can choose to play the movie/episode
     """
@@ -63,7 +66,9 @@ class Instance:
         self.brandingProviderId = instance['brandingProviderId']
         self.isVodOttOnlyPurchasable = instance['isVodOttOnlyPurchasable']
         self.goPlayable = instance['goPlayable']
-        self.goDownloadable = instance['goDownloadable']
+        self.goDownloadable = False
+        if 'goDownloadable' in instance:
+            self.goDownloadable = instance['goDownloadable']
         self.isAdEnabled = instance['isAdEnabled']
         self.isA2AEnabled = instance['isA2AEnabled']
         self.supportedExternalStreamingProtocols = []
@@ -106,15 +111,17 @@ class OfferType(IntEnum):
     """
     Enumeration of types to search for within instance/offer
     """
-    FREE = 1,
+    FREE = 1
     PAYED = 2
 
 class Asset:
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes, too-many-branches
     """
     Class containing shared properties for movies and episodes
     """
 
     def __init__(self, info):
+        # pylint: disable=too-many-instance-attributes, too-many-statements
         self.id                 = info['id']
         self.type               = info['type']
         self.assetType          = info['assetType']
@@ -199,6 +206,7 @@ class Asset:
 
 
 class Movie:
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes, too-many-branches
     """
     class containing movie information
     """
@@ -242,10 +250,12 @@ class Movie:
         if self.asset is None:
             if self.gridlink is None:
                 return G.STATIC_URL + 'image-service/intent/{crid}/posterTile'.format(crid=self.id)
-            elif 'background' in self.gridlink.theme:
+            if 'background' in self.gridlink.theme:
                 return self.gridlink.theme['background']
-        else:
-            return self.asset.image
+            if 'poster' in self.gridlink.theme:
+                return self.gridlink.theme['poster']
+            return None
+        return self.asset.image
 
     @property
     def title(self):
@@ -257,12 +267,11 @@ class Movie:
         if self.asset is None:
             if self.gridlink is None:
                 return f'<{self.id}>'
-            else:
-                return self.gridlink.title
-        else:
-            return self.asset.title
+            return self.gridlink.title
+        return self.asset.title
 
 class Series:
+    # pylint: disable=too-many-instance-attributes
     """
     class containing information of a series. 
     container must be a reference to a SeriesList
@@ -315,8 +324,7 @@ class Series:
             if self.gridlink.title is None or self.gridlink.title == '':
                 return '<?>'
             return self.gridlink.title
-        else:
-            return self._title
+        return self._title
 
     def add_details(self, seriesJson):
         """
@@ -360,6 +368,7 @@ class Series:
         return None
 
 class Season:
+    # pylint: disable=too-few-public-methods, too-many-instance-attributes
     """
     class containing information of a season of a series. 
     """
@@ -387,10 +396,12 @@ class Season:
         return None
 
 class Episode:
+    # pylint: disable=too-many-instance-attributes
     """
     class containing information of an episode of a series. 
     """
     class Source:
+        # pylint: disable=too-many-instance-attributes, too-few-public-methods
         """
         Class containing information about the source of an episode. 
         Can be an Event/Channel (linear) or a series/episode
@@ -403,9 +414,9 @@ class Episode:
             self.ageRating = source['ageRating']
             self.duration = source['duration']
             self.sourceType = sourceType
+            self.goDownloadable = False
             if sourceType.lower() == 'linear':
                 self.type = sourceType
-                self.goDownloadable = False
                 self.broadcastDate = source['broadcastDate']
                 self.channel = source ['channel']
                 self.eventId = source['eventId']
@@ -415,7 +426,8 @@ class Episode:
                 self.brandingProviderId = source['brandingProviderId']
                 self.isGoPlayable = source['isGoPlayable']
                 self.audioQuality = source['audioQuality']
-                self.goDownloadable = source['goDownloadable']
+                if 'goDownloadable' in source:
+                    self.goDownloadable = source['goDownloadable']
 
     def __init__(self, episodeJson, season: Season):
         self.season             = season
@@ -450,8 +462,7 @@ class Episode:
             else:
                 title = f'{self.season.title} (S{self.season.seasonnumber}-E{self.episodenumber})'
             return title
-        else:
-            return self.asset.title
+        return self.asset.title
 
     @property
     def brandingProviderId(self) -> str:
@@ -519,6 +530,7 @@ class SeriesList:
         itemsSeen = []
         screenDetails = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=screenId)
         self.parseerrors = 0
+        # pylint: disable=too-many-nested-blocks
         if 'collections' in screenDetails:
             for collection in screenDetails['collections']:
                 for item in collection['items']:
@@ -615,6 +627,7 @@ class SeriesList:
         for serie in self.series:
             if serie.id == seriesId:
                 return serie
+        return None
 
     def __load_series_details(self):
         """
@@ -697,6 +710,7 @@ class MovieList:
         itemsSeen = []
         screenDetails = self.helper.dynamic_call(LoginSession.obtain_vod_screen_details, collectionId=screenId)
         self.parseerrors = 0
+        # pylint: disable=too-many-nested-blocks
         if 'collections' in screenDetails:
             for collection in screenDetails['collections']:
                 for item in collection['items']:
@@ -717,7 +731,7 @@ class MovieList:
                             xbmc.log(f'Parsing of movies failed, for item-id: {itemid}, Exception{exc}',xbmc.LOGERROR)
                             self.parseerrors += 1
 
-    def update_details(self, movie: Movie):
+    def update_details(self, movie: Movie) -> int:
         """
         Function to get the most recent details of a movie
         
@@ -757,6 +771,7 @@ class MovieList:
         for movie in self.movies:
             if movie.id == movieId:
                 return movie
+        return None
 
     def __save_movie_details(self):
         Path(self.file).write_text(json.dumps(self.moviesDetails), encoding='utf-8')

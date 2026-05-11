@@ -13,7 +13,7 @@ from resources.lib import utils
 from resources.lib.avstream import StreamSession
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import SingleRecording, SavedStateList
+from resources.lib.recording import SavedStateList, SingleRecording
 from resources.lib.streaminginfo import ReplayStreamingInfo
 from resources.lib.urltools import UrlTools
 from resources.lib.events import Event
@@ -62,7 +62,9 @@ class VideoItem:
         helper.dynamic_call(StreamSession.stop_stream, token=self.streamInfo.token)
         xbmc.log('VIDEOITEM stop complete',xbmc.LOGDEBUG)
 
+# pylint: disable=too-many-instance-attributes
 class VideoHelpers:
+    # pylint: disable=too-many-instance-attributes
     """
     class with helper functions to prepare playing a video/recording etc.
     Note all video play actions must be performed via this class, this includes 
@@ -74,6 +76,7 @@ class VideoHelpers:
     _INSTANCE = None
     _INITIALIZED = False
 
+    # pylint: disable=too-many-instance-attributes
     def __new__(cls, *args, **kwargs):
         if cls._INSTANCE is None:
             cls._INSTANCE = super(VideoHelpers, cls).__new__(cls)
@@ -128,35 +131,6 @@ class VideoHelpers:
             episode: Episode = item
             tag.setEpisode(int(episode.episodenumber))
             tag.setSeason(int(episode.season.seasonnumber))
-
-    def __add_recording_info(self, playItem: xbmcgui.ListItem, recording: SingleRecording):
-        tag: xbmc.InfoTagVideo = playItem.getVideoInfoTag()
-        details = self.helper.dynamic_call(LoginSession.get_recording_details, recordingId=recording.id)
-        if details is None:
-            return
-
-        tag.setGenres(details['genres'])
-        cast = []
-        if 'cast' in details:
-            for person in details['cast']:
-                cast.append(xbmc.Actor(name=person, role=''))
-        tag.setCast(cast)
-        if 'synopsis' in details:
-            tag.setPlot(details['synopsis'])
-        else:
-            if recording.season is not None:
-                tag.setPlot(recording.season.shortSynopsis)
-        if 'shortSynopsis' in details:
-            tag.setPlotOutline(details['shortSynopsis'])
-        else:
-            if recording.season is not None:
-                tag.setPlotOutline(recording.season.shortSynopsis)
-        if 'episode' in details:
-            tag.setEpisode(int(details['episodeNumber']))
-        if 'season' in details:
-            tag.setSeason(int(details['seasonNumber']))
-
-        playItem.setLabel(details['title'])
 
     def __start_play(self, item: VideoItem, startposition=None,activateKeymap: bool=False):
         self.helper.dynamic_call(StreamSession.start_stream, token=item.streamInfo.token)
@@ -347,7 +321,7 @@ class VideoHelpers:
             streamInfo = self.helper.dynamic_call(LoginSession.obtain_recording_streaming_token, streamid=recording.id)
             item = VideoItem(self.addon, streamInfo)
             item.playItem.setProperty('ziggorecordingid', recording.id)
-            self.__add_recording_info(item.playItem, recording)
+            self.liHelper.update_single_recording_details(item.playItem, recording)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:
@@ -450,7 +424,7 @@ class VideoHelpers:
         xbmc.log("VIDEOHELPER player_stopped callback called", xbmc.LOGDEBUG)
         if self.player is not None:
             self.player.set_stop_callback(None)
-        # Note: although we have stopped the player, the onPlayBackStopped event might not yet have been processed, 
+        # Note: although we have stopped the player, the onPlayBackStopped event might not yet have been processed,
         # so we delete the videoitem and set the it to None
         if self.videoitem is not None:
             self.videoitem.stop()
@@ -477,8 +451,7 @@ class VideoHelpers:
             event: Event = serieslist.get_event(episode)
             channel = self.channels.find_channel_by_id(episode.source.channel['channelId'])
             return self.__replay_event(event, channel)
-        else:
-            return self.__play_vod(movie, resumePoint)
+        return self.__play_vod(movie, resumePoint)
 
     def play_recording(self, recording: SingleRecording, resumePoint):
         """
@@ -529,7 +502,7 @@ class VideoHelpers:
         @return: position as fractional seconds
         """
         recList = SavedStateList(self.addon)
-        resumePoint = recList.get(path)
+        resumePoint = recList.get_position(path)
         if resumePoint is None:
             return 0
         t = datetime.now().replace(hour=0, minute=0, second=0) + timedelta(seconds=resumePoint)
@@ -544,7 +517,8 @@ class VideoHelpers:
         xbmc.log(webExc.response.decode('utf-8'), xbmc.LOGERROR)
         if webExc.status == 403:
             errorMsg = json.loads(webExc.response)
-            statusCode = errorMsg['error']['statusCode'] if 'error' in errorMsg and 'statusCode' in errorMsg['error'] else 0
+            statusCode = errorMsg['error']['statusCode'] if 'error' in errorMsg \
+                                                         and 'statusCode' in errorMsg['error'] else 0
             if not suppressHD and statusCode == 1111:  # HD stream not allowed, try SD stream if available
                 xbmcgui.Dialog().notification('Info',
                                               self.addon.getLocalizedString(S.MSG_FALLBACK_HD),

@@ -20,6 +20,7 @@ from resources.lib.webcalls import LoginSession
 
 
 # pylint: disable=too-many-instance-attributes
+
 class HttpProxyService:
     """
     class for maintaining state of the proxy-server
@@ -33,7 +34,7 @@ class HttpProxyService:
         self.port = 80
         self.isShutDown = True
         self.httpServerThread = None
-        self.proxyServer: http.server.HTTPServer = None  # started by me
+        self.proxyServer: ProxyServer = None  # started by me
         self.settingsChangeLock = threading.Lock()
         xbmc.log("Proxy service initialized", xbmc.LOGDEBUG)
 
@@ -55,13 +56,13 @@ class HttpProxyService:
     def start_http_server(self):
         """start the http server"""
         self.isShutDown = False
-        self.stop_http_server()
+        # self.stop_http_server()
         try:
             self.proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
         except IOError:
             pass
 
-        thread = threading.Thread(target=self.proxyServer.serve_forever)
+        thread = threading.Thread(target=self.proxyServer.run)
         thread.start()
         self.httpServerThread = thread
         xbmc.log("ProxyService started listening on {0}-{1}".format(self.address,
@@ -70,7 +71,7 @@ class HttpProxyService:
     def stop_http_server(self):
         """stop the http server"""
         if self.proxyServer is not None:
-            self.proxyServer.shutdown()
+            self.proxyServer.stop()
             xbmc.log("PROXY SERVER STOPPPED", xbmc.LOGDEBUG)
         if self.httpServerThread is not None:
             self.httpServerThread.join()
@@ -187,9 +188,10 @@ class ServiceMonitor(xbmc.Monitor):
             return
         xbmc.log("SERVICEMONITOR Notification: {0},{1},{2}".format(sender, method, data), xbmc.LOGDEBUG)
 
+    # pylint: disable=useless-super-delegation
     def onSettingsChanged(self):
         return super().onSettingsChanged()
-    
+
     def shutdown(self):
         """
         Function to shut down the service

@@ -61,6 +61,7 @@ class StreamSession:
 
 
 class AvStream:
+    # pylint: disable=too-many-instance-attributes
     """
         Class to hold information for current playing channel or video
     """

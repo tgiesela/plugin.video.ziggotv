@@ -1,19 +1,17 @@
 """
 Classes for processing channels
 """
-import os
 import dataclasses
 from typing import List, Tuple
 from collections import UserList
-import json
 import datetime
 import xbmc
-import xbmcvfs
 import xbmcgui
 import xbmcaddon
 from resources.lib import utils
 from resources.lib.events import EventList
 from resources.lib.globals import G
+from resources.lib.savedstates import BaseSavedStateList
 
 class Channel:
     """
@@ -143,6 +141,7 @@ class Channel:
 
 
 class ChannelList(UserList):
+    # pylint: disable=too-many-instance-attributes
     """
     class to get a list of channels with options to suppress hidden channels or only get channels
     for which you ar entitled.
@@ -381,85 +380,31 @@ class ChannelList(UserList):
         except ValueError:
             return channel
 
-class SavedChannelsList:
+class SavedChannelsList(BaseSavedStateList):
     """
     class to keep the state of played channels. This is used to present a list of recently played channels
     in the home screen.
     """
-
     def __init__(self, addon: xbmcaddon.Addon):
-        self.addon = addon
-        self.addonPath = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
-        self.states = {}
-        self.fileName = self.addonPath + G.RECENTCHANNELS_INFO
-        targetdir = os.path.dirname(self.fileName)
-        if targetdir == '':
-            targetdir = os.getcwd()
-        if not os.path.exists(targetdir):
-            os.makedirs(targetdir)
-        if not os.path.exists(self.fileName):
-            with open(self.fileName, 'w', encoding='utf-8') as file:
-                json.dump(self.states, file)
-        self.__load()
-
-    def __load(self):
-        with open(self.fileName, 'r+', encoding='utf-8') as file:
-            self.states = json.load(file)
+        fileName = G.RECENTCHANNELS_INFO
+        super().__init__(addon, fileName)
 
     def add(self, itemId, name):
         """
         function to add/update the position of a channel
         @param itemId:
-        @param position:
+        @param name:
         @return:
         """
-        self.states.update({itemId: {'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now()),
+        self.states.update({itemId: {'dateAdded': utils.DatetimeHelper.unix_datetime(datetime.datetime.now()),
                                      'name': name}})
-        with open(self.fileName, 'w', encoding='utf-8') as file:
-            json.dump(self.states, file)
 
-    def delete(self, itemId):
-        """
-        function to delete the channel from the state list
-        @param itemId:
-        @return:
-        """
-        if itemId in self.states:
-            self.states.pop(itemId)
-
-    def get(self, itemId):
-        """
-       function to find a channel by its id
-       @param itemId:
-       @return:
-        """
-        for item in self.states:
-            if item == itemId:
-                return self.states[item]['datePlayed']
-        return None
-
-    def cleanup(self, daysToKeep=365, itemsToKeep=0):
-        """
-        function to clean up saved channels
-        @param daysToKeep: 
-        @return: 
-        """
-        expDate = datetime.datetime.now() - datetime.timedelta(days=daysToKeep)
-        sortedStates = dict(sorted(self.states.items(), key=lambda x: x[1]['datePlayed'], reverse=True))
-        itemsKept = 0
-        for item in list(sortedStates):
-            if sortedStates[item]['datePlayed'] < utils.DatetimeHelper.unix_datetime(expDate):
-                if itemsKept < itemsToKeep:
-                    itemsKept += 1
-                else:
-                    self.delete(item)
-        with open(self.fileName, 'w', encoding='utf-8') as file:
-            json.dump(self.states, file)
+        self.save()
 
     def get_all(self):
         """
         function to get all saved channels, ordered by date played
         @return:
         """
-        sortedStates = dict(sorted(self.states.items(), key=lambda x: x[1]['datePlayed'], reverse=True))
+        sortedStates = dict(sorted(self.states.items(), key=lambda x: x[1]['dateAdded'], reverse=True))
         return sortedStates

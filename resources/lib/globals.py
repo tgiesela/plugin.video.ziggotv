@@ -54,7 +54,7 @@ class GlobalVariables:
     """
     ZIGGO_URL = 'https://www.ziggogo.tv/'
     ZIGGO_HOST = 'spark-prod-nl.gnp.cloud.ziggogo.tv'
-    STATIC_URL = 'https://staticqbr-nl-prod.prod.cdn.dmdsdp.com/'
+    STATIC_URL = 'https://staticqbr-prod-nl.gnp.cloud.ziggogo.tv/'
     STATICPROD_URL = 'https://static.spark.ziggogo.tv/'
     ZIGGOPROD_URL = 'https://' + ZIGGO_HOST + '/'
     LANG = 'eng'

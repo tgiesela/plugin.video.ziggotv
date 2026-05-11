@@ -10,8 +10,8 @@ import xbmcaddon
 from resources.lib.channel import ChannelList
 from resources.lib.globals import S
 from resources.lib.listitemhelper import ListitemHelper
-from resources.lib.recording import PlannedRecording, Recording, RecordingList, RecordingType, \
-                                    SavedStateList, SeasonRecording, SingleRecording
+from resources.lib.recording import PlannedRecording, Recording, RecordingList, RecordingType, SavedStateList, \
+                                    SeasonRecording, SingleRecording
 from resources.lib.utils import ProxyHelper, SharedProperties
 from resources.lib.windows.basewindow import BaseWindow
 
@@ -226,7 +226,7 @@ class RecordingWindow(BaseWindow):
         if isinstance(recording, SingleRecording):
             choices = {self.addon.getLocalizedString(S.MSG_PLAY_FROM_BEGINNING): 'playbeginning'}
             savedstateList = SavedStateList(self.addon)
-            resumePoint = savedstateList.get(recording.id)
+            resumePoint = savedstateList.get_position(recording.id)
             if resumePoint is not None:
                 t = datetime.now().replace(hour=0, minute=0, second=0) + timedelta(seconds=resumePoint)
                 choices.update({self.addon.getLocalizedString(

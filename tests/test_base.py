@@ -77,9 +77,9 @@ class TestBase(unittest.TestCase):
 
     def tearDown(self):
         print("Executing teardown", self._testMethodName)
-        self.session.close()
-        sleep(1)
         self.svc.stop_http_server()
+        # self.svc.stop_http_server()
+        sleep(1)
         self.cleanup_all()
 
     @staticmethod

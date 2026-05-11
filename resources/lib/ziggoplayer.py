@@ -2,7 +2,7 @@
 Module with classes for playing videos
 """
 import xbmc
-from resources.lib.utils import WebException, ZiggoKeyMap
+from resources.lib.utils import ZiggoKeyMap
 
 class ZiggoPlayer(xbmc.Player):
     """

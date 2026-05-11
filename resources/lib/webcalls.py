@@ -130,7 +130,7 @@ class Web(requests.Session):
             self.__print_response(response)
 
     def do_post(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments, too-many-arguments
         """
          :param params: query parameters
          :param jsonData: (optional) json data to send
@@ -152,7 +152,7 @@ class Web(requests.Session):
         return response
 
     def do_get(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments, too-many-arguments
         """
          :param jsonData: (optional) json data to send
          :param url: web address to connect to
@@ -174,7 +174,7 @@ class Web(requests.Session):
         return response
 
     def do_head(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments, too-many-arguments
         """
          :param jsonData: (optional) json data to send
          :param url: web address to connect to
@@ -196,7 +196,7 @@ class Web(requests.Session):
         return response
 
     def do_delete(self, url: str, data=None, jsonData=None, extraHeaders=None, params=None):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments, too-many-arguments
         """
          :param jsonData: (optional) json data to send
          :param url: web address to connect to

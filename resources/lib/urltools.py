@@ -9,6 +9,7 @@ import xbmcaddon
 
 
 class UrlTools:
+    # pylint: disable=too-few-public-methods
     """
     class implementing all kind of functions to manipulate the urls
     """
@@ -51,4 +52,3 @@ class UrlTools:
         )
         xbmc.log('BUILD URL: {0}'.format(url), xbmc.LOGDEBUG)
         return url
-

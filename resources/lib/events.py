@@ -257,10 +257,8 @@ class EventList(LinkedList):
             if currentEvent.id == current.id:
                 if currentNode.next is None:
                     return None
-                else:
-                    return currentNode.next.data
-            else:
-                currentNode = currentNode.next
+                return currentNode.next.data
+            currentNode = currentNode.next
         return None
 
     def __find_event(self, ts: datetime.datetime, te: datetime.datetime) -> Node:
