@@ -9,13 +9,26 @@ from urllib.parse import urlparse, parse_qs, urlunparse, urlencode, unquote
 import xbmc
 import xbmcaddon
 
+from resources.lib.channel import Channel, ChannelList
+from resources.lib.events import Event
+from resources.lib.movies import Instance
+from resources.lib.recording import Recording
+from resources.lib.streaminginfo import StreamingInfo
 from resources.lib.utils import Timer, WebException, ProxyHelper
 from resources.lib.webcalls import LoginSession
 
 
+class AVStreamType(IntEnum):
+    """
+    Enum for the AVstream type
+    """
+    CHANNEL = 1
+    RECORDING = 2
+    EVENT = 3
+    VOD = 4
 class StreamSession:
     """
-    Class implementing functions needed for adding and deleting streams
+    Class implementing functions needed for adding, starting and deleting streams
     """
 
     def __init__(self, loginSession: LoginSession):
@@ -25,17 +38,104 @@ class StreamSession:
         """
         self.streamList: AVStreamList = AVStreamList()
         self.loginSession = loginSession
+        self._reloadchannels()
 
-    def start_stream(self, token: str):
+    def _reloadchannels(self):
+        channels = self.loginSession.get_channels()
+        entitlements = self.loginSession.get_entitlements()
+        if entitlements == {}:
+            pass
+        else:
+            self.channelList = ChannelList(channels, entitlements)
+
+    def __get_channel_token(self, channel, suppressHD: bool = False):
+        locator, assetType = channel.get_locator(suppressHD)
+        if locator is None:
+            return None
+        _streamInfo = self.loginSession.obtain_tv_streaming_token(
+            channelId=channel.id, assetType=assetType)
+        _streamInfo.url = locator # All other StreamInfo receive the url from the LoginSession
+        return _streamInfo
+
+    def define_stream_for(self, streamType: AVStreamType, streamId: str, suppressHD: bool = False):
+        """
+        Function to define a stream. It will create an AvStream object, but it will not be registered as active stream
+        This method is an alternative for define_stream, which can be used when only the id of the stream is known, 
+        but not the complete item (Channel, Recording, Event or Movie)
+
+        @param streamType: the type of the stream (channel, recording, event or vod)
+        @param streamId: the id of the stream 
+                        for channel it is the channel id
+                        for recording it is the recording id
+                        for event it is the id of the details of the event
+                        for vod it is the movie id
+        @param suppressHD: whether to suppress HD streams
+        
+        @return: the created AvStream object
+        """
+        match streamType:
+            case AVStreamType.CHANNEL:
+                channel = self.channelList.find_channel_by_id(streamId)
+                if channel is None:
+                    self._reloadchannels()
+                    if channel is None:
+                        channel = self.channelList.find_channel_by_id(streamId)
+                if channel is None:
+                    xbmc.log(f'Channel with id {streamId} not found', xbmc.LOGERROR)
+                    return None
+                streamInfo = self.__get_channel_token(channel=channel, suppressHD=suppressHD)
+            case AVStreamType.RECORDING:
+                streamInfo = self.loginSession.obtain_recording_streaming_token(streamid=streamId)
+            case AVStreamType.EVENT:
+                streamInfo = self.loginSession.obtain_replay_streaming_token(path=streamId)
+            case AVStreamType.VOD:
+                streamInfo = self.loginSession.obtain_vod_streaming_token(streamId=streamId)
+            case _:
+                raise ValueError(f'Unsupported streamType: {streamType}')
+
+        if streamInfo is None:
+            return None
+
+        stream = AvStream(self.loginSession, streamInfo)
+        self.streamList.add_stream(stream)
+        return stream
+
+    def define_stream(self, streamItem: typing.Union[Channel, Recording, Event, Instance], suppressHD: bool = False):
+        """
+        Function to define a stream. It will create an AvStream object, but it will not be registered as active stream
+        
+        @param streamItem: the item for which to define a stream
+        @param suppressHD: whether to suppress HD streams
+        
+        @return: the created AvStream object
+        """
+        if isinstance(streamItem, Channel):
+            streamInfo = self.__get_channel_token(channel=streamItem, suppressHD=suppressHD)
+        elif isinstance(streamItem, Recording):
+            streamInfo = self.loginSession.obtain_recording_streaming_token(streamid=streamItem.id)
+        elif isinstance(streamItem, Event):
+            streamInfo = self.loginSession.obtain_replay_streaming_token(path=streamItem.id)
+        elif isinstance(streamItem, Instance):
+            streamInfo = self.loginSession.obtain_vod_streaming_token(streamId=streamItem.id)
+        else:
+            raise ValueError(f'Unsupported streamItem: {type(streamItem)}')
+
+        if streamInfo is None:
+            return None
+
+        stream = AvStream(self.loginSession, streamInfo)
+        self.streamList.add_stream(stream)
+        return stream
+
+    def start_stream(self, streamid: str):
         """
         Function to start/register a stream
         @param token: the stream-token for the stream on startup
         @return: None
         """
-        stream = AvStream(self.loginSession, token)
-        self.streamList.add_stream(stream)
+        self.find_stream(streamid).start()
 
-    def find_stream(self, token):
+    def find_stream(self, streamid):
         """
         Function to locate a stream
         @param token: the stream-token for the stream on startup
@@ -43,17 +143,17 @@ class StreamSession:
         """
         stream: AvStream
         for stream in self.streamList:
-            if stream.token == token:
+            if stream.id == streamid:
                 return stream
         return None
 
-    def stop_stream(self, token: str):
+    def stop_stream(self, streamid: str):
         """
         Function to end playing stream
-        @param token: the stream-token for the stream in startup
+        @param id: the id for the stream in startup
         @return:
         """
-        stream = self.find_stream(token)
+        stream = self.find_stream(streamid)
         if stream is not None:
 #            stream.stop()
             self.streamList.stop_stream(stream)
@@ -74,42 +174,48 @@ class AvStream:
         PLAYING = 2
         STOPPED = 3
 
-    def __init__(self, loginsession: LoginSession, token: str):
-        xbmc.log('AVSTREAM CREATED {0}'.format(token), xbmc.LOGDEBUG)
+    def __init__(self, loginsession: LoginSession, tokenInfo: StreamingInfo):
+        xbmc.log('AVSTREAM CREATED {0}'.format(tokenInfo.token), xbmc.LOGDEBUG)
         self.origHostname = None
         self.origPath = None
         self.redirectedUrl = None
         self.baseUrl = None
         self.proxyUrl = None
-        self.addon = xbmcaddon.Addon()
         self.loginsession = loginsession
-        self.helper = ProxyHelper(self.addon)
+        self.helper = ProxyHelper(xbmcaddon.Addon())
         self.state = self.AVStreamStatus.DEFINED
-        self.token = token
-        self.latestToken = token
-        self.tokenTimer = Timer(60, self.__update_token)
-        self.tokenTimer.start()
+        self.id = tokenInfo.token
+        self.latestToken = tokenInfo.token
+        self.tokenTimer: Timer = None
+        self.streamInfo = tokenInfo
 
     def __del__(self):
-        xbmc.log('AVSTREAM DELETE {0}'.format(self.token),xbmc.LOGDEBUG)
+        xbmc.log('AVSTREAM DELETE {0}'.format(self.id),xbmc.LOGDEBUG)
         if self.tokenTimer is not None:
             self.tokenTimer.stop()
+
+    def start(self):
+        """
+        Function to start updating the token by using a timer
+        """
+        self.tokenTimer = Timer(60, self.__update_token)
+        self.tokenTimer.start()
+        self.state = self.AVStreamStatus.PLAYING
 
     def stop(self, timeronly=False):
         """
         Function to stop streaming. It will stop the timer to refresh the token and delete the token
         @return:
         """
-        xbmc.log('AVSTREAM STOP {0}'.format(self.token), xbmc.LOGDEBUG)
+        xbmc.log('AVSTREAM STOP {0}'.format(self.id), xbmc.LOGDEBUG)
         self.state = self.AVStreamStatus.STOPPED
-        if self.tokenTimer is None:
-            return
-        self.tokenTimer.stop()
+        if self.tokenTimer is not None:
+            self.tokenTimer.stop()
         try:
             if timeronly:
                 return
             self.loginsession.delete_token(streamingId=self.latestToken)
-            xbmc.log('AVSTREAM TOKEN DELETED {0}'.format(self.token), xbmc.LOGDEBUG)
+            xbmc.log('AVSTREAM TOKEN DELETED {0}'.format(self.id), xbmc.LOGDEBUG)
         except WebException as webExc:
             xbmc.log('Could not delete token. {0}'.format(webExc), xbmc.LOGERROR)
             xbmc.log('Response from server: status {0} content: {1}'.format(webExc.status, webExc.response),

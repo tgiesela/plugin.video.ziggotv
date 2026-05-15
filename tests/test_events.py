@@ -65,6 +65,5 @@ class TestEvents(TestBase):
             #                                                                , evt.data.startTime
             #                                                               , evt.data.endTime))
 
-
 if __name__ == '__main__':
     unittest.main()

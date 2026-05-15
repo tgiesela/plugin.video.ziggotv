@@ -1,6 +1,7 @@
 """
 module with utility functions
 """
+import base64
 import os
 import shutil
 import sys
@@ -366,7 +367,7 @@ class ProxyHelper:
                 arguments = kwargs
             response = requests.get(
                 url=self.host + 'function/{method}'.format(method=method.__qualname__),
-                params={'args': json.dumps(arguments)},
+                params={'args': base64.b64encode(pickle.dumps(arguments))},
                 timeout=self.dataTimeout)
             if response.status_code != 200:
                 raise WebException(response)

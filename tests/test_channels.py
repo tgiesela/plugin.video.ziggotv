@@ -2,12 +2,13 @@
 import unittest
 
 from resources.lib.channel import ChannelList, Channel
+from resources.lib.utils import ProxyHelper
 from tests.test_base import TestBase
 
-
 class TestChannels(TestBase):
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = ProxyHelper(self.addon)
 
     def test_channels(self):
         self.do_login()

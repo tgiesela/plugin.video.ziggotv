@@ -2,7 +2,6 @@
 module containing the service monitor to track all ongoing tasks of the plugin
 """
 import datetime
-import http.server
 import os
 import threading
 from pathlib import Path
@@ -59,8 +58,11 @@ class HttpProxyService:
         # self.stop_http_server()
         try:
             self.proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
-        except IOError:
-            pass
+        except IOError as ioexc:
+            print(f'Exception: {ioexc}')
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(f'Exception: {exc}')
 
         thread = threading.Thread(target=self.proxyServer.run)
         thread.start()

@@ -10,7 +10,7 @@ import xbmcaddon
 import xbmcgui
 
 from resources.lib import utils
-from resources.lib.avstream import StreamSession
+from resources.lib.avstream import AvStream, StreamSession
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.recording import SavedStateList, SingleRecording
@@ -35,22 +35,16 @@ class VideoItem:
     """
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, addon, streamInfo, locator=None) -> xbmcgui.ListItem:
+    def __init__(self, addon, avstream: AvStream) -> xbmcgui.ListItem:
         self.urlHelper = UrlTools(addon)
         self.liHelper: ListitemHelper = ListitemHelper(addon)
-        self.streamInfo = streamInfo
+        self.streamInfo = avstream
         self.addon = addon
-        if locator is None:
-            if hasattr(streamInfo, 'url'):
-                self.url = self.urlHelper.build_proxy_url(streamInfo.url)
-            else:
-                raise RuntimeError('url or locator missing')
-        else:
-            self.url = self.urlHelper.build_proxy_url(locator)
+        self.url = self.urlHelper.build_proxy_url(avstream.streamInfo.url)
         self.playItem:xbmcgui.ListItem = \
-            self.liHelper.listitem_from_url(requesturl=self.url,
-                                            streamingToken=streamInfo.token,
-                                            drmContentId=streamInfo.drmContentId)
+            self.liHelper.listitem_from_url(requesturl=avstream.streamInfo.url,
+                                            streamingToken=avstream.id,
+                                            drmContentId=avstream.streamInfo.drmContentId)
 
     def stop(self):
         """
@@ -59,7 +53,7 @@ class VideoItem:
         """
         xbmc.log('VIDEOITEM stop',xbmc.LOGDEBUG)
         helper = ProxyHelper(self.addon)
-        helper.dynamic_call(StreamSession.stop_stream, token=self.streamInfo.token)
+        helper.dynamic_call(StreamSession.stop_stream, streamid=self.streamInfo.id)
         xbmc.log('VIDEOITEM stop complete',xbmc.LOGDEBUG)
 
 # pylint: disable=too-many-instance-attributes
@@ -76,13 +70,11 @@ class VideoHelpers:
     _INSTANCE = None
     _INITIALIZED = False
 
-    # pylint: disable=too-many-instance-attributes
     def __new__(cls, *args, **kwargs):
         if cls._INSTANCE is None:
             cls._INSTANCE = super(VideoHelpers, cls).__new__(cls)
         return cls._INSTANCE
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self, addon: xbmcaddon.Addon):
         if self._INITIALIZED:
             return
@@ -133,7 +125,7 @@ class VideoHelpers:
             tag.setSeason(int(episode.season.seasonnumber))
 
     def __start_play(self, item: VideoItem, startposition=None,activateKeymap: bool=False):
-        self.helper.dynamic_call(StreamSession.start_stream, token=item.streamInfo.token)
+        self.helper.dynamic_call(StreamSession.start_stream, streamid=item.streamInfo.id)
         if startposition is None:
             self.player.set_replay(False, 0)
         else:
@@ -211,26 +203,27 @@ class VideoHelpers:
 
     def __play_channel(self, channel:Channel):
         def get_token(suppressHD: bool = False):
-            get_token.locator, assetType = channel.get_locator(self.addon, suppressHD)
-            if get_token.locator is None:
-                xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
-                return None, None
             try:
-                _streamInfo = self.helper.dynamic_call(LoginSession.obtain_tv_streaming_token,
-                                                       channelId=channel.id, assetType=assetType)
-                return get_token.locator, _streamInfo
+                avstream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
+                                                             streamItem=channel,
+                                                             suppressHD=suppressHD)
+                return avstream
             except WebException as exc:
                 retry = self.__handle_web_exception(exc, suppressHD)
                 if retry:
-                    return get_token(True)
-                return get_token.locator, None
-
-        streaminfo = None
-        try:
-            locator, streaminfo = get_token()
-            if streaminfo is None:
+                    avstream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
+                                                                 streamItem=channel,
+                                                                 suppressHD=True)
+                    return avstream
                 return None
-            item = VideoItem(self.addon, streaminfo, locator)
+
+        avstream = None
+        try:
+            avstream: AvStream = get_token()
+            if avstream is None:
+                xbmcgui.Dialog().ok('Info', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
+                return None
+            item = VideoItem(self.addon, avstream)
             item.playItem.setProperty('ziggochannelid', channel.id)
             self.__start_play(item, activateKeymap=True)
             self.currentchannel = channel
@@ -243,26 +236,26 @@ class VideoHelpers:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log(f'Error in __play_channel: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
-            if streaminfo is not None and streaminfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streaminfo.token)
+            if avstream is not None:
+                self.helper.dynamic_call(StreamSession.stop_stream, streamid=avstream.id)
             return None
 
     def __replay_event(self, event: Event, channel: Channel):
         if not event.canReplay:
             xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_REPLAY_NOT_AVAIALABLE))
             return
-        streaminfo: ReplayStreamingInfo = None
+        avstream: ReplayStreamingInfo = None
         try:
-            streaminfo = self.helper.dynamic_call(LoginSession.obtain_replay_streaming_token,
-                                                  path=event.details.eventId)
-            item = VideoItem(self.addon, streaminfo)
+            avstream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
+                                                         streamItem=event)
+            item = VideoItem(self.addon, avstream)
             item.playItem.setProperty('ziggoeventid', event.id)
             self.__add_event_info(item.playItem, channel, event)
             resumePoint = self.get_resume_point(event.id)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:
-                position = streaminfo.prePaddingTime
+                position = avstream.streamInfo.prePaddingTime
             self.__start_play(item, startposition=position,activateKeymap=False)
             self.monitor_state(event.id)
         except WebException as webexc:
@@ -270,8 +263,8 @@ class VideoHelpers:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log(f'Error in __replay_event: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
-            if streaminfo is not None and streaminfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streaminfo.token)
+            if avstream is not None:
+                self.helper.dynamic_call(StreamSession.stop_stream, streamid=avstream.id)
 
     def __play_vod(self, movie: Union[Movie,Episode], resumePoint, instance:Instance=None) -> xbmcgui.ListItem:
         '''
@@ -291,11 +284,11 @@ class VideoHelpers:
             xbmcgui.Dialog().ok('Error', self.addon.getLocalizedString(S.MSG_CANNOTWATCH))
             return None
 
-        streamInfo = None
+        avstream = None
         try:
-            streamInfo = self.helper.dynamic_call(LoginSession.obtain_vod_streaming_token,
-                                                  streamId=playableInstance.id)
-            item = VideoItem(self.addon, streamInfo)
+            avstream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
+                                                         streamItem=playableInstance)
+            item = VideoItem(self.addon, avstream)
             item.playItem.setProperty('ziggomovieid', movie.id)
             self.__add_vod_info(item.playItem, movie)
             if resumePoint > 0:
@@ -311,21 +304,22 @@ class VideoHelpers:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log(f'Error in __play_vod: type {str(exc)}, args {exc.args}', xbmc.LOGERROR)
-            if streamInfo is not None and streamInfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
+            if avstream is not None:
+                self.helper.dynamic_call(StreamSession.stop_stream, streamid=avstream.id)
             return None
 
     def __play_recording(self, recording: SingleRecording, resumePoint) -> xbmcgui.ListItem:
-        streamInfo = None
+        avstream = None
         try:
-            streamInfo = self.helper.dynamic_call(LoginSession.obtain_recording_streaming_token, streamid=recording.id)
-            item = VideoItem(self.addon, streamInfo)
+            avstream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
+                                                         streamItem=recording)
+            item = VideoItem(self.addon, avstream)
             item.playItem.setProperty('ziggorecordingid', recording.id)
             self.liHelper.update_single_recording_details(item.playItem, recording)
             if resumePoint > 0:
                 position = int(resumePoint * 1000)
             else:
-                position = streamInfo.prePaddingTime
+                position = avstream.streamInfo.prePaddingTime
             self.__start_play(item, startposition=position, activateKeymap=False)
             self.monitor_state(recording.id)
             return item.playItem
@@ -335,8 +329,8 @@ class VideoHelpers:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             xbmc.log('Error in __play_recording: type {0}, args {1}'.format(str(exc), exc.args), xbmc.LOGERROR)
-            if streamInfo is not None and streamInfo.token is not None:
-                self.helper.dynamic_call(LoginSession.delete_token, streamingId=streamInfo.token)
+            if avstream is not None:
+                self.helper.dynamic_call(StreamSession.stop_stream, streamid=avstream.id)
             return None
 
     def __record_event(self, event):

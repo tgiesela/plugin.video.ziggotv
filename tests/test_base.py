@@ -52,12 +52,12 @@ class TestBase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.addon = Addon('plugin.video.ziggotv')
-        self.addon.setSettingBool('print-network-traffic', False)
+        self.addon.setSettingBool('print-network-traffic', True)
         self.addon.setSetting('proxy-ip', '127.0.0.1')
         self.addon.setSetting('proxy-port', '6868')
         self.addon.setSettingBool('full-hd', True)
-        self.addon.setSettingBool('print-response-content', False)
-        self.addon.setSettingBool('print-request-content', False)
+        self.addon.setSettingBool('print-response-content', True)
+        self.addon.setSettingBool('print-request-content', True)
         self.addon.setSettingNumber('connection-timeout', 10)
         self.addon.setSettingNumber('data-timeout', 10)
         self.addon.setSettingBool('adult-allowed', True)
@@ -71,14 +71,14 @@ class TestBase(unittest.TestCase):
         self.helper = ProxyHelper(self.addon)
 
     def setUp(self):
-        self.session = LoginSession(self.addon)
+        print("Executing setup", self._testMethodName)
+#        self.session = LoginSession(self.addon)
         self.svc.start_http_server()
         print("Executing setup",  self._testMethodName)
 
     def tearDown(self):
         print("Executing teardown", self._testMethodName)
         self.svc.stop_http_server()
-        # self.svc.stop_http_server()
         sleep(1)
         self.cleanup_all()
 
@@ -134,7 +134,7 @@ class TestBase(unittest.TestCase):
             credentials = json.loads(credfile.read())
         self.session.login(credentials['username'], credentials['password'])
         self.assertFalse(len(self.session.customerInfo) == 0)
-        # self.session.obtain_customer_info()
+        self.session.refresh_entitlements()
 
     def logon_via_proxy(self):
         with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
@@ -142,3 +142,4 @@ class TestBase(unittest.TestCase):
         rslt = self.helper.dynamic_call(LoginSession.login, username=credentials['username'],
                                         password=credentials['password'])
         print(rslt)
+        rslt = self.helper.dynamic_call(LoginSession.refresh_entitlements)

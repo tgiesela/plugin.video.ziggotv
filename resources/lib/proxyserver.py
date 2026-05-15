@@ -1,11 +1,12 @@
 """
 Proxy server related classes
 """
+import base64
 import pickle
 import traceback
 from urllib.parse import urlparse, parse_qs, unquote
 
-import json
+import socket
 import typing
 
 import socketserver
@@ -90,6 +91,10 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         self.uuId = SharedProperties(addon=self.addon).get_uuid()
         xbmc.log("ProxyServer created", xbmc.LOGINFO)
 
+    def server_bind(self):
+        super().server_bind()
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     def send_error(self, exc: Exception, request: HTTPRequestHandler):
         """
         Function to send an error message in case of a failure
@@ -125,7 +130,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             token = request.headers['x-streaming-token']
             stream = self.streamsession.find_stream(token)
             if stream is None:
-                raise RuntimeError('Stream not found for token: {0}'.format(qs['token'][0]))
+                raise RuntimeError('Stream not found for token: {token}')
             manifestUrl = stream.get_manifest_url(proxyUrl=request.path)
             with self.lock:
                 manifestBaseurl = None
@@ -159,7 +164,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             token = request.headers['x-streaming-token']
             stream = self.streamsession.find_stream(token)
             if stream is None:
-                raise RuntimeError('Stream not found for token: {0}'.format(token))
+                raise RuntimeError('Stream not found for token: {token}')
         else:
             request.send_response(500)
             request.send_header('Content-Type','text/html')
@@ -426,9 +431,10 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         calledmethod = parts[1]
         qs = parse_qs(parsedUrl.query)
         if 'args' in qs:
-            args = json.loads(qs['args'][0])
+            args = pickle.loads(base64.b64decode(qs['args'][0]))
             try:
                 retval = None
+                xbmc.log(f'Called method: {calledclass}.{calledmethod} with args: {args}', xbmc.LOGDEBUG)
                 if calledclass == self.session.__class__.__name__:
                     callableMethod = getattr(self.session, calledmethod)
                     with self.lock:
@@ -436,6 +442,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 else:
                     if calledclass == self.streamsession.__class__.__name__:
                         callableMethod = getattr(self.streamsession, calledmethod)
+                        xbmc.log(f'Calling StreamSession: {callableMethod} with args: {args}', xbmc.LOGDEBUG)
                         with self.lock:
                             retval = callableMethod(**args)
                 request.send_response(200)
@@ -509,6 +516,9 @@ class ProxyServer(http.server.ThreadingHTTPServer):
         return None
 
     def run(self):
+        """
+        Function to initiate the thread
+        """
         try:
             self.serve_forever(poll_interval=0.5)
         except KeyboardInterrupt as exc:
@@ -517,12 +527,16 @@ class ProxyServer(http.server.ThreadingHTTPServer):
             xbmc.log('Proxy server shutting down', xbmc.LOGINFO)
             self.server_close()
             xbmc.log('Proxy server closed', xbmc.LOGINFO)
-            
+
     def stop(self):
+        """
+        Function to stop the proxyserver
+        After shutdown is called a connection is made to the server to make sure it stops
+        """
         self.shutdown()
         try:
-            import socket
             with socket.create_connection(self.server_address, timeout=1):
                 pass
+        # pylint: disable=broad-exception-caught
         except Exception:
             pass # Is expected here because the server is already down

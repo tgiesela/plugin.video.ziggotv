@@ -123,7 +123,7 @@ class TestWebCalls(TestBase):
         self.session.printNetworkTraffic = True
         channels = self.session.get_channels()
         channel = channels[0]  # Simply use the first channel
-        locator, assetType = channel.get_locator(self.addon)
+        _, assetType = channel.get_locator()
         tkn = self.session.obtain_tv_streaming_token(channel.id, assetType)
         locator = channel.locators['Default'].replace('http://', 'https://')
         if '/dash' in locator:
@@ -166,7 +166,7 @@ class TestWebCalls(TestBase):
             if c.name == 'STAR Channel':
                 channel = c
                 break
-        locator, assetType = channel.get_locator(self.addon)
+        _, assetType = channel.get_locator()
         tkn = self.session.obtain_tv_streaming_token(channel.id, assetType)
         locator = channel.locators['Default'].replace('http://', 'https://')
         if '/dash' in locator:

@@ -15,9 +15,9 @@ class TestVideoPlayer(TestBase):
         self.session.refresh_widevine_license()
 
     def test_buildurl(self):
+        # pylint: disable=too-many-statements, too-many-locals
         self.do_login()
         self.session.refresh_entitlements()
-        # pylint: disable=too-many-statements, too-many-locals
         urlHelper = UrlTools(self.addon)
         helpers = ListitemHelper(self.addon)
         self.session.refresh_widevine_license()

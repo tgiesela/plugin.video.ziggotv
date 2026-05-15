@@ -95,8 +95,9 @@ class TestSavedStates(TestBase):
         self.do_login()
         self.logon_via_proxy()
         savedchannels = SavedChannelsList(self.addon)
-        savedchannels.states = {'NL_000001_019401': {'name': 'NPO-1', 
-                                                     'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now())}}
+        savedchannels.states = {'NL_000001_019401':
+            {'name': 'NPO-1',
+             'datePlayed': utils.DatetimeHelper.unix_datetime(datetime.datetime.now())}}
         savedchannels.save()
         savedchannels = SavedChannelsList(self.addon)
         savedchannels.states = {}

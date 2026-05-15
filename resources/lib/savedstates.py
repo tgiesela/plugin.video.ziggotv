@@ -1,3 +1,6 @@
+"""Module for base class to save state of playing channels/recording/movies
+
+"""
 import datetime
 import json
 import os
