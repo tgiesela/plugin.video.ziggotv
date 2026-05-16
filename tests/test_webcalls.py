@@ -117,6 +117,7 @@ class TestWebCalls(TestBase):
                 return baseURL[0].childNodes[0].data
         return None
 
+    # pylint: disable=too-many-statements
     def test_manifest(self):
         self.do_login()
         self.session.refresh_channels()

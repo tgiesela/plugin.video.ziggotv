@@ -2,7 +2,6 @@
 
 import threading
 import unittest
-import json
 from time import sleep
 
 from resources.lib.proxyserver import ProxyServer
