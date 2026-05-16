@@ -20,13 +20,6 @@ class TestProxyServer(TestBase):
         self.session.printNetworkTraffic = True
         self.helper = ProxyHelper(self.addon)
 
-    def do_login(self):
-        with open('c:/temp/credentials.json', 'r', encoding='utf-8') as credfile:
-            credentials = json.loads(credfile.read())
-        self.helper.dynamic_call(LoginSession.login,
-                                 username=credentials['username'],
-                                 password=credentials['password'])
-
     def test_start_proxy(self):
         self.do_login()
         thread = None

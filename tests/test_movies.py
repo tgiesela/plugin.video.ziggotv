@@ -25,7 +25,6 @@ class TestMovies(TestBase):
         self.addon.setSettingBool('print-request-content', False)
         self.do_login()
         self.logon_via_proxy()
-        moviesDetails = json.loads(Path(G.MOVIE_INFO).read_text(encoding='utf-8'))
         moviesDetails = []
         Path(G.MOVIE_INFO).write_text(json.dumps(moviesDetails), encoding='utf-8')
         response = self.session.obtain_vod_screens()

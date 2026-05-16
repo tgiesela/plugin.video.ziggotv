@@ -125,6 +125,7 @@ class TestWebCalls(TestBase):
         channel = channels[0]  # Simply use the first channel
         _, assetType = channel.get_locator()
         tkn = self.session.obtain_tv_streaming_token(channel.id, assetType)
+        self.assertIsNotNone(tkn)
         locator = channel.locators['Default'].replace('http://', 'https://')
         if '/dash' in locator:
             locator = locator.replace("/dash", "/dash,vxttoken=" + tkn.token).replace("http://", "https://")
@@ -132,10 +133,11 @@ class TestWebCalls(TestBase):
             locator = locator.replace("/sdash", "/sdash,vxttoken=" + tkn.token).replace("http://", "https://")
         elif '/live' in locator:
             locator = locator.replace("/live", "/live,vxttoken=" + tkn.token).replace("http://", "https://")
+        self.session.delete_token(tkn.token)
 
         streamsession = StreamSession(self.session)
-        streamsession.start_stream(tkn.token)
-        stream = streamsession.find_stream(tkn.token)
+        stream = streamsession.define_stream(channel, locator)
+        streamsession.define_stream(channel, locator)
 
         response = self.session.get_manifest(locator)
         self.session.delete_token(tkn.token)

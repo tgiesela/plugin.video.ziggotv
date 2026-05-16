@@ -63,7 +63,7 @@ class TestBase(unittest.TestCase):
         self.addon.setSettingBool('adult-allowed', True)
         self.cleanup_all()
         self.session = LoginSession(self.addon)
-        self.session.printNetworkTraffic = False
+        self.session.printNetworkTraffic = True
         self.svc = HttpProxyService(threading.Lock(), self.addon)
         self.svc.set_address((self.addon.getSetting('proxy-ip'), self.addon.getSettingInt('proxy-port')))
         sleep(1)
@@ -92,6 +92,12 @@ class TestBase(unittest.TestCase):
 
     def cleanup_channels(self):
         self.remove(G.CHANNEL_INFO)
+
+    def cleanup_movies(self):
+        self.remove(G.MOVIE_INFO)
+
+    def cleanup_series(self):
+        self.remove(G.SERIES_INFO)
 
     def cleanup_customer(self):
         self.remove(G.CUSTOMER_INFO)
@@ -122,6 +128,8 @@ class TestBase(unittest.TestCase):
         self.cleanup_session()
         self.cleanup_channels()
         self.cleanup_cookies()
+        self.cleanup_movies()
+        self.cleanup_series()
         self.cleanup_entitlements()
         self.cleanup_widevine()
         self.cleanup_epg()
