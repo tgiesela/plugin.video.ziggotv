@@ -23,11 +23,9 @@ class Poster:
     Small data class to store the poster
     """
 
-    def __init__(self, posterJson):
-        self.url = posterJson['url']
-        self.type = posterJson['type']  # values seen: HighResPortrait
-
-
+    def __init__(self, posterJson: dict):
+        self.url    = posterJson['url']
+        self.type   = posterJson.get('type')  # values seen: HighResPortrait
 
 class RecordingType(IntEnum):
     """
@@ -55,91 +53,58 @@ class Recording:
     def __init__(self, recordingJson):
         # pylint: disable=too-many-branches, too-many-statements
         if 'poster' in recordingJson:
-            self.poster = Poster(posterJson=recordingJson['poster'])
+            self.poster         = Poster(posterJson=recordingJson['poster'])
         else:
-            self.poster = None
+            self.poster         = None
         self.recordingState = recordingJson['recordingState']  # recorded, planned
-        self.minimumAge = 0
-        self.private = False
-        self.isAdult = False
-        self.diskSpace = 0
-        self.expirationDate = ''
-        self.technicalDuration = 0
-        self.isOttBlackout = False
-        self.duration = 0
-        self.bookmark = 0
-        self.subtitles = []
-        self.seasonNumber = None
-        self.episodeNumber = None
-        self.type = 'undefined'
-        if 'type' in recordingJson:
-            self.type = recordingJson['type']
-        if 'episodeTitle' in recordingJson:
-            self.episodeTitle = recordingJson['episodeTitle']
-        self.synopsis = ''
-        if 'synopsis' in recordingJson:
-            self.synopsis = recordingJson['synopsis']
+        self.minimumAge         = 0
+        self.private            = False
+        self.isAdult            = False
+        self.diskSpace          = 0
+        self.expirationDate     = ''
+        self.technicalDuration  = 0
+        self.isOttBlackout      = False
+        self.duration           = 0
+        self.bookmark           = 0
+        self.subtitles          = []
+        self.seasonNumber       = None
+        self.episodeNumber      = None
+        self.type               = recordingJson.get('type','undefined')
+        self.episodeTitle       = recordingJson.get('episodeTitle')
+        self.synopsis           = recordingJson.get('synopsis','')
 
-        if 'captionLanguages' in recordingJson:
-            for subtitle in recordingJson['captionLanguages']:
-                self.subtitles.append(self.Language(subtitle))
-        self.audioLanguages = []
-        if 'audioLanguages' in recordingJson:
-            for subtitle in recordingJson['audioLanguages']:
-                self.audioLanguages.append(self.Language(subtitle))
-        self.ottMarkers = []
-        if 'ottMarkers' in recordingJson:
-            self.ottMarkers = recordingJson['ottMarkers']
-        self.channelId = None
-        if 'channelId' in recordingJson:
-            self.channelId = recordingJson['channelId']  # NL_000001_019401
-        self.prePaddingOffset = recordingJson['prePaddingOffset']  # 300
-        self.postPaddingOffset = recordingJson['postPaddingOffset']  # 900
-        self.recordingType = recordingJson['recordingType']  # nDVR
-        self.showId = None
-        if 'showId' in recordingJson:
-            self.showId = recordingJson['showId']  # crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000
-        self.title = None
-        if 'title' in recordingJson:
-            self.title = recordingJson['title']
-        self.startTime = recordingJson['startTime']  # 2024-01-17T11:00:00.000Z
-        self.endTime = recordingJson['endTime']  # 2024-01-17T11:16:00.000Z
-        self.source = recordingJson['source']  # single
+        for subtitle in recordingJson.get('captionLanguages',{}):
+            self.subtitles.append(self.Language(subtitle))
+        self.audioLanguages     = []
+        for subtitle in recordingJson.get('audioLanguages',{}):
+            self.audioLanguages.append(self.Language(subtitle))
+        self.ottMarkers         = recordingJson.get('ottMarkers',[])
+        self.channelId          = recordingJson.get('channelId')  # NL_000001_019401
+        self.prePaddingOffset   = recordingJson.get('prePaddingOffset',0)  # 300
+        self.postPaddingOffset  = recordingJson.get('postPaddingOffset',0)  # 900
+        self.recordingType      = recordingJson.get('recordingType')  # nDVR
+        self.showId             = recordingJson.get('showId')  # crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000
+        self.title              = recordingJson.get('title','')
+        self.startTime          = recordingJson.get('startTime')  # 2024-01-17T11:00:00.000Z
+        self.endTime            = recordingJson.get('endTime')  # 2024-01-17T11:16:00.000Z
+        self.source             = recordingJson.get('source')  # single
         if 'id' in recordingJson:
             self.id = recordingJson['id']  # crid:~~2F~~2Fgn.tv~~2F817615~~2FSH010806510000~~2F237133469,
             # imi:517366be71fa5106c9215d9f1367cbacef4a4772
         else:
             self.id = recordingJson['episodeId']
         # self.type = recordingjson['type']  # single or season
-        if 'ottPaddingsBlackout' in recordingJson:
-            self.ottPaddingsBlackout = recordingJson['ottPaddingsBlackout']  # false
-        else:
-            if 'isOttBlackout' in recordingJson:
-                self.ottPaddingsBlackout = recordingJson['isOttBlackout']  # false
-        if 'isPremiereAirings' in recordingJson:
-            self.isPremiereAirings = recordingJson['isPremiereAirings']  # false
-        else:
-            self.isPremiereAirings = False
-        if 'deleteTime' in recordingJson:
-            self.deleteTime = recordingJson['deleteTime']  # 2025-01-16T11:16:00.000Z
-        else:
-            self.deleteTime = recordingJson['expirationDate']  # ???
-        if 'retentionPeriod' in recordingJson:
-            self.retentionPeriod = recordingJson['retentionPeriod']  # 365
-        else:
-            self.retentionPeriod = 0
-        if 'autoDeletionProtected' in recordingJson:
-            self.autoDeletionProtected = recordingJson['autoDeletionProtected']  # false
-        else:
-            self.autoDeletionProtected = False
-        self.isPremiere = recordingJson['isPremiere']  # false, true: when latest episode playing
-        self.trickPlayControl = []
-        if 'trickPlayControl' in recordingJson:
-            self.trickPlayControl = recordingJson['trickPlayControl']
-        if 'episodeNumber' in recordingJson:
-            self.episodeNumber = recordingJson['episodeNumber']
-        if 'seasonNumber' in recordingJson:
-            self.seasonNumber = recordingJson['seasonNumber']
+        self.ottPaddingsBlackout    = recordingJson.get('ottPaddingsBlackout',False)  # false
+        self.isOttBlackout          = recordingJson.get('isOttBlackout',False)  # false
+        self.isPremiereAirings      = recordingJson.get('isPremiereAirings',False)  # false
+        self.deleteTime             = recordingJson.get('deleteTime')  # 2025-01-16T11:16:00.000Z
+        self.expirationDate         = recordingJson.get('expirationDate','')  # ???
+        self.retentionPeriod        = recordingJson.get('retentionPeriod',0)  # 365
+        self.autoDeletionProtected  = recordingJson.get('autoDeletionProtected',False)  # false
+        self.isPremiere             = recordingJson.get('isPremiere',False)  # false, true: when latest episode playing
+        self.trickPlayControl       = recordingJson.get('trickPlayControl',[])
+        self.episodeNumber          = recordingJson.get('episodeNumber')
+        self.seasonNumber           = recordingJson.get('seasonNumber')
 
     @property
     def isRecording(self) -> bool:
@@ -173,55 +138,33 @@ class SeasonRecording:
     """
 
     # pylint: disable=too-many-instance-attributes, too-few-public-methods, too-many-branches, too-many-statements
-    def __init__(self, recordingJson, recordingtype:RecordingType):
-        self.poster = Poster(posterJson=recordingJson['poster'])
-        self.recordingType = recordingtype
-        self.title = recordingJson['title']
-        self.source = recordingJson['source']
-        self.nrofepisodes = recordingJson['noOfEpisodes']
-        self.channelId = recordingJson['channelId']
-        self.id = recordingJson['id']
-        self.type = recordingJson['type']
-        self.shortSynopsis = None
-        if 'shortSynopsis' in recordingJson:
-            self.shortSynopsis = recordingJson['shortSynopsis']
-        self.genres = []
-        if 'genres' in recordingJson:
-            self.genres = recordingJson['genres']
-        self.images = []
-        if 'images' in recordingJson:
-            self.images = recordingJson['images']
-        self.seasons = []
-        if 'seasons' in recordingJson:
-            self.seasons = recordingJson['seasons']
+    def __init__(self, recordingJson: dict, recordingtype:RecordingType):
+        self.poster         = Poster(posterJson=recordingJson['poster'])
+        self.recordingType  = recordingtype
+        self.title          = recordingJson.get('title','')
+        self.source         = recordingJson.get('source')
+        self.nrofepisodes   = recordingJson.get('noOfEpisodes')
+        self.channelId      = recordingJson.get('channelId')
+        self.id             = recordingJson['id']
+        self.type           = recordingJson['type']
+        self.shortSynopsis  = recordingJson.get('shortSynopsis')
+        self.genres         = recordingJson.get('genres',[])
+        self.images         = recordingJson.get('images',[])
+        self.seasons        = recordingJson.get('seasons',[])
 
         if self.type in ['season','show']:
-            self.seasonTitle = None
-            if 'seasonTitle' in recordingJson:
-                self.seasonTitle = recordingJson['seasonTitle']
-            self.showId = None
-            if 'showId' in recordingJson:
-                self.showId = recordingJson['showId']
-            self.minimumAge = 0
-            if 'minimumAge' in recordingJson:
-                self.minimumAge = recordingJson['minimumAge']
-            self.diskSpace = 0
-            if 'diskSpace' in recordingJson:
-                self.diskSpace = recordingJson['diskSpace']
-            self.isPremiereAirings = False
-            if 'isPremiereAirings' in recordingJson:
-                self.isPremiereAirings = recordingJson['isPremiereAirings']
-            self.relevantEpisode = None
-            if 'mostRelevantEpisode' in recordingJson:
-                self.relevantEpisode = recordingJson['mostRelevantEpisode']
+            self.seasonTitle        = recordingJson.get('seasonTitle')
+            self.showId             = recordingJson.get('showId')
+            self.minimumAge         = recordingJson.get('minimumAge',0)
+            self.diskSpace          = recordingJson.get('diskSpace',0)
+            self.isPremiereAirings  = recordingJson.get('isPremiereAirings',False)
+            self.relevantEpisode    = recordingJson.get('mostRelevantEpisode')
             self.episodes = []
             if 'episodes' in recordingJson:
-                episodes = recordingJson['episodes']
-                self.cnt = 0
-                if 'total' in episodes:
-                    self.cnt = episodes['total']
+                _episodes = recordingJson['episodes']
+                self.cnt = _episodes.get('total',0)
                 self.episodes = []
-                for episode in episodes['data']:
+                for episode in _episodes['data']:
                     if episode['recordingState'] == 'planned':
                         recPlanned = PlannedRecording(episode, self)
                         self.episodes.append(recPlanned)
@@ -229,8 +172,9 @@ class SeasonRecording:
                         recSingle = SingleRecording(episode, self)
                         self.episodes.append(recSingle)
         else:
-            self.episodes = []
-            self.showId = self.id
+            self.episodes   = []
+            self.cnt        = 0
+            self.showId     = self.id
 
     def get_episodes(self, recType: RecordingType):
         """
@@ -258,22 +202,14 @@ class SingleRecording(Recording):
     # pylint: disable=too-many-instance-attributes
     def __init__(self, recordingJson, season: SeasonRecording = None):
         super().__init__(recordingJson)
-        if 'privateCopy' in recordingJson:
-            self.private = recordingJson['privateCopy']
-        else:
-            self.private = False
-        self.isAdult = recordingJson['containsAdult']
-        if '' in recordingJson:
-            self.diskSpace = recordingJson['diskSpace']  # 0.041527778
-        else:
-            self.diskSpace = 0
-        self.technicalDuration = recordingJson['technicalDuration']
-        self.isOttBlackout = False
-        if 'isOttBlackout' in recordingJson:
-            self.isOttBlackout = recordingJson['isOttBlackout']  # false
-        self.duration = recordingJson['duration']  # 598,
-        self.bookmark = recordingJson['bookmark']  # 0
-        self.viewState = recordingJson['viewState']  # notWatched
+        self.private            = recordingJson.get('privateCopy',False)
+        self.isAdult            = recordingJson.get('containsAdult', False)
+        self.diskSpace          = recordingJson.get('diskSpace',0)  # 0.041527778
+        self.technicalDuration  = recordingJson.get('technicalDuration')
+        self.isOttBlackout      = recordingJson.get('isOttBlackout',False)  # false
+        self.duration           = recordingJson.get('duration',0)  # 598,
+        self.bookmark           = recordingJson.get('bookmark')  # 0
+        self.viewState          = recordingJson.get('viewState')  # notWatched
         self.season: SeasonRecording = season
         if self.season is not None:
             if self.channelId is None:
@@ -291,10 +227,8 @@ class PlannedRecording(Recording):
 
     def __init__(self, recordingJson, season: SeasonRecording = None):
         super().__init__(recordingJson)
-        self.minimumAge = 0
-        if 'minimumAge' in recordingJson:
-            self.minimumAge = recordingJson['minimumAge']
-        self.viewState = 'notWatched'
+        self.minimumAge = recordingJson.get('minimumAge',0)
+        self.viewState  = 'notWatched'
         self.season: SeasonRecording = season
         if season is not None:
             if self.channelId is None:
@@ -303,7 +237,6 @@ class PlannedRecording(Recording):
                 self.showId = self.season.showId
             if self.title is None:
                 self.title = self.season.title
-
 
 class RecordingList:
     """

@@ -23,27 +23,13 @@ class Channel:
         Dataclass for replay info belonging to a channel
         """
         def __init__(self, eventJson):
-            self.replayPrePadding = 0
-            self.replayPostPadding = 0
-            self.replaySources = {}
-            self.replayProducts = {}
-            self.ndvrRetentionLimit = 0
-            self.avadEnabled = False
-            self.adSupport = []
-            if 'replayPrePadding' in eventJson:
-                self.replayPrePadding = eventJson['replayPrePadding']
-            if 'replayPostPadding' in eventJson:
-                self.replayPostPadding = eventJson['replayPostPadding']
-            if 'replaySources' in eventJson:
-                self.replaySources = eventJson['replaySources']
-            if 'replayProducts' in eventJson:
-                self.replayProducts = eventJson['replayProducts']
-            if 'ndvrRetentionLimit' in eventJson:
-                self.ndvrRetentionLimit = eventJson['ndvrRetentionLimit']
-            if 'avadEnabled' in eventJson:
-                self.avadEnabled = True
-            if 'adSupport' in eventJson:
-                self.adSupport = eventJson['adSupport']
+            self.replayPrePadding = eventJson.get('replayPrePadding')
+            self.replayPostPadding = eventJson.get('replayPostPadding')
+            self.replaySources = eventJson.get('replaySources')
+            self.replayProducts = eventJson.get('replayProducts')
+            self.ndvrRetentionLimit = eventJson.get('ndvrRetentionLimit')
+            self.avadEnabled = eventJson.get('avadEnabled', False)
+            self.adSupport = eventJson.get('adSupport')
 
     @dataclasses.dataclass
     class StreamInfo:
@@ -51,63 +37,45 @@ class Channel:
         streaming information belonging to a channel
         """
         def __init__(self, eventJson):
-            self.streamingApplications = {}
-            self.externalStreamingProtocols = {}
-            for streamapp in eventJson['streamingApplications']:
-                self.streamingApplications[streamapp] = eventJson['streamingApplications'][streamapp]
-            if 'externalStreamingProtocols' in eventJson:
-                for extstreamapp in eventJson['externalStreamingProtocols']:
-                    self.externalStreamingProtocols[extstreamapp] = eventJson['externalStreamingProtocols'][
-                        extstreamapp]
-            self.imageStream = eventJson['imageStream']
+            self.streamingApplications = eventJson.get('streamingApplications')
+            self.externalStreamingProtocols = eventJson.get('externalStreamingProtocols')
+            self.imageStream = eventJson.get('imageStream')
 
     def __init__(self, channelJson):
-        # from resources.lib.events import EventList
         self.jsonData = channelJson
         self.events: EventList = EventList()
-        self.logo = {}
-        if 'logo' in channelJson:
-            for logotype in channelJson['logo']:
-                self.logo[logotype] = channelJson['logo'][logotype]
-        self.locators = {}
-        if 'locators' in channelJson:
-            for locator in channelJson['locators']:
-                self.locators[locator] = channelJson['locators'][locator]
-        self.locators['Default'] = channelJson['locator']
+        self.logo = channelJson.get('logo')
+        self.locators = channelJson.get('locators')
+        self.locators['Default'] = channelJson.get('locator')
         self.replayInfo = self.ReplayInfo(channelJson)
-        if 'genre' in channelJson:
-            self.genre = channelJson['genre']
-        else:
-            self.genre = []
+        self.genre = channelJson.get('genre')
         self.streamInfo = Channel.StreamInfo(channelJson)
 
     # properties
     # pylint: disable=missing-function-docstring
     @property
     def id(self):
-        return self.jsonData['id']
+        return self.jsonData.get('id')
 
     @property
     def name(self):
-        return self.jsonData['name']
+        return self.jsonData.get('name')
 
     @property
     def logicalChannelNumber(self):
-        return self.jsonData['logicalChannelNumber']
+        return self.jsonData.get('logicalChannelNumber')
 
     @property
     def resolution(self):
-        return self.jsonData['resolution']
+        return self.jsonData.get('resolution')
 
     @property
     def isHidden(self):
-        if 'isHidden' in self.jsonData:
-            return self.jsonData['isHidden']
-        return False
+        return self.jsonData.get('isHidden',False)
 
     @property
     def linearProducts(self):
-        return self.jsonData['linearProducts']
+        return self.jsonData.get('linearProducts')
     # pylint: enable=missing-function-docstring
 
     def get_locator(self, disableFullHD: bool = False) -> Tuple[str, str]:

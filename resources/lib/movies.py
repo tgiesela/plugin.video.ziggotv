@@ -18,33 +18,27 @@ class GridLink:
     """
     class containing the gridLink Information. Used to display icon/poster 
     """
-    def __init__(self, gridlinkJson):
-        self.id         = gridlinkJson['id']
-        self.type       = gridlinkJson['type']
-        self.title      = gridlinkJson['title']
-        self.theme      = gridlinkJson['theme']
+    def __init__(self, gridlinkJson: dict):
+        self.id         = gridlinkJson.get('id')
+        self.type       = gridlinkJson.get('type')
+        self.title      = gridlinkJson.get('title')
+        self.theme      = gridlinkJson.get('theme')
 
 class Offer:
     # pylint: disable=too-few-public-methods, too-many-instance-attributes
     """
     class containing the offer information of an instance which could be played.
     """
-    def __init__(self, offer):
+    def __init__(self, offer: dict):
         self.id = offer['id']
         self.type = offer['type']
-        self.edsProductId = None
-        if 'edsProductId' in offer:
-            self.edsProductId = offer['edsProductId']
+        self.edsProductId = offer.get('edsProductId')
         self.name = offer['name']
         self.price = offer['price']
         self.priceDisplay = offer['priceDisplay']
         self.currency = offer['currency']
-        self.relationAvailabilityStart = None
-        if 'relationAvailabilityStart' in offer:
-            self.relationAvailabilityStart = offer['relationAvailabilityStart']
-        self.relationAvailabilityEnd = None
-        if 'relationAvailabilityEnd' in offer:
-            self.relationAvailabilityEnd = offer['relationAvailabilityEnd']
+        self.relationAvailabilityStart = offer.get('relationAvailabilityStart')
+        self.relationAvailabilityEnd = offer.get('relationAvailabilityEnd')
         self.entitled = offer['entitled']
 
 class Instance:
@@ -52,28 +46,22 @@ class Instance:
     """
     class containing of instance from which we can choose to play the movie/episode
     """
-    def __init__(self, instance):
+    def __init__(self, instance:dict):
         self.id = instance['id']
         self.resolution = instance['resolution']
         self.encodingProfile = instance['encodingProfile']
         self.isDolby = instance['isDolby']
         self.audioLang = instance['audioLang']
-        self.subtiles = []
-        if 'subtitles' in instance:
-            self.subtitles = instance['subtitles']
+        self.subtitles = instance.get('subtitles',[])
         self.availabilityStart = instance['availabilityStart']
         self.availabilityEnd = instance['availabilityEnd']
         self.brandingProviderId = instance['brandingProviderId']
         self.isVodOttOnlyPurchasable = instance['isVodOttOnlyPurchasable']
         self.goPlayable = instance['goPlayable']
-        self.goDownloadable = False
-        if 'goDownloadable' in instance:
-            self.goDownloadable = instance['goDownloadable']
+        self.goDownloadable = instance.get('goDownloadable',False)
         self.isAdEnabled = instance['isAdEnabled']
         self.isA2AEnabled = instance['isA2AEnabled']
-        self.supportedExternalStreamingProtocols = []
-        if 'supportedExternalStreamingProtocols' in instance:
-            self.supportedExternalStreamingProtocols = instance['supportedExternalStreamingProtocols']
+        self.supportedExternalStreamingProtocols = instance.get('supportedExternalStreamingProtocols',[])
         self.offers: list[Offer] = []
         for offer in instance['offers']:
             self.offers.append(Offer(offer))
@@ -120,62 +108,32 @@ class Asset:
     Class containing shared properties for movies and episodes
     """
 
-    def __init__(self, info):
+    def __init__(self, info: dict):
         # pylint: disable=too-many-instance-attributes, too-many-statements
         self.id                 = info['id']
         self.type               = info['type']
         self.assetType          = info['assetType']
         self.isAdult            = info['isAdult']
         self.image              = G.STATIC_URL + 'image-service/intent/{crid}/posterTile'.format(crid=self.id)
-        self.mergedId           = None
-        if 'mergedId' in info:
-            self.mergedId = info['mergedId']
-        self.title = ''
-        if 'title' in info:
-            self.title = info['title']
-        self.synopsis = ''
-        if 'synopsis' in info:
-            self.synopsis = info['synopsis']
-        self.isAdult = info['isAdult']
-        self.ageRating = info['ageRating']
-        self.duration = 0
-        if 'duration' in info:
-            self.duration = info['duration']
-        self.minResolution = None
-        if 'minResolution' in info:
-            self.minResolution = info['minResolution']
-        self.genres = []
-        if 'genres' in info:
-            self.genres = info['genres']
-        self.goPlayable = True
-        if 'goPlayable' in info:
-            self.goPlayable = info['goPlayable']
-        # self.brandingProviderId already set
-        self.prodYear = None
-        if 'prodYear' in info:
-            self.prodYear = info['prodYear']
-        self.isPreview = info['isPreview']
-        self.onWatchlist = info['onWatchlist']
-        self.minimumAgeWarnings = []
-        if 'minimumAgeWarnings' in info:
-            self.minimumAgeWarnings = info['minimumAgeWarnings']
-        self.audioLanguages = []
-        if 'audioLanguages' in info:
-            self.audioLanguages = info['audioLanguages']
-        self.country = []
-        if 'country' in info:
-            self.country = info['country']
-        if 'subtitles' in info:
-            self.subtitles = info['subtitles']
-        self.icons = []
-        if 'icons' in info:
-            self.icons = info['icons']
-        self.castAndCrew = []
-        if 'castAndCrew' in info:
-            self.castAndCrew = info['castAndCrew']
-        self.goPlayableViaExternalApp = True
-        if 'goPlayableViaExternalApp' in info:
-            self.goPlayableViaExternalApp = info['goPlayableViaExternalApp']
+        self.mergedId           = info.get('mergedId')
+        self.title              = info.get('title','')
+        self.synopsis           = info.get('synopsis','')
+        self.isAdult            = info['isAdult']
+        self.ageRating          = info['ageRating']
+        self.duration           = info.get('duration',0)
+        self.minResolution      = info.get('minResolution')
+        self.genres             = info.get('genres',[])
+        self.goPlayable         = info.get('goPlayable',True)
+        self.prodYear           = info.get('prodYear')
+        self.isPreview          = info.get('isPreview')
+        self.onWatchlist        = info.get('onWatchlist')
+        self.minimumAgeWarnings = info.get('minimumAgeWarnings',[])
+        self.audioLanguages     = info.get('audioLanguages',[])
+        self.country            = info.get('country',[])
+        self.subtitles          = info.get('subtitles',[])
+        self.icons              = info.get('icons',[])
+        self.castAndCrew        = info.get('castAndCrew',[])
+        self.goPlayableViaExternalApp = info.get('goPlayableViaExternalApp',True)
         self.instances: list[Instance] = []
         if 'instances' in info:
             for instance in info['instances']:
@@ -210,35 +168,31 @@ class Movie:
     """
     class containing movie information
     """
-    def __init__(self, movieJson):
+    def __init__(self, movieJson: dict):
         self.hasdetails         = False
         self.asset:Asset        = None
         self.id                 = movieJson['id'] # Also present in Asset
-        self.ageRating          = movieJson['ageRating']
-        self.brandingProviderId = None
-        if 'brandingProviderId' in movieJson:
-            self.brandingProviderId = movieJson['brandingProviderId']
+        self.ageRating          = movieJson.get('ageRating',0)
+        self.brandingProviderId = movieJson.get('brandingProviderId')
         self.gridlink           = None
         if 'gridLink' in movieJson:
             self.gridlink:GridLink  = GridLink(movieJson['gridLink'])
-        self.trailerInfo = []
-        self.trailers = []
+        self.trailerInfo        = []
+        self.trailers           = []
 
-    def add_details(self, details):
+    def add_details(self, details: dict):
         """
         Function add details originating from a webcall to the movie
         
         :param self: 
         :param details: the details in json format
         """
-        self.hasdetails = True
+        self.hasdetails         = True
         self.asset              = Asset(details)
         if details['id'] != self.id:
             raise RuntimeError('Details do not belong to this movie')
-        if 'trailerInfo' in details:
-            self.trailerInfo = details['trailerInfo']
-        if 'trailers' in details:
-            self.trailers = details['trailers']
+        self.trailerInfo        = details.get('trailerInfo',[])
+        self.trailers           = details.get('trailers',[])
 
     @property
     def image(self):
@@ -276,41 +230,32 @@ class Series:
     class containing information of a series. 
     container must be a reference to a SeriesList
     """
-    def __init__(self, seriesJson, container):
+    def __init__(self, seriesJson: dict, container):
         self.serieslist         = container
         self.hasdetails         = False
         self.id                 = seriesJson['id']
         self.type               = seriesJson['type']
         self.assetType          = seriesJson['assetType']
         self.isAdult            = seriesJson['isAdult']
-        self._title              = ''
-        if 'title' in seriesJson:
-            self._title             =seriesJson['title']
-        if 'image' in seriesJson:
-            self.image              = seriesJson['image']
-        else:
-            self.image              = G.STATIC_URL + 'image-service/intent/{crid}/posterTile'.format(crid=self.id)
-        self.seriesId           = self.id
-        if 'seriesId' in seriesJson:
-            self.seriesId           = seriesJson['seriesId']
-        self.brandingProviderId = None
-        if 'brandingProviderId' in seriesJson:
-            self.brandingProviderId = seriesJson['brandingProviderId']
+        self._title             = seriesJson.get('title','')
+        self.image              = seriesJson.get('image',
+                                                 G.STATIC_URL +
+                                                 'image-service/intent/{crid}/posterTile'.format(crid=self.id))
+        self.seriesId           = seriesJson.get('seriesId',self.id)
+        self.brandingProviderId = seriesJson.get('brandingProviderId')
         self.gridlink           = None
         if 'gridLink' in seriesJson:
             self.gridlink:GridLink  = GridLink(seriesJson['gridLink'])
-        self.goPlayable         = False
-        if 'goPlayable' in seriesJson:
-            self.goPlayable         = seriesJson['goPlayable']
+        self.goPlayable         = seriesJson.get('goPlayable',False)
 
         # Details initialization
-        self.genres: list[str] = []
-        self.ageRating = None
-        self.synopsis = ''
-        self.startYear = None
-        self.endYear = None
-        self.seasonCount = 0
-        self.mergedId = None
+        self.genres: list[str]  = []
+        self.ageRating          = None
+        self.synopsis           = ''
+        self.startYear          = None
+        self.endYear            = None
+        self.seasonCount        = 0
+        self.mergedId           = None
         self.seasons:list[Season] = []
 
     @property
@@ -326,7 +271,7 @@ class Series:
             return self.gridlink.title
         return self._title
 
-    def add_details(self, seriesJson):
+    def add_details(self, seriesJson: dict):
         """
         Adds seasons of a series
         
@@ -337,23 +282,18 @@ class Series:
             raise RuntimeError('Details do not belong to this series')
 
         self.hasdetails = True
-        self._title  = seriesJson['title']
-        self.genres = []
-        if 'genres' in seriesJson:
-            self.genres = seriesJson['genres']
-        self.ageRating = seriesJson['ageRating']
-        self.isAdult = seriesJson['isAdult']
-        self.synopsis = seriesJson['synopsis']
-        if 'startYear' in seriesJson:
-            self.startYear = seriesJson['startYear']
-        if 'endYear' in seriesJson:
-            self.endYear = seriesJson['endYear']
-        self.seasonCount = seriesJson['seasonCount']
-        self.mergedId = seriesJson['mergedId']
+        self._title         = seriesJson['title']
+        self.genres         = seriesJson.get('genres',[])
+        self.ageRating      = seriesJson['ageRating']
+        self.isAdult        = seriesJson['isAdult']
+        self.synopsis       = seriesJson['synopsis']
+        self.startYear      = seriesJson.get('startYear')
+        self.endYear        = seriesJson.get('endYear')
+        self.seasonCount    = seriesJson.get('seasonCount',0)
+        self.mergedId       = seriesJson['mergedId']
         self.seasons:list[Season] = []
-        if 'seasons' in seriesJson:
-            for season in seriesJson['seasons']:
-                self.seasons.append(Season(season, self))
+        for season in seriesJson.get('seasons',{}):
+            self.seasons.append(Season(season, self))
 
     def find_season(self, seasonId):
         """
@@ -373,11 +313,11 @@ class Season:
     class containing information of a season of a series. 
     """
     def __init__(self, seasonsJson, series: Series):
-        self.series = series
-        self.id = seasonsJson['id']
-        self.title = seasonsJson['title']
-        self.totalEpisodes = seasonsJson['totalEpisodes']
-        self.seasonnumber = seasonsJson['season']
+        self.series         = series
+        self.id             = seasonsJson['id']
+        self.title          = seasonsJson['title']
+        self.totalEpisodes  = seasonsJson['totalEpisodes']
+        self.seasonnumber   = seasonsJson['season']
         self.episodes: list[Episode] = []
         for episode in seasonsJson['episodes']:
             self.episodes.append(Episode(episode, self))
@@ -407,27 +347,26 @@ class Episode:
         Can be an Event/Channel (linear) or a series/episode
         """
         def __init__(self, sourceType:str, source):
-            self.entitlementState = None
+            self.entitlementState   = None
             self.brandingProviderId = None
-            self.titleId = source['titleId']
-            self.imageVersion = source['imageVersion']
-            self.ageRating = source['ageRating']
-            self.duration = source['duration']
-            self.sourceType = sourceType
-            self.goDownloadable = False
+            self.titleId            = source['titleId']
+            self.imageVersion       = source['imageVersion']
+            self.ageRating          = source['ageRating']
+            self.duration           = source['duration']
+            self.sourceType         = sourceType
+            self.goDownloadable     = False
             if sourceType.lower() == 'linear':
-                self.type = sourceType
-                self.broadcastDate = source['broadcastDate']
-                self.channel = source ['channel']
-                self.eventId = source['eventId']
+                self.type               = sourceType
+                self.broadcastDate      = source['broadcastDate']
+                self.channel            = source ['channel']
+                self.eventId            = source['eventId']
             else:
-                self.type = source['type']
-                self.entitlementState = source['entitlementState']
+                self.type               = source['type']
+                self.entitlementState   = source['entitlementState']
                 self.brandingProviderId = source['brandingProviderId']
-                self.isGoPlayable = source['isGoPlayable']
-                self.audioQuality = source['audioQuality']
-                if 'goDownloadable' in source:
-                    self.goDownloadable = source['goDownloadable']
+                self.isGoPlayable       = source['isGoPlayable']
+                self.audioQuality       = source['audioQuality']
+                self.goDownloadable     = source.get('goDownloadable', False)
 
     def __init__(self, episodeJson, season: Season):
         self.season             = season

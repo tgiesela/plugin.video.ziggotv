@@ -14,33 +14,17 @@ class EventDetails:
     class containing the details of an event
     """
     def __init__(self, eventJson):
-        if 'shortDescription' in eventJson:
-            self.description = eventJson['shortDescription']
-        elif 'longDescription' in eventJson:
-            self.description = eventJson['longDescription']
-        else:
-            self.description = ''
-
+        self.description = eventJson.get('shortDescription')
+        self.description = eventJson.get('longDescription','')
         self.eventId = eventJson['eventId']
         self.channelId = eventJson['channelId']
-        self.mergedId = None
-        if 'mergeId' in eventJson:
-            self.mergedId = eventJson['mergedId']
-        self.seriesId = None
-        if 'seriesId' in eventJson:
-            self.seriesId = eventJson['seriesId']
-            self.episode = eventJson['episodeNumber']
-            self.season = eventJson['seasonNumber']
-            if 'episodeName' in eventJson:
-                self.episodeName = eventJson['episodeName']
-        if 'actors' in eventJson:
-            self.actors = eventJson['actors']
-        else:
-            self.actors = []
-        if 'genres' in eventJson:
-            self.genres = eventJson['genres']
-        else:
-            self.genres = []
+        self.mergedId = eventJson.get('mergedId')
+        self.seriesId = eventJson.get('seriesId')
+        self.episode = eventJson.get('episodeNumber')
+        self.season = eventJson.get('seasonNumber')
+        self.episodeName = eventJson.get('episodeName')
+        self.actors = eventJson.get('actors',[])
+        self.genres = eventJson.get('genres',[])
 
     @property
     def isSeries(self) -> bool:
@@ -56,36 +40,19 @@ class Event:
     class containing the basic properties of an event. See EventDetails for more information
     """
     # pylint: disable=too-many-branches
-    def __init__(self, eventJson):
+    def __init__(self, eventJson: dict):
         self.programDetails: EventDetails = None
-        self.startTime = eventJson['startTime']
-        self.endTime = eventJson['endTime']
-        self.title = ''
-        if 'title' in eventJson:
-            self.title = eventJson['title']
+        self.startTime = eventJson.get('startTime')
+        self.endTime = eventJson.get('endTime')
+        self.title = eventJson.get('title','')
         self.id = eventJson['id']
-        if 'mergedId' in eventJson:
-            self.mergedId = eventJson['mergedId']
-        else:
-            self.mergedId = ''
-        self.minimumAge = 0
-        if 'minimumAge' in eventJson:
-            self.minimumAge = eventJson['minimumAge']
-        self.isPlaceHolder = False
-        if 'isPlaceHolder' in eventJson:
-            self.isPlaceHolder = eventJson['isPlaceHolder']
-        self.replayTVMinAge = 0
-        if 'replayTVMinAge' in eventJson:
-            self.replayTVMinAge = eventJson['replayTVMinAge']
-        self.hasReplayTV = True
-        if 'hasReplayTV' in eventJson:
-            self.hasReplayTV = eventJson['hasReplayTV']
-        self.hasReplayTVOTT = True
-        if 'hasReplayTVOTT' in eventJson:
-            self.hasReplayTVOTT = eventJson['hasReplayTVOTT']
-        self.hasStartOver = True
-        if 'hasStartOver' in eventJson:
-            self.hasStartOver = eventJson['hasStartOver']
+        self.mergedId = eventJson.get('mergedId')
+        self.minimumAge = eventJson.get('minimumAge',0)
+        self.isPlaceHolder = eventJson.get('isPlaceHolder',False)
+        self.replayTVMinAge = eventJson.get('replayTVMinAge',0)
+        self.hasReplayTV = eventJson.get('hasReplayTV',True)
+        self.hasReplayTVOTT = eventJson.get('hasReplayTVOTT',True)
+        self.hasStartOver = eventJson.get('hasStartOver',True)
 
     @property
     def duration(self):
@@ -175,9 +142,6 @@ class EventList(LinkedList):
     def __find_insert_location(self, event: Event):
         # The event list is ordered on startTime
         currentNode: Node = self.head
-        # if event.startTime < current_event.startTime:
-        #     self.insertAtBegin(None)
-        #     return self.head
         while currentNode is not None:
             currentEvent: Event = currentNode.data
             if currentEvent.startTime > event.startTime:

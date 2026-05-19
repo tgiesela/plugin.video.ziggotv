@@ -238,7 +238,7 @@ class LoginSession(Web):
         self.extraHeaders = {}
         self.streamInfo: StreamingInfo = None
         self.username = None
-        self.get_channels()
+        # self.get_channels()
         # self.get_session_info() # We always start with a clean session
         # self.get_customer_info()
         # self.get_entitlements()
