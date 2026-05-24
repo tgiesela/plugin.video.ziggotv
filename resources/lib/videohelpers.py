@@ -26,7 +26,7 @@ from resources.lib.movies import Movie, OfferType, Instance, Episode, Asset, Ser
 try:
     # pylint: disable=import-error, broad-exception-caught
     from inputstreamhelper import Helper # type: ignore
-except Exception as excpt:
+except Exception:
     from tests.testinputstreamhelper import Helper
 
 class VideoItem:
@@ -95,6 +95,7 @@ class VideoHelpers:
         # This can be set to call a function when the videoplayer stops
         self.requestorCallbackStop = None
         self.videoitem: VideoItem = None
+        self._INITIALIZED = True
 
     def user_wants_switch(self):
         """

@@ -1,5 +1,4 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
-import unittest
 from urllib.parse import unquote
 
 from resources.lib.avstream import AvStream, StreamSession
@@ -191,5 +190,5 @@ class TestVideoPlayer(TestBase):
         self.delete_stream(stream)
         self.session.close()
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

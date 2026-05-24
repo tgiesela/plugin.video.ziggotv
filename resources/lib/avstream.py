@@ -190,7 +190,7 @@ class AvStream:
         self.streamInfo = tokenInfo
 
     def __del__(self):
-        xbmc.log('AVSTREAM DELETE {0}'.format(self.id),xbmc.LOGDEBUG)
+#        xbmc.log('AVSTREAM DELETE {0}'.format(self.id),xbmc.LOGDEBUG)
         if self.tokenTimer is not None:
             self.tokenTimer.stop()
 

@@ -1,7 +1,6 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 
 import datetime
-import unittest
 
 from resources.lib.channel import ChannelList, Channel
 from resources.lib.channelguide import ChannelGuide
@@ -154,5 +153,5 @@ class TestRecordings(TestBase):
             print(details)
 
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

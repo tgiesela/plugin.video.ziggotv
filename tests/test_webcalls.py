@@ -2,7 +2,6 @@
 import base64
 import datetime
 import json
-import unittest
 import uuid
 from http.cookiejar import Cookie
 
@@ -124,24 +123,22 @@ class TestWebCalls(TestBase):
         self.session.printNetworkTraffic = True
         channels = self.session.get_channels()
         channel = channels[0]  # Simply use the first channel
-        _, assetType = channel.get_locator()
-        tkn = self.session.obtain_tv_streaming_token(channel.id, assetType)
-        self.assertIsNotNone(tkn)
-        locator = channel.locators['Default'].replace('http://', 'https://')
-        if '/dash' in locator:
-            locator = locator.replace("/dash", "/dash,vxttoken=" + tkn.token).replace("http://", "https://")
-        elif 'sdash' in locator:
-            locator = locator.replace("/sdash", "/sdash,vxttoken=" + tkn.token).replace("http://", "https://")
-        elif '/live' in locator:
-            locator = locator.replace("/live", "/live,vxttoken=" + tkn.token).replace("http://", "https://")
-        self.session.delete_token(tkn.token)
-
         streamsession = StreamSession(self.session)
-        stream = streamsession.define_stream(channel, locator)
-        streamsession.define_stream(channel, locator)
+        stream = streamsession.define_stream(channel, suppressHD=False)
+        self.assertIsNotNone(stream)
+        locator = stream.streamInfo.url.replace('http://', 'https://')
+        if '/dash' in locator:
+            locator = locator.replace("/dash", "/dash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+        elif 'sdash' in locator:
+            locator = locator.replace("/sdash", "/sdash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+        elif '/live' in locator:
+            locator = locator.replace("/live", "/live,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+        streamsession.stop_stream(stream.id)
 
+        stream = streamsession.define_stream(channel, suppressHD=False)
+        self.assertIsNotNone(stream)
+        
         response = self.session.get_manifest(locator)
-        self.session.delete_token(tkn.token)
         mpd = str(response.content, 'utf-8')
         self.assertFalse(mpd == '')
         self.assertTrue(mpd.find('<MPD') > 0)
@@ -169,17 +166,19 @@ class TestWebCalls(TestBase):
             if c.name == 'STAR Channel':
                 channel = c
                 break
-        _, assetType = channel.get_locator()
-        tkn = self.session.obtain_tv_streaming_token(channel.id, assetType)
+        locator, assetType = channel.get_locator()
+        stream = streamsession.define_stream(channel, suppressHD=True)
         locator = channel.locators['Default'].replace('http://', 'https://')
         if '/dash' in locator:
-            locator = locator.replace("/dash", "/dash,vxttoken=" + tkn.token).replace("http://", "https://")
+            locator = locator.replace("/dash", "/dash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
         elif 'sdash' in locator:
-            locator = locator.replace("/sdash", "/sdash,vxttoken=" + tkn.token).replace("http://", "https://")
+            locator = locator.replace("/sdash", "/sdash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
         elif '/live' in locator:
-            locator = locator.replace("/live", "/live,vxttoken=" + tkn.token).replace("http://", "https://")
+            locator = locator.replace("/live", "/live,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
         response = self.session.get_manifest(locator)
-        self.session.delete_token(tkn.token)
+
+        streamsession.stop_stream(stream.id)
+
         mpd = str(response.content, 'utf-8')
         self.assertFalse(mpd == '')
         self.assertTrue(mpd.find('<MPD') > 0)
@@ -325,5 +324,5 @@ class TestWebCalls(TestBase):
             # details2 = self.session.obtain_asset_details(episode['source']['eventId'])
 
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

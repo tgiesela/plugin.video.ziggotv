@@ -1,5 +1,4 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
-import unittest
 import datetime
 
 from resources.lib import utils
@@ -65,5 +64,5 @@ class TestEvents(TestBase):
             #                                                                , evt.data.startTime
             #                                                               , evt.data.endTime))
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

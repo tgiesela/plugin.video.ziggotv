@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 import threading
-import unittest
 
 from resources.lib.globals import G
 from resources.lib.movies import Episode, MovieList, SeriesList
@@ -54,5 +53,5 @@ class TestMovies(TestBase):
                 print(f'Movie: {movie.id}, title: {movie.asset.title}')
             movies.save()
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

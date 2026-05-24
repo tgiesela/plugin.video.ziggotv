@@ -68,7 +68,7 @@ class TestAvStream(TestBase):
         rl = RecordingList(self.addon)
         rl.refresh()
         seasons = rl.get_season_recordings(RecordingType.RECORDED)
-        season: SeasonRecording = seasons[1]
+        season: SeasonRecording = seasons[0]
 
         recordings = season.get_episodes(RecordingType.RECORDED)
         self.assertTrue(len(recordings) > 0,

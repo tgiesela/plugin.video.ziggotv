@@ -1,7 +1,6 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 
 import threading
-import unittest
 from time import sleep
 
 from resources.lib.proxyserver import ProxyServer
@@ -82,5 +81,5 @@ class TestProxyServer(TestBase):
             print('ProxyServer stopped')
 
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

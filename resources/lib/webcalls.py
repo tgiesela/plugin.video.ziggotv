@@ -270,16 +270,16 @@ class LoginSession(Web):
             self.sessionInfo = {}
         return self.sessionInfo
 
-    def get_customer_info(self):
+    def get_customer_info(self) -> dict:
         """
         load customer information from disk
-        @return: nothing
+        @return: customer information in json format
         """
         if Path(self.pluginpath(G.CUSTOMER_INFO)).exists():
             self.customerInfo = json.loads(Path(self.pluginpath(G.CUSTOMER_INFO)).read_text(encoding='utf-8'))
             self.set_active_profile(self.get_profiles()[0])
         else:
-            self.customerInfo = {}
+            self.__obtain_customer_info()
         return self.customerInfo
 
     def get_channels(self):
@@ -315,7 +315,7 @@ class LoginSession(Web):
         get customer information from ziggo go and store it in a disk-file
         @return: nothing
         """
-        if not self.__claims_token_still_valid():
+        if not self.__claims_token_still_valid() or self.customerInfo is None or len(self.customerInfo) == 0:
             self.__delete_cookie("CLAIMSTOKEN")
             url = G.PERSONALISATION_URL.format(householdid=self.sessionInfo['householdId'])
             response = super().do_get(url, params={'with': 'profiles,devices'})
