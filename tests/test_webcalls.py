@@ -18,7 +18,6 @@ class TestWebCalls(TestBase):
         super().__init__(*args, **kwargs)
         self.do_login()
 
-
     def test_login(self):
         self.cleanup_all()
         self.session = LoginSession(self.addon)
@@ -57,7 +56,7 @@ class TestWebCalls(TestBase):
         self.session.sessionInfo['accessToken'] = accessToken
         self.do_login()
 
-    def test_channels(self):
+    def test_webcalls_channels(self):
         self.do_login()
         self.cleanup_channels()
         channels = self.session.get_channels()
@@ -128,16 +127,19 @@ class TestWebCalls(TestBase):
         self.assertIsNotNone(stream)
         locator = stream.streamInfo.url.replace('http://', 'https://')
         if '/dash' in locator:
-            locator = locator.replace("/dash", "/dash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/dash", "/dash,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         elif 'sdash' in locator:
-            locator = locator.replace("/sdash", "/sdash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/sdash", "/sdash,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         elif '/live' in locator:
-            locator = locator.replace("/live", "/live,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/live", "/live,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         streamsession.stop_stream(stream.id)
 
         stream = streamsession.define_stream(channel, suppressHD=False)
         self.assertIsNotNone(stream)
-        
+
         response = self.session.get_manifest(locator)
         mpd = str(response.content, 'utf-8')
         self.assertFalse(mpd == '')
@@ -166,15 +168,17 @@ class TestWebCalls(TestBase):
             if c.name == 'STAR Channel':
                 channel = c
                 break
-        locator, assetType = channel.get_locator()
         stream = streamsession.define_stream(channel, suppressHD=True)
         locator = channel.locators['Default'].replace('http://', 'https://')
         if '/dash' in locator:
-            locator = locator.replace("/dash", "/dash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/dash", "/dash,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         elif 'sdash' in locator:
-            locator = locator.replace("/sdash", "/sdash,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/sdash", "/sdash,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         elif '/live' in locator:
-            locator = locator.replace("/live", "/live,vxttoken=" + stream.streamInfo.token).replace("http://", "https://")
+            locator = locator.replace("/live", "/live,vxttoken=" +
+                                      stream.streamInfo.token).replace("http://", "https://")
         response = self.session.get_manifest(locator)
 
         streamsession.stop_stream(stream.id)

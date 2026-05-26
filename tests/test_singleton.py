@@ -15,6 +15,7 @@ class TestVideoPlayer(TestBase):
         :param self: 
         """
 
+        self.do_login()
         player1 = VideoHelpers(self.addon)
         player2 = VideoHelpers(self.addon)
 

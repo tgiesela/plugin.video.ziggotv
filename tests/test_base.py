@@ -138,6 +138,7 @@ class TestBase(unittest.TestCase):
         self.cleanup_savechannelstates()
 
     def do_login(self):
+        print("Executing login", self._testMethodName)
         with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
             credentials = json.loads(credfile.read())
         self.session.login(credentials['username'], credentials['password'])
@@ -145,6 +146,7 @@ class TestBase(unittest.TestCase):
         self.session.refresh_entitlements()
 
     def logon_via_proxy(self):
+        print("Executing login via proxy", self._testMethodName)
         with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
             credentials = json.loads(credfile.read())
         rslt = self.helper.dynamic_call(LoginSession.login, username=credentials['username'],

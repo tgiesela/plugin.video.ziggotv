@@ -7,14 +7,14 @@
     "python.terminal.activateEnvironment": true,
     "python.testing.unittestArgs": [
         "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "test_*.py"
+        "-s","tests",
+        "-t","${workspaceFolder}",
+        "-p","test_*.py"
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
     "python.languageServer": "Default",
     "pylint.importStrategy": "fromEnvironment",
     "python.analysis.diagnosticMode": "workspace"
+    // ,"python.testing.cwd": "tests"
 }
