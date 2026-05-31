@@ -19,7 +19,7 @@ if __name__ == '__main__':
                 break
 
     # pylint: disable=broad-exception-caught
-    except Exception as exc:
+    except Exception:
         pass
     xbmc.log("STOPPING PROXYSERVICE", xbmc.LOGINFO)
     MONITOR_SERVICE.shutdown()

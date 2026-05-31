@@ -38,15 +38,16 @@ class StreamSession:
         """
         self.streamList: AVStreamList = AVStreamList()
         self.loginSession = loginSession
-        self._reloadchannels()
+        self.channelList: ChannelList = None
+#        self._reloadchannels()
 
     def _reloadchannels(self):
         channels = self.loginSession.get_channels()
         entitlements = self.loginSession.get_entitlements()
         if entitlements == {}:
-            pass
-        else:
-            self.channelList = ChannelList(channels, entitlements)
+            self.loginSession.refresh_entitlements()
+            entitlements = self.loginSession.get_entitlements()
+        self.channelList = ChannelList(channels, entitlements)
 
     def __get_channel_token(self, channel, suppressHD: bool = False):
         locator, assetType = channel.get_locator(suppressHD)
@@ -75,11 +76,9 @@ class StreamSession:
         """
         match streamType:
             case AVStreamType.CHANNEL:
-                channel = self.channelList.find_channel_by_id(streamId)
-                if channel is None:
+                if self.channelList is None:
                     self._reloadchannels()
-                    if channel is None:
-                        channel = self.channelList.find_channel_by_id(streamId)
+                channel = self.channelList.find_channel_by_id(streamId)
                 if channel is None:
                     xbmc.log(f'Channel with id {streamId} not found', xbmc.LOGERROR)
                     return None

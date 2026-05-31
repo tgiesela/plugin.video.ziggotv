@@ -7,14 +7,22 @@
     "python.terminal.activateEnvironment": true,
     "python.testing.unittestArgs": [
         "-v",
-        "-s","tests",
+        "-s","tests_pytest",
         "-t","${workspaceFolder}",
         "-p","test_*.py"
     ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
+    "python.testing.pytestArgs": [
+        "-v",
+        "-s",
+        // "--no-cov",
+        "--rootdir=tests_pytest",
+        "-k","test_"
+    ],
+    "python.testing.pytestPath": "test_pytest",
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
     "python.languageServer": "Default",
     "pylint.importStrategy": "fromEnvironment",
     "python.analysis.diagnosticMode": "workspace"
-    // ,"python.testing.cwd": "tests"
+//    ,"python.testing.cwd": "tests_pytest"
 }

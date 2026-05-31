@@ -2,37 +2,29 @@
 
 import json
 from pathlib import Path
-import threading
 
 from resources.lib.globals import G
 from resources.lib.movies import Episode, MovieList, SeriesList
-from tests.test_base import TestBase
 
 class InvalidAgeError(Exception):
     def __init__(self, msg="Age must be between 0 and 120"):
         self.msg = msg
         super().__init__(self.msg)
 
-class TestMovies(TestBase):
+class TestMovies:
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.thread: threading.Thread = None
-
-    def test_series(self):
-        self.addon.setSettingBool('print-response-content', False)
-        self.addon.setSettingBool('print-request-content', False)
-        self.do_login()
-        self.logon_via_proxy()
+    def test_series(self, activewebsession):
+        activewebsession.addon.setSettingBool('print-response-content', False)
+        activewebsession.addon.setSettingBool('print-request-content', False)
         moviesDetails = []
         Path(G.MOVIE_INFO).write_text(json.dumps(moviesDetails), encoding='utf-8')
-        response = self.session.obtain_vod_screens()
+        response = activewebsession.session.obtain_vod_screens()
         combinedlist = response['screens']
         combinedlist.append(response['hotlinks']['adultRentScreen'])
 
         for screen in combinedlist:
             print('Screen: ' + screen['title'], 'id: ', screen['id'])
-            series = SeriesList(self.addon, screen['id'])
+            series = SeriesList(activewebsession.addon, screen['id'])
             for serie in series.series:
                 if not serie.hasdetails:
                     series.update_season_details(serie)
@@ -46,7 +38,7 @@ class TestMovies(TestBase):
                             print(event.id)
                 print(f'Serie: {serie.id}, title: {serie.title}')
             series.save()
-            movies = MovieList(self.addon, screen['id'])
+            movies = MovieList(activewebsession.addon, screen['id'])
             for movie in movies.movies:
                 if not movie.hasdetails:
                     movies.update_details(movie)

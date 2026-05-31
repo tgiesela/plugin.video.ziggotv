@@ -5,44 +5,40 @@ from resources.lib.avstream import AvStream, StreamSession
 from resources.lib.channel import Channel, ChannelList
 from resources.lib.listitemhelper import ListitemHelper
 from resources.lib.urltools import UrlTools
-from tests.test_base import TestBase
+from resources.lib.utils import ProxyHelper
 
-
-class TestVideoPlayer(TestBase):
-    def create_stream(self, zender: Channel):
-        stream:AvStream = self.helper.dynamic_call(StreamSession.define_stream,
-                                                   streamItem=zender,
-                                                   suppressHD=False)
+class TestVideoPlayer:
+    def create_stream(self, zender: Channel, activewebsession) -> AvStream:
+        stream:AvStream = ProxyHelper(activewebsession.addon).dynamic_call(
+            StreamSession.define_stream,
+            streamItem=zender,
+            suppressHD=False)
         return stream
 
-    def delete_stream(self, stream: AvStream):
-        stream:AvStream = self.helper.dynamic_call(StreamSession.stop_stream,
-                                                   streamid=stream.id)
+    def delete_stream(self, stream: AvStream, activewebsession):
+        stream:AvStream = ProxyHelper(activewebsession.addon).dynamic_call(
+            StreamSession.stop_stream,
+            streamid=stream.id)
 
-    def test_widevine_license(self):
-        self.do_login()
-        self.session.refresh_entitlements()
-        self.session.refresh_widevine_license()
+    def test_widevine_license(self, activewebsession):
+        activewebsession.session.refresh_widevine_license()
 
-    def test_buildurl(self):
+    def test_buildurl(self, activewebsession):
         # pylint: disable=too-many-statements, too-many-locals
-        self.do_login()
-        self.logon_via_proxy()
-        self.session.refresh_entitlements()
-        urlHelper = UrlTools(self.addon)
-        helpers = ListitemHelper(self.addon)
-        self.session.refresh_widevine_license()
-        self.session.get_customer_info()
+        urlHelper = UrlTools(activewebsession.addon)
+        helpers = ListitemHelper(activewebsession.addon)
+        activewebsession.session.refresh_widevine_license()
+        activewebsession.session.get_customer_info()
 
         # Test for play channels
 
-        self.session.refresh_channels()
-        channels = self.session.get_channels()
-        entitlements = self.session.get_entitlements()
+        activewebsession.session.refresh_channels()
+        channels = activewebsession.session.get_channels()
+        entitlements = activewebsession.session.get_entitlements()
         cl = ChannelList(channels, entitlements)
         zender:Channel = cl.find_channel_by_number(1)
 
-        stream:AvStream = self.create_stream(zender)
+        stream:AvStream = self.create_stream(zender, activewebsession)
 
         url = 'http://wp-obc1-live-nl-prod.prod.cdn.dmdsdp.com/dash/go-dash-hdready-avc/NL_000001_019401/manifest.mpd'
         expectedUrl = ('http://127.0.0.1:6868/manifest?'
@@ -56,28 +52,28 @@ class TestVideoPlayer(TestBase):
            f'vxttoken={stream.streamInfo.token}/go-dash-hdready-avc/NL_000001_019401/manifest.mpd')
         createdUrl = urlHelper.build_proxy_url(url)
 
-        self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
+        assert createdUrl == expectedUrl, 'URL not as expected'
         s = createdUrl.find('/manifest')
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
+        assert manifestUrl == expectedManifestUrl, 'URL not as expected'
         print(manifestUrl)
         stream.update_redirection(createdUrl[s:], redirectedUrl)
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        assert manifestUrl == redirectedUrl, 'URL not as expected'
         videoUrl = (
             '/private1/Header.m4s')
         expectedVideoUrl = (
             'https://da-d436304820010b88000108000000000000000008.id.cdn.upcbroadband.com/dash,'
            f'vxttoken={stream.streamInfo.token}/go-dash-hdready-avc/NL_000001_019401/private1/Header.m4s')
         baseurl = stream.replace_baseurl(videoUrl, stream.streamInfo.token)
-        self.assertEqual(expectedVideoUrl, baseurl, 'URL not as expected')
+        assert expectedVideoUrl == baseurl, 'URL not as expected'
 
         li = helpers.listitem_from_url(url, stream.streamInfo.token, 'content')
         print(li.getLabel())
 
         # Tests for replay
-        self.delete_stream(stream)
-        stream:AvStream = self.create_stream(zender)
+        self.delete_stream(stream, activewebsession)
+        stream:AvStream = self.create_stream(zender, activewebsession)
 
         url = ('http://wp-pod3-replay-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash/LIVE$NL_000001_019401/index.mpd'
                '/Manifest?device=AVC-OTT-DASH-PR-WV&start=2023-12-15T14%3A16%3A00Z&end=2023-12-15T14%3A51%3A00Z')
@@ -95,15 +91,15 @@ class TestVideoPlayer(TestBase):
         )
         createdUrl = urlHelper.build_proxy_url(url)
 
-        self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
+        assert createdUrl == expectedUrl, 'URL not as expected'
         s = createdUrl.find('/manifest')
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
+        assert manifestUrl == expectedManifestUrl, 'URL not as expected'
         print(manifestUrl)
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
         stream.update_redirection(createdUrl[s:], redirectedUrl)
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        assert manifestUrl == redirectedUrl, 'URL not as expected'
 
         li = helpers.listitem_from_url(url, stream.streamInfo.token, 'content')
 
@@ -117,11 +113,11 @@ class TestVideoPlayer(TestBase):
             '!d2ESQVZDLU9UVC1EQVNILVBSLVdWEgJDeAz7ykSIKfvKFgSf/QualityLevels(128000,'
             'Level_params=dxADIeIBnw..)/Fragments(audio_482_dut=Init)')
         baseurl = stream.replace_baseurl(videoUrl, stream.streamInfo.token)
-        self.assertEqual(expectedVideoUrl, baseurl, 'URL not as expected')
+        assert expectedVideoUrl == baseurl, 'URL not as expected'
 
         # Test for video-on-demand urls
-        self.delete_stream(stream)
-        stream:AvStream = self.create_stream(zender)
+        self.delete_stream(stream, activewebsession)
+        stream:AvStream = self.create_stream(zender, activewebsession)
 
         url = (
             'https://wp-pod1-vod-vxtoken-nl-prod.prod.cdn.dmdsdp.com/sdash'
@@ -141,19 +137,19 @@ class TestVideoPlayer(TestBase):
         )
         createdUrl = urlHelper.build_proxy_url(url)
 
-        self.assertEqual(createdUrl, expectedUrl, 'URL not as expected')
+        assert createdUrl == expectedUrl, 'URL not as expected'
         s = createdUrl.find('/manifest')
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
+        assert manifestUrl == expectedManifestUrl, 'URL not as expected'
         print(manifestUrl)
 
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
         stream.update_redirection(createdUrl[s:], redirectedUrl)
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        assert manifestUrl == redirectedUrl, 'URL not as expected'
 
-        self.delete_stream(stream)
-        stream:AvStream = self.create_stream(zender)
+        self.delete_stream(stream, activewebsession)
+        stream:AvStream = self.create_stream(zender, activewebsession)
         url = ('http://wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live/disk1/'
                'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd')
         expectedUrl = ('http://127.0.0.1:6868/manifest?path=/live/disk1/NL_000011_019563/go-dash-hdready-avc/'
@@ -169,15 +165,15 @@ class TestVideoPlayer(TestBase):
             'NL_000011_019563/go-dash-hdready-avc/NL_000011_019563.mpd'
         )
         createdUrl = urlHelper.build_proxy_url(url)
-        self.assertEqual(unquote(createdUrl), expectedUrl, 'URL not as expected')
+        assert unquote(createdUrl) == expectedUrl, 'URL not as expected'
         s = createdUrl.find('/manifest')
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, expectedManifestUrl, 'URL not as expected')
+        assert manifestUrl == expectedManifestUrl, 'URL not as expected'
         print(manifestUrl)
         # Now update redirection and then create the manifest URL again. it should be identical to the redirected URL
         stream.update_redirection(createdUrl[s:], redirectedUrl, '../_shared_a997aca19aa594f6aba2bcbd76c87946/')
         manifestUrl = stream.get_manifest_url(createdUrl[s:])
-        self.assertEqual(manifestUrl, redirectedUrl, 'URL not as expected')
+        assert manifestUrl == redirectedUrl, 'URL not as expected'
         videoUrl = ('http://127.0.0.1:6868/_shared_a997aca19aa594f6aba2bcbd76c87946/NL_000011_019563-mp4a_128000_nld'
                     '=20000-init.mp4')
         expectedUrl = (
@@ -185,10 +181,10 @@ class TestVideoPlayer(TestBase):
            f'wp4-vxtoken-anp-g05060506-hzn-nl.t1.prd.dyncdn.dmdsdp.com/live,vxttoken={stream.streamInfo.token}/disk1/'
             'NL_000011_019563/_shared_a997aca19aa594f6aba2bcbd76c87946/NL_000011_019563-mp4a_128000_nld=20000-init.mp4')
         defaultUrl = stream.replace_baseurl(videoUrl, stream.streamInfo.token)
-        self.assertEqual(expectedUrl, defaultUrl, 'URL not as expected')
+        assert expectedUrl == defaultUrl, 'URL not as expected'
         print(defaultUrl)
-        self.delete_stream(stream)
-        self.session.close()
+        self.delete_stream(stream, activewebsession)
+        activewebsession.session.close()
 
 # if __name__ == '__main__':
 #     unittest.main()

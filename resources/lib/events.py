@@ -62,10 +62,6 @@ class Event:
         """
         return self.endTime - self.startTime
 
-    @duration.setter
-    def duration(self, value):
-        self.duration = value
-
     @property
     def hasDetails(self) -> bool:
         """

@@ -27,7 +27,7 @@ try:
     # pylint: disable=import-error, broad-exception-caught
     from inputstreamhelper import Helper # type: ignore
 except Exception:
-    from tests.testinputstreamhelper import Helper
+    from tests_pytest.testinputstreamhelper import Helper
 
 class VideoItem:
     """

@@ -9,4 +9,6 @@ Kodistubs==20.0.1
 # git+https://github.com/emilsvennesson/script.module.inputstreamhelper.git@master#egg=inputstreamhelper
 
 PyJWT~=2.8.0
+pytest
+pytest-cov
 # aiohttp==3.9.1

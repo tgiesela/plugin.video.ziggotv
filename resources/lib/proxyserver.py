@@ -458,6 +458,11 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 request.send_header('content-type', 'text/html')
                 request.end_headers()
                 request.wfile.write(exc.response)
+            except Exception as exc:
+                request.send_response(500)
+                request.send_header('content-type', 'text/html')
+                request.end_headers()
+                request.wfile.write(bytes(str(exc), 'utf-8'))
         else:
             request.send_response(400)
             request.end_headers()

@@ -25,8 +25,8 @@ from resources.lib.webcalls import LoginSession
 try:
     # pylint: disable=import-error, broad-exception-caught
     from inputstreamhelper import Helper # type: ignore
-except Exception as excpt:
-    from tests.testinputstreamhelper import Helper
+except Exception:
+    from tests_pytest.testinputstreamhelper import Helper
 
 class ListitemHelper:
     # pylint: disable=too-many-instance-attributes

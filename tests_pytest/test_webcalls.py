@@ -2,6 +2,7 @@
 import base64
 import datetime
 import json
+import os
 import uuid
 from http.cookiejar import Cookie
 
@@ -11,98 +12,98 @@ from resources.lib.avstream import StreamSession
 from resources.lib.globals import G
 from resources.lib.utils import WebException, DatetimeHelper
 from resources.lib.webcalls import LoginSession
-from tests.test_base import TestBase
 
-class TestWebCalls(TestBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.do_login()
-
-    def test_login(self):
-        self.cleanup_all()
-        self.session = LoginSession(self.addon)
+class TestWebCalls:
+    def do_login(self, session: LoginSession):
+        with open(os.path.expanduser('~/credentials.json'), 'r', encoding='utf-8') as credfile:
+            credentials = json.loads(credfile.read())
+        session.login(credentials['username'], credentials['password'])
+        assert len(session.customerInfo) != 0
+        session.refresh_entitlements()
+        
+    def test_login(self, websession):
+        websession.cleanup_all()
+        websession.session = LoginSession(websession.addon)
         try:
-            self.session.login('baduser', 'badpassword')
+            websession.session.login('baduser', 'badpassword')
         except WebException as exc:
             print(exc.response)
             print(exc.status)
-        self.do_login()
-        self.session.dump_cookies()
+        self.do_login(websession.session)
+        websession.session.dump_cookies()
         # Test expired accesstoken in sessionInfo
-        self.session.sessionInfo['accessToken'] = \
+        websession.session.sessionInfo['accessToken'] = \
             ('eyJ0eXAiOiJKV1QiLCJraWQiOiJvZXNwX3Rva2VuX3Byb2RfMjAyMDA4MTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ3ZWItYXBpLXBy'
              'b2Qtb2JvLmhvcml6b24udHYiLCJzaWQiOiJlYzYxNDE5NWE0NjdkNWM5ZGZkM2Q0MGQ2MzVmYTdhZjA4NmU4MzEzZDZhOGUyODQ5NDQ3Z'
              'Dk3ZTg4NGIzMzkzIiwiaWF0IjoxNzA1NzM2Mjc0LCJleHAiOjE3MDU3NDM0NzQsInN1YiI6Ijg2NTQ4MDdfbmwifQ.SAD1RuDYX60_tq7'
              'Zt0v-Zh3iKKS2hU6nv34-zAEKl2w')
-        self.do_login()
+        self.do_login(websession.session)
         # Test without ACCESSTOKEN cookie
-        for _cookie in self.session.cookies:
+        for _cookie in websession.session.cookies:
             c: Cookie = _cookie
             if c.name == 'ACCESSTOKEN':
-                self.session.cookies.clear(domain=c.domain, path=c.path, name=c.name)
-        self.session.sessionInfo['accessToken'] = \
+                websession.session.cookies.clear(domain=c.domain, path=c.path, name=c.name)
+        websession.session.sessionInfo['accessToken'] = \
             ('eyJ0eXAiOiJKV1QiLCJraWQiOiJvZXNwX3Rva2VuX3Byb2RfMjAyMDA4MTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ3ZWItYXBpLXBy'
              'b2Qtb2JvLmhvcml6b24udHYiLCJzaWQiOiJlYzYxNDE5NWE0NjdkNWM5ZGZkM2Q0MGQ2MzVmYTdhZjA4NmU4MzEzZDZhOGUyODQ5NDQ3Z'
              'Dk3ZTg4NGIzMzkzIiwiaWF0IjoxNzA1NzM2Mjc0LCJleHAiOjE3MDU3NDM0NzQsInN1YiI6Ijg2NTQ4MDdfbmwifQ.SAD1RuDYX60_tq7'
              'Zt0v-Zh3iKKS2hU6nv34-zAEKl2w')
-        self.do_login()
+        self.do_login(websession.session)
         # Test with expired accessToken
-        accessToken = self.session.sessionInfo['accessToken']
+        accessToken = websession.session.sessionInfo['accessToken']
         parts = accessToken.split('.')
         jsondata = json.loads(base64.b64decode(parts[1]+'=='))
         jsondata['exp'] = DatetimeHelper.unix_datetime(DatetimeHelper.now() - datetime.timedelta(hours=2))
         parts[1] = base64.b64encode(bytes(json.dumps(jsondata), 'ascii')).decode('ascii')[:-2]
         accessToken = '.'.join(parts)
-        self.session.sessionInfo['accessToken'] = accessToken
-        self.do_login()
+        websession.session.sessionInfo['accessToken'] = accessToken
+        self.do_login(websession.session)
 
-    def test_webcalls_channels(self):
-        self.do_login()
-        self.cleanup_channels()
-        channels = self.session.get_channels()
-        self.assertEqual(0, len(channels))
-        self.session.refresh_channels()
-        channels = self.session.get_channels()
-        self.assertNotEqual(len(channels), 0)
+    def test_webcalls_channels(self, activewebsession):
+        activewebsession.cleanup_channels()
+        channels = activewebsession.session.get_channels()
+        assert 0 == len(channels)
+        activewebsession.session.refresh_channels()
+        channels = activewebsession.session.get_channels()
+        assert len(channels) != 0
 
-    def test_entitlements(self):
-        self.cleanup_all()
-        self.session = LoginSession(self.addon)
-        self.session.printNetworkTraffic = 'false'
-        self.do_login()
-        self.session.refresh_entitlements()
-        entitlements = self.session.get_entitlements()
-        self.assertFalse(entitlements == {})
+    def test_entitlements(self, activewebsession):
+        activewebsession.cleanup_all()
+        activewebsession.session = LoginSession(activewebsession.addon)
+        activewebsession.session.printNetworkTraffic = 'false'
+        activewebsession.do_login()
+        activewebsession.session.refresh_entitlements()
+        entitlements = activewebsession.session.get_entitlements()
+        assert not entitlements == {}
 
-    def test_widevine_license(self):
-        self.session.refresh_widevine_license()
+    def test_widevine_license(self, activewebsession):
+        activewebsession.session.refresh_widevine_license()
 
-    def test_tokens(self):
-        self.do_login()
-        self.session.refresh_channels()
-        channels = self.session.get_channels()
+    def test_tokens(self, activewebsession):
+        activewebsession.session.refresh_channels()
+        channels = activewebsession.session.get_channels()
         channel = channels[0]  # Simply use the first channel
-        streamInfo = self.session.obtain_tv_streaming_token(channel.id, assetType='Orion-DASH')
-        self.session.streamingToken = streamInfo.token
+        streamInfo = activewebsession.session.obtain_tv_streaming_token(channel.id, assetType='Orion-DASH')
+        activewebsession.session.streamingToken = streamInfo.token
         headers = {}
         hwUuid = str(uuid.UUID(hex=hex(uuid.getnode())[2:]*2+'00000000'))
         headers.update({
             'Host': G.ZIGGO_HOST,
             'x-streaming-token': streamInfo.token,
-            'X-cus': self.session.customerInfo['customerId'],
+            'X-cus': activewebsession.session.customerInfo['customerId'],
             'x-go-dev': hwUuid,
             'x-drm-schemeId': 'edef8ba9-79d6-4ace-a3c8-27dcd51d21ed',
             'deviceName': 'Firefox',
 #            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0',
         })
 
-        response = self.session.get_license('nl_tv_standaard_cenc', '\x08\x04', headers)
+        response = activewebsession.session.get_license('nl_tv_standaard_cenc', '\x08\x04', headers)
         updatedStreamingToken = response.headers['x-streaming-token']
-        self.assertFalse(updatedStreamingToken == streamInfo.token)
-        # self.session.obtain_customer_info()
-        newStreamingToken = self.session.update_token(updatedStreamingToken)
-        self.assertFalse(newStreamingToken == streamInfo.token)
-        self.session.delete_token(newStreamingToken)
+        assert updatedStreamingToken != streamInfo.token
+        # activewebsession.session.obtain_customer_info()
+        newStreamingToken = activewebsession.session.update_token(updatedStreamingToken)
+        assert newStreamingToken != streamInfo.token
+        activewebsession.session.delete_token(newStreamingToken)
 
     def baseurl_from_manifest(self, manifest):
         document = minidom.parseString(manifest)
@@ -116,15 +117,14 @@ class TestWebCalls(TestBase):
         return None
 
     # pylint: disable=too-many-statements
-    def test_manifest(self):
-        self.do_login()
-        self.session.refresh_channels()
-        self.session.printNetworkTraffic = True
-        channels = self.session.get_channels()
+    def test_manifest(self, activewebsession):
+        activewebsession.session.refresh_channels()
+        activewebsession.session.printNetworkTraffic = True
+        channels = activewebsession.session.get_channels()
         channel = channels[0]  # Simply use the first channel
-        streamsession = StreamSession(self.session)
+        streamsession = StreamSession(activewebsession.session)
         stream = streamsession.define_stream(channel, suppressHD=False)
-        self.assertIsNotNone(stream)
+        assert stream is not None
         locator = stream.streamInfo.url.replace('http://', 'https://')
         if '/dash' in locator:
             locator = locator.replace("/dash", "/dash,vxttoken=" +
@@ -138,12 +138,12 @@ class TestWebCalls(TestBase):
         streamsession.stop_stream(stream.id)
 
         stream = streamsession.define_stream(channel, suppressHD=False)
-        self.assertIsNotNone(stream)
+        assert stream is not None
 
-        response = self.session.get_manifest(locator)
+        response = activewebsession.session.get_manifest(locator)
         mpd = str(response.content, 'utf-8')
-        self.assertFalse(mpd == '')
-        self.assertTrue(mpd.find('<MPD') > 0)
+        assert mpd != ''
+        assert mpd.find('<MPD') > 0
         baseURL = self.baseurl_from_manifest(response.content)
         if baseURL is None:
             print('BaseURL not found')
@@ -179,59 +179,58 @@ class TestWebCalls(TestBase):
         elif '/live' in locator:
             locator = locator.replace("/live", "/live,vxttoken=" +
                                       stream.streamInfo.token).replace("http://", "https://")
-        response = self.session.get_manifest(locator)
+        response = activewebsession.session.get_manifest(locator)
 
         streamsession.stop_stream(stream.id)
 
         mpd = str(response.content, 'utf-8')
-        self.assertFalse(mpd == '')
-        self.assertTrue(mpd.find('<MPD') > 0)
+        assert mpd != ''
+        assert mpd.find('<MPD') > 0
 
         baseURL = self.baseurl_from_manifest(response.content)
         if baseURL is None:
             print('BaseURL not found')
 
-    def test_voor_jou(self):
-        self.do_login()
-        profiles = self.session.get_profiles()
+    def test_voor_jou(self, activewebsession):
+        profiles = activewebsession.session.get_profiles()
         for profile in profiles:
             print('Profile: {0}\n'.format(profile['name']))
-            self.session.set_active_profile(profile)
-            response = self.session.obtain_structure()
+            activewebsession.session.set_active_profile(profile)
+            response = activewebsession.session.obtain_structure()
             response = json.loads(response)
             requestcolls = []
             for item in response:
                 print(item['id'], item['type'])
                 if item['type'] == 'MostWatchedChannels':
-                    mostwatched = json.loads(self.session.get_mostwatched_channels())
+                    mostwatched = json.loads(activewebsession.session.get_mostwatched_channels())
                     print('Mostwatched: ', mostwatched)
                 # if item['type'] in ['CombinedCollection', 'RecommendedForYou']:
                 else:
                     requestcolls.append(item['id'])
-                    homeColl = json.loads(self.session.obtain_home_collection(requestcolls))
+                    homeColl = json.loads(activewebsession.session.obtain_home_collection(requestcolls))
                     # print(homeColl)
                     for collection in homeColl['collections']:
-                        self.process_collection_voor_jou(collection)
+                        self.process_collection_voor_jou(collection, activewebsession.session)
 
-    def test_movies_and_series(self):
-        self.do_login()
-        profiles = self.session.get_profiles()
+    def test_movies_and_series(self, activewebsession):
+        activewebsession.do_login()
+        profiles = activewebsession.session.get_profiles()
         for profile in profiles:
             print('Profile: {0}\n'.format(profile['name']))
-            self.session.set_active_profile(profile)
-            response = self.session.obtain_vod_screens()
+            activewebsession.session.set_active_profile(profile)
+            response = activewebsession.session.obtain_vod_screens()
             combinedlist = response['screens']
             combinedlist.append(response['hotlinks']['adultRentScreen'])
             for screen in combinedlist:
                 print('Screen: ' + screen['title'], 'id: ', screen['id'])
-                screenDetails = self.session.obtain_vod_screen_details(screen['id'])
+                screenDetails = activewebsession.session.obtain_vod_screen_details(screen['id'])
                 if 'collections' in screenDetails:
                     for collection in screenDetails['collections']:
-                        self.process_collection_movies(collection)
+                        self.process_collection_movies(collection, activewebsession.session)
             break # We only test one profile !
             # print(response)
 
-    def process_collection_voor_jou(self, collection):
+    def process_collection_voor_jou(self, collection, session: LoginSession = None):
         print('\tCollection: ' + collection['title'])
         if 'subcollections' in collection:
             for subcoll in collection['subcollections']:
@@ -246,7 +245,7 @@ class TestWebCalls(TestBase):
                 if 'brandingProviderId' in item:
                     print('\t\t      Branding-provider', item['brandingProviderId'])
                 if entitled:
-                    episoderesponse, asset = self.session.get_episode(item)
+                    episoderesponse, asset = session.get_episode(item)
                     print("Episo-resp:", episoderesponse)
                     print("Asset-resp:", asset)
                     if asset != '':
@@ -255,7 +254,7 @@ class TestWebCalls(TestBase):
                         print("STARTTIME:", datetime.datetime.fromtimestamp(assetJson['startTime']))
                         print("ENDTIME:", datetime.datetime.fromtimestamp(assetJson['endTime']))
 
-    def process_collection_movies(self, collection):
+    def process_collection_movies(self, collection, session: LoginSession = None):
         # pylint: disable=too-many-branches
         if collection['collectionLayout'] == 'BasicCollection':
             print('\t{0}, type: {1}'.format(collection['title'], collection['contentType']))
@@ -264,7 +263,7 @@ class TestWebCalls(TestBase):
         for item in collection['items']:
             if item['type'] == 'LINK':
                 try:
-                    _ = self.session.obtain_grid_screen_details(item['gridLink']['id'])
+                    _ = session.obtain_grid_screen_details(item['gridLink']['id'])
                     print('\t\t{0}:{1}'.format(item['type'], item['gridLink']['title']))
                 # pylint: disable=broad-exception-caught
                 except Exception:
@@ -279,17 +278,17 @@ class TestWebCalls(TestBase):
                     else:
                         print('\t\t{0}-{1}:{2}'.format(item['type'], item['assetType'], 'NO TITLE'))
                 if item['type'] == 'SERIES':
-                    overview = self.session.obtain_series_overview(item['id'])
+                    overview = session.obtain_series_overview(item['id'])
                     print('\t\t{0}'.format(','.join(overview['genres'])))
                     print('\t\t{0}'.format(overview['synopsis']))
-                    episodes = self.session.get_episode_list(item['id'])
+                    episodes = session.get_episode_list(item['id'])
                     for season in episodes['seasons']:
-                        self.process_collection_movies_season(season)
+                        self.process_collection_movies_season(season, session)
                 elif item['type'] == 'ASSET':
                     if 'brandingProviderId' in item:
-                        overview = self.session.obtain_asset_details(item['id'], item['brandingProviderId'])
+                        overview = session.obtain_asset_details(item['id'], item['brandingProviderId'])
                     else:
-                        overview = self.session.obtain_asset_details(item['id'])
+                        overview = session.obtain_asset_details(item['id'])
                     if 'genres' in overview:
                         print('\t\t{0}'.format(','.join(overview['genres'])))
                     print('\t\t{0}'.format(overview['synopsis']))
@@ -300,7 +299,7 @@ class TestWebCalls(TestBase):
                             instance['offers'][0]['entitled']
                             , instance['offers'][0]['price']))
 
-    def process_collection_movies_season(self, season):
+    def process_collection_movies_season(self, season, session: LoginSession):
         print('\t\t\tSeizoen {0}, afl: {1}'.format(
             season['season']
             , season['totalEpisodes']))
@@ -319,7 +318,7 @@ class TestWebCalls(TestBase):
                 , title, episode['source']['titleId']
                 , entitled
                 , episodeType))
-            details = self.session.obtain_asset_details(episode['id'])
+            details = session.obtain_asset_details(episode['id'])
             if 'instances' in details:
                 print('\t\t\tInstances found')
             else:

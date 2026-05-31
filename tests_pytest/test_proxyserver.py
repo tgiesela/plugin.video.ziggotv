@@ -6,28 +6,27 @@ from time import sleep
 from resources.lib.proxyserver import ProxyServer
 from resources.lib.utils import ProxyHelper, WebException
 from resources.lib.webcalls import LoginSession
-from tests.test_base import TestBase
 
+class TestProxyServer:
+    # def __init__(self, websession):
+    #     super().__init__(websession)
+    #     self.lock = threading.Lock()
+    #     self.port = 6868
+    #     self.address = '127.0.0.1'
+    #     websession.session.printNetworkTraffic = True
+    #     self.helper = ProxyHelper(websession.addon)
 
-class TestProxyServer(TestBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.lock = threading.Lock()
-        self.port = 6868
-        self.address = '127.0.0.1'
-        self.session.printNetworkTraffic = True
-        self.helper = ProxyHelper(self.addon)
-
-    def test_start_proxy(self):
-        self.do_login()
+    def test_start_proxy(self, websession):
+        websession.do_login()
         thread = None
         proxyServer = None
+        lock = threading.Lock()
         try:
-            proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
+            proxyServer = ProxyServer(websession.addon, ('127.0.0.1', 6868), lock)
             thread = threading.Thread(target=proxyServer.serve_forever)
             thread.start()
             sleep(1)
-            rslt = self.helper.dynamic_call(LoginSession.login, username='bad', password='bad')
+            rslt = ProxyHelper(websession.addon).dynamic_call(LoginSession.login, username='bad', password='bad')
             print(rslt)
             sleep(1)
             proxyServer.shutdown()
@@ -46,19 +45,20 @@ class TestProxyServer(TestBase):
                 thread.join()
             print('ProxyServer stopped')
 
-    def test_dynamic_call(self):
-        self.do_login()
+    def test_dynamic_call(self, websession):
+        websession.do_login()
         thread = None
         proxyServer = None
+        lock = threading.Lock()
         try:
-            proxyServer = ProxyServer(self.addon, (self.address, self.port), self.lock)
+            proxyServer = ProxyServer(websession.addon, ('127.0.0.1', 6868), lock)
             thread = threading.Thread(target=proxyServer.serve_forever)
             thread.start()
             sleep(1)
             events = []
             shows = ['crid:~~2F~~2Fgn.tv~~2F26434552~~2FSH041927000000']
             channelId = 'NL_000001_019401'
-            rslt = self.helper.dynamic_call(LoginSession.delete_recordings,
+            rslt = ProxyHelper(websession.addon).dynamic_call(LoginSession.delete_recordings,
                                             events=events,
                                             shows=shows,
                                             channelId=channelId)

@@ -78,6 +78,13 @@ class Channel:
         return self.jsonData.get('linearProducts')
     # pylint: enable=missing-function-docstring
 
+    def _get_isa_max_resolution(self):
+        """
+        Function to get the maximal resolution allowed by inputstream adaptive (ISA)
+        @return: the maximal resolution allowed by ISA
+        """
+        return xbmcaddon.Addon('inputstream.adaptive').getSetting('adaptivestream.res.secure.max')
+    
     def get_locator(self, disableFullHD: bool = False) -> Tuple[str, str]:
         """
         Function to get the correct locator(url) to play a channel. The selected locator
@@ -89,7 +96,7 @@ class Channel:
         @return: URL of the channel
         """
         try:
-            maxResDrm = xbmcaddon.Addon('inputstream.adaptive').getSetting('adaptivestream.res.secure.max')
+            maxResDrm = self._get_isa_max_resolution()
             hdAllowed = maxResDrm in ['auto', '1080p', '2K', '4K', '1440p']
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -107,7 +114,6 @@ class Channel:
             avc = self.locators['Default']
         return avc, assetType
 
-
 class ChannelList(UserList):
     # pylint: disable=too-many-instance-attributes
     """
@@ -120,7 +126,7 @@ class ChannelList(UserList):
         self.__channelnumbers: List[int] = self.__create_list()
         self.filteredChannels: List[Channel] = []
         self.entitlements = entitlements
-        self.suppressHidden = True
+        self._suppressHidden = True
         self._entitledOnly = False
         self.entitlementList = []
         i = 0
@@ -139,11 +145,11 @@ class ChannelList(UserList):
     # pylint: disable=missing-function-docstring
     @property
     def hiddenSuppressed(self):
-        return self.suppressHidden
+        return self._suppressHidden
 
     @hiddenSuppressed.setter
     def hiddenSuppressed(self, value):
-        self.suppressHidden = value
+        self._suppressHidden = value
 
     @property
     def entitledOnly(self):
@@ -163,8 +169,8 @@ class ChannelList(UserList):
         """
         self.filteredChannels = []
         for channel in self.channels:
-            if channel.isHidden and self.suppressHidden:
-                continue
+            if channel.isHidden and self._suppressHidden:
+                pass
             if self.entitledOnly:
                 if self.is_entitled(channel):
                     self.filteredChannels.append(channel)
@@ -203,6 +209,8 @@ class ChannelList(UserList):
         @param channel:
         @return:
         """
+        if channel.replayInfo.replayProducts is None:
+            return False
         for product in channel.replayInfo.replayProducts:
             if product['entitlementId'] in self.entitlementList:
                 if product['allowStartOver']:
