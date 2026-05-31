@@ -3,6 +3,7 @@ Test for singleton approach (may be an option for a future refactor)
 """
 from resources.lib.videohelpers import VideoHelpers
 
+#pylint: disable=too-few-public-methods
 class TestVideoPlayer:
     """
     Test class for singleton approach (may be an option for a future refactor)

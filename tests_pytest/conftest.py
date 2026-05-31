@@ -6,7 +6,6 @@ from time import sleep
 
 import pytest
 
-import xbmcaddon
 from resources.lib.globals import G
 from resources.lib.proxyserver import ProxyServer
 from resources.lib.servicemonitor import HttpProxyService
@@ -122,7 +121,7 @@ class LocalSession(Session):
             self.helper.dynamic_call(LoginSession.refresh_entitlements)
         sleep(1)
         print("Proxy server started and logged in")
-        
+
     def stop_proxy_server(self):
         print("Stopping proxy server")
         self.svc.stop_http_server()

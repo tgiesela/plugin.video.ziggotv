@@ -458,6 +458,7 @@ class ProxyServer(http.server.ThreadingHTTPServer):
                 request.send_header('content-type', 'text/html')
                 request.end_headers()
                 request.wfile.write(exc.response)
+            #pylint: disable=broad-exception-caught
             except Exception as exc:
                 request.send_response(500)
                 request.send_header('content-type', 'text/html')

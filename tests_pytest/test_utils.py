@@ -1,7 +1,6 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 
 import datetime
-import unittest
 from time import sleep
 
 from resources.lib import utils
@@ -9,7 +8,7 @@ from resources.lib.channel import SavedChannelsList
 from resources.lib.recording import SavedStateList
 
 class TestUtils:
-    timercount = 0
+    TIMERCOUNT = 0
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
     #     self.tmr: utils.TimeSignal
@@ -17,8 +16,8 @@ class TestUtils:
     #     self.timercount = 0
 
     def timer_func(self):
-        print(f"Timer_expired: count={self.timercount}")
-        self.timercount += 1
+        print(f"Timer_expired: count={self.TIMERCOUNT}")
+        self.TIMERCOUNT += 1
 
     def test_times(self):
         rslt = utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ')

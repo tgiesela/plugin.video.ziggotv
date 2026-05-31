@@ -503,7 +503,7 @@ class SeriesList:
                 self.seriesDetails.remove(seriedetails)
                 break
         details = self.helper.dynamic_call(LoginSession.obtain_series_overview, seriesId=serie.id)
-        if not 'seasons' in details:
+        if 'seasons' not in details:
             seasons = self.helper.dynamic_call(LoginSession.get_episode_list, item=serie.id)
             if seasons is not None:
                 details.update({'seasons': seasons['seasons']})
@@ -518,7 +518,6 @@ class SeriesList:
             xbmc.log(f'details: {details}',xbmc.LOGDEBUG)
             xbmc.log(f'Parsing of details of series failed, for series-id: {serie.id}, Exception{exc}',xbmc.LOGERROR)
             return 1
-
 
     def update_episode_details(self, episode: Episode):
         """

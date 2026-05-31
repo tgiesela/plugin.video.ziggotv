@@ -45,7 +45,7 @@ class TestChannels:
             c: Channel = x
             assert not c.isHidden, f'Channel {c.name} is hidden but hiddenSuppressed is True'
             assert cl.is_entitled(c), f'Channel {c.name} is not entitled but entitledOnly is True'
-                
+
         url, assetType = clByLcn[0].get_locator(False)
         assert url is not None
         assert assetType is not None
@@ -54,14 +54,15 @@ class TestChannels:
         assert assetType is not None
 
         print(clByLcn[0].streamInfo.externalStreamingProtocols)
-                    
+
     @patch.object(Channel, '_get_isa_max_resolution')
     @patch.object(xbmcaddon.Addon, 'getSettingBool')
     def test_channel_exceptions(self, mocked_setting_bool, mocked_get_isa_max_resolution, activewebsession):
         activewebsession.session.refresh_channels()
         activewebsession.session.refresh_entitlements()
         channels = activewebsession.session.get_channels()
-        assert len(channels) > 0, "No channels found, please make sure there are channels available for the test account"
+        assert len(channels) > 0, \
+            "No channels found, please make sure there are channels available for the test account"
         _ = activewebsession.session.get_entitlements()
         channel = channels[0]
         mocked_setting_bool.return_value = True
@@ -90,7 +91,7 @@ class TestChannels:
         if setting_name == 'full-hd':
             return 'auto'
         return None
-    
+
     def test_channellist(self, activewebsession):
         activewebsession.session.refresh_channels()
         activewebsession.session.refresh_entitlements()
@@ -118,7 +119,7 @@ class TestChannels:
 
         clByName: list[Channel] = cl.channels_by_name()
         assert len(clByName) > 0
-        
+
         channel = cl.channels[0]
         found_channel = cl.find_channel_by_id(channel.id)
         assert found_channel is not None
@@ -155,7 +156,7 @@ class TestChannels:
         savedChannelsList.add(clByLcn[1].id, clByLcn[1].name)
         savedChannelsList.save()
         assert len(savedChannelsList.get_all()) == 2
-        
+
     def test_channel_sort(self, activewebsession):
         activewebsession.session.refresh_channels()
         activewebsession.session.refresh_entitlements()
@@ -168,7 +169,7 @@ class TestChannels:
             c: Channel = channel
             item = ListItem(label=c.name)
             item.getVideoInfoTag().setUniqueIDs(
-                {'ziggochannelid': channel.id, 
+                {'ziggochannelid': channel.id,
                  'ziggochannelnumber': channel.logicalChannelNumber}, defaultuniqueid='ziggochannelnumber')
             listing.append(item)
             print(f'Channel {c.logicalChannelNumber} - {c.name}')

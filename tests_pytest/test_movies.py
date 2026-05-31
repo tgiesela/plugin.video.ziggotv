@@ -11,6 +11,7 @@ class InvalidAgeError(Exception):
         self.msg = msg
         super().__init__(self.msg)
 
+#pylint: disable=too-few-public-methods
 class TestMovies:
 
     def test_series(self, activewebsession):
@@ -35,14 +36,16 @@ class TestMovies:
                             series.update_episode_details(episode)
                         if episode.isEvent():
                             event = series.get_event(episode)
-                            print(event.id)
+                            print(f'Event: {event.id}')
+                        else:
+                            print(f'Episode: {episode.id}, title: {episode.title}')
                 print(f'Serie: {serie.id}, title: {serie.title}')
             series.save()
             movies = MovieList(activewebsession.addon, screen['id'])
             for movie in movies.movies:
                 if not movie.hasdetails:
                     movies.update_details(movie)
-                print(f'Movie: {movie.id}, title: {movie.asset.title}')
+                print(f'Movie: {movie.id}, title: {movie.title}, image: {movie.image}')
             movies.save()
 
 # if __name__ == '__main__':

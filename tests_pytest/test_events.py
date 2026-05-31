@@ -5,6 +5,7 @@ from resources.lib import utils
 from resources.lib.channelguide import ChannelGuide
 from resources.lib.events import EventList
 
+#pylint: disable=too-few-public-methods
 class TestEvents:
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
@@ -52,9 +53,13 @@ class TestEvents:
             testevent = channel.events.get_current_event()
             testevent.details = activewebsession.session.get_event_details(testevent.id)
             print('IsSeries: {0}'.format(testevent.details.isSeries))
-            print(f'testevent.canReplay: {testevent.canReplay}, canRecord: {testevent.canRecord}, isPlaying: {testevent.isPlaying}')
+            print(f'testevent.canReplay: {
+                testevent.canReplay}, canRecord: {testevent.canRecord}, isPlaying: {
+                    testevent.isPlaying}')
             testevent = channel.events.get_next_event(testevent)
-            print(f'testevent.canReplay: {testevent.canReplay}, canRecord: {testevent.canRecord}, isPlaying: {testevent.isPlaying}')
+            print(f'testevent.canReplay: {
+                testevent.canReplay}, canRecord: {testevent.canRecord}, isPlaying: {
+                    testevent.isPlaying}')
             for evt in evts:
                 print('    Event: {0}, duration: {1}, start: {2}, end: {3}'.format(
                     evt.title,

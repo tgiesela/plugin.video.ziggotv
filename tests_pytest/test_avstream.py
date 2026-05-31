@@ -27,7 +27,7 @@ class TestAvStream:
         assert result is not None
         assert result.streamInfo is not None
         assert result.streamInfo.token is not None
-        
+
         activewebsession.helper.dynamic_call(StreamSession.start_stream,streamid=result.id)
         activewebsession.helper.dynamic_call(StreamSession.stop_stream,streamid=result.id)
 
@@ -153,6 +153,9 @@ class TestAvStream:
         movie: Movie
         for movie in movies.movies:
             movies.update_details(movie)
+            payedInstance, _ = movie.asset.find_entitled_offer(OfferType.PAYED)
+            if movie.asset.goPlayable and payedInstance:
+                print(f'Found playable movie: {movie.asset.title}')
             playableInstance, _ = movie.asset.find_entitled_offer(OfferType.FREE)
             if movie.asset.goPlayable and playableInstance:
                 print(f'Found playable movie: {movie.asset.title}')

@@ -84,7 +84,7 @@ class Channel:
         @return: the maximal resolution allowed by ISA
         """
         return xbmcaddon.Addon('inputstream.adaptive').getSetting('adaptivestream.res.secure.max')
-    
+
     def get_locator(self, disableFullHD: bool = False) -> Tuple[str, str]:
         """
         Function to get the correct locator(url) to play a channel. The selected locator

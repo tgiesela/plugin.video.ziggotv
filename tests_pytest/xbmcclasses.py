@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 import xbmcaddon
 import xbmcgui
 import xbmc
@@ -45,7 +46,7 @@ class ListItem(xbmcgui.ListItem):
             super().__init__()
             self.uniqueIDs = {}
             self.defaultuniqueid = ''
-            
+
         def setUniqueIDs(self, uniqueIDs: dict, defaultuniqueid: str = '') -> None:
             for key, value in uniqueIDs.items():
                 self.uniqueIDs.update({key: value})
@@ -58,10 +59,9 @@ class ListItem(xbmcgui.ListItem):
         super().__init__(*args, **kwargs)
         self.videoInfoTag = self.InfoTagVideo()
         self.label = kwargs.get('label', '')
-        
+
     def getVideoInfoTag(self):
         return self.videoInfoTag
-    
+
     def getLabel(self):
         return self.label
-        

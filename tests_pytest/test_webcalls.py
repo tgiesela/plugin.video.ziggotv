@@ -20,7 +20,7 @@ class TestWebCalls:
         session.login(credentials['username'], credentials['password'])
         assert len(session.customerInfo) != 0
         session.refresh_entitlements()
-        
+
     def test_login(self, websession):
         websession.cleanup_all()
         websession.session = LoginSession(websession.addon)
