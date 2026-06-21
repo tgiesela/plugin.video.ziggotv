@@ -228,11 +228,12 @@ class ListitemHelper:
                 else:
                     episode = f'S{recording.seasonNumber}-E?'
         elif recording.source == 'single':
-            if hasattr(recording,'episodeTitle'):
-                episode = recording.episodeTitle
-            elif hasattr(recording,'title'):
+            if hasattr(recording,'title'):
                 episode = recording.title
-            else:
+            if episode is None or episode == '':
+                if hasattr(recording,'episodeTitle'):
+                    episode = recording.episodeTitle
+            if episode is None or episode == '':
                 start = utils.DatetimeHelper.from_utc_to_local(start)
                 episode = start.strftime('%Y-%m-%d %H:%M')
         else:

@@ -48,7 +48,7 @@ class Channel:
         self.locators = channelJson.get('locators')
         self.locators['Default'] = channelJson.get('locator')
         self.replayInfo = self.ReplayInfo(channelJson)
-        self.genre = channelJson.get('genre')
+        self.genre = channelJson.get('genre',[])
         self.streamInfo = Channel.StreamInfo(channelJson)
 
     # properties

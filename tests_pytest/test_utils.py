@@ -16,8 +16,9 @@ class TestUtils:
     #     self.timercount = 0
 
     def timer_func(self):
-        print(f"Timer_expired: count={self.TIMERCOUNT}")
-        self.TIMERCOUNT += 1
+        print(f"Timer_expired: count={TestUtils.TIMERCOUNT}")
+        TestUtils.TIMERCOUNT += 1
+        print(f"Timer_expired: count={TestUtils.TIMERCOUNT}")
 
     def test_times(self):
         rslt = utils.DatetimeHelper.to_unix('2021-06-03T18:01:16.974Z', '%Y-%m-%dT%H:%M:%S.%fZ')

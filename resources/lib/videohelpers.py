@@ -76,7 +76,7 @@ class VideoHelpers:
         return cls._INSTANCE
 
     def __init__(self, addon: xbmcaddon.Addon):
-        if self._INITIALIZED:
+        if VideoHelpers._INITIALIZED:
             return
         self.addon = addon
         self.helper = ProxyHelper(addon)
@@ -95,7 +95,7 @@ class VideoHelpers:
         # This can be set to call a function when the videoplayer stops
         self.requestorCallbackStop = None
         self.videoitem: VideoItem = None
-        self._INITIALIZED = True
+        VideoHelpers._INITIALIZED = True
 
     def user_wants_switch(self):
         """
