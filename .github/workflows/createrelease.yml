@@ -1,0 +1,48 @@
+name: Create tag and release
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@master
+
+      - name: extract addon version
+        id: extractversion
+        uses: ./.github/actions/extractversion
+        with: 
+          addon: addon.xml
+
+      - name: add version tag
+        id: addversiontag
+        uses: ./.github/actions/addtag
+        with: 
+          version: ${{steps.extractversion.outputs.ADDON_VERSION}}
+
+      - name: createzipfiles
+        id: createzipfiles
+        uses: ./.github/actions/createzipfiles
+        with:
+          version: ${{ steps.extractversion.outputs.ADDON_VERSION }}
+          versiontag: ${{ steps.addversiontag.outputs.VERSION_TAG }}
+          zipfilelocation: repo
+          branch: master
+
+      - name: release
+        uses: ncipollo/release-action@v1
+        env:
+          ADDON_VERSION: ${{ steps.extractversion.outputs.ADDON_VERSION }}
+          VERSION_TAG: ${{ steps.addversiontag.outputs.VERSION_TAG }}
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          name: "${{ env.VERSION_TAG }}"
+          tag: "${{ env.VERSION_TAG }}"
+          artifacts: "${{steps.createzipfiles.outputs.PLUGINZIPFILE}},${{steps.createzipfiles.outputs.REPOSITORYZIPFILE}}"

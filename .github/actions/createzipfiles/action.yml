@@ -1,0 +1,116 @@
+name: createzipfiles
+inputs:
+  version:
+    description: 'The version of the addon (content of addon.xml)'
+    required: true
+    default: 0.0.0
+  versiontag:
+    description: 'The tag of the version for the release (git tag)'
+    required: true
+    default: v0.0.0
+  zipfilelocation:
+    description: 'The location of the zipfile'
+    required: false
+    default: 'repo'
+  branch:
+    description: 'Branch in repository.ziggotv to work on'
+    default: 'master'
+outputs:
+  PLUGINZIPFILE:
+    description: 'The location of the plugin zipfile'
+    value: ${{ steps.zipfile-creator.outputs.PLUGINZIPFILE }}
+  REPOSITORYZIPFILE:
+    description: 'The location of the repository zipfile'
+    value: ${{ steps.zipfile-creator.outputs.REPOSITORYZIPFILE }}
+    
+permissions:
+  contents: write
+
+runs:
+  using: 'composite'
+  steps:
+    - name: checkout
+      uses: actions/checkout@master
+      with: 
+        repository: tgiesela/repository.ziggotv
+        path: repopath
+        ref: ${{ inputs.branch }}
+        token: ${{ github.token }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        architecture: 'x64'
+
+    - name: Setup virtual environment
+      id: python-venv
+      working-directory: repopath
+      run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+  
+    - name: get repository config
+      id: get-repository-config
+      run: |
+        import json
+        import os
+        repoversion = '0.0.0'
+        zipdir = ''
+        with open('repopath/config/config_action.json') as conf:
+            config = json.load(conf)    
+            repoversion = config['config']['repository']['version']
+            config['config']['locations']['url'] = 'https://raw.githubusercontent.com/tgiesela/repository.ziggotv/${{inputs.branch}}/'
+            config['config']['addons'][0] = config['config']['addons'][0] + '#${{inputs.versiontag}}'
+            zipdir = os.getcwd() + '/' + '${{inputs.zipfilelocation}}'
+            config['config']['locations']['outputfolder'] = zipdir
+            with open("repopath/config/config_action_tmp.json", "w") as newconf:
+              json.dump(config, newconf)
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as go:    
+            go.write("REPOSITORY_VERSION={0}\n".format(repoversion))
+            go.write(f"ZIPDIR={zipdir}\n")
+      shell: python
+
+    - name: zipfile creator
+      id: zipfile-creator
+      env:
+        ZIPDIR: ${{steps.get-repository-config.outputs.ZIPDIR}}
+      run: |
+          mkdir -p $ZIPDIR
+          ADDON_VERSION=${{inputs.version}}
+          REPOSITORY_VERSION=${{steps.get-repository-config.outputs.REPOSITORY_VERSION}}
+          cd repopath
+          source venv/bin/activate
+          export PYTHONPATH=./lib:${PYTHONPATH}
+          python create_repo.py -c config_action_tmp.json
+          rm -f config/config_action_tmp.json
+          cd -
+          echo PLUGINZIPFILE=$ZIPDIR/plugin.video.ziggotv/plugin.video.ziggotv-${ADDON_VERSION}.zip >> ${GITHUB_OUTPUT}
+          echo REPOSITORYZIPFILE=$ZIPDIR/repository.ziggotv/repository.ziggotv-${REPOSITORY_VERSION}.zip >> ${GITHUB_OUTPUT}
+
+    - name: setup git config
+      working-directory: repopath
+      run: |
+        git config --local user.email "github-actions@users.noreply.github.com"
+        git config --local user.name "github-actions"
+
+    - name: store zipfiles in repository
+      id: store-zipfiles
+      working-directory: repopath
+      env:
+        ZIPDIR: ${{steps.get-repository-config.outputs.ZIPDIR}}
+      run: |
+        cp -R ${ZIPDIR}/* ./ziggotv/
+
+        cd ziggotv
+        FOLDERS=$(find ./* -maxdepth 0 -type d)
+        for f in $FOLDERS; do
+          ls $f/*.zip| sort --version-sort | head -n -2 | xargs rm -f
+          ls $f/*.zip.sha256| sort --version-sort | head -n -2 | xargs rm -f
+        done
+        cd -
+
+        git add -A
+        git commit -m 'Added zipfile version ${{inputs.version}}'
+        git push

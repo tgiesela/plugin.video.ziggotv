@@ -1,0 +1,37 @@
+name: extracttag
+inputs:
+  addon:
+    required: false
+outputs:
+  ADDON_VERSION:
+    description: 'The version of the addon'
+    value: ${{ steps.extractversion.outputs.ADDON_VERSION }}
+    
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        architecture: 'x64'
+
+    - name: Install dependencies
+      id: python-venv
+      run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+    - name: extract-version
+      id: extractversion
+      run: |
+        import xml.etree.ElementTree
+        import os
+
+        x = xml.etree.ElementTree.ElementTree()
+        p = x.parse('${{inputs.addon}}')
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as go:
+          go.write("ADDON_VERSION={0}\n".format(p.attrib['version']))
+      shell: python

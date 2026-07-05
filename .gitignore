@@ -19,3 +19,6 @@ entitlements.json
 session.json
 customer.json
 .coverage
+.input
+.secrets
+.vars

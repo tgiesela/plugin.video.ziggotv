@@ -1,0 +1,47 @@
+name: addtag
+
+inputs:
+  version:
+    description: 'The name of the version tag'
+    required: false
+outputs:
+  VERSION_TAG:
+    description: 'The version of the addon'
+    value: ${{ steps.addtag.outputs.VERSION_TAG }}
+
+runs:
+  using: 'composite'
+  steps:
+  # This step is only run in act, because it copies our local repository with changes
+  # which prevents git checkout of the version tag
+  - name: checkout
+    uses: actions/checkout@v4
+    with:
+      ref: master
+      token: ${{ github.token }}
+
+  - name: setup git config
+    run: |
+      git config --local user.email "github-actions@users.noreply.github.com"
+      git config --local user.name "github-actions"
+  
+  - name: add-tag
+    id: addtag
+    continue-on-error: true
+    run: |
+        set -e
+        TAG=v${{inputs.version}}
+        echo VERSION_TAG=$TAG >> ${GITHUB_OUTPUT}
+        RSLT=$(git tag -l | grep ${TAG} || true)
+        if [ ! -z "${RSLT}" ]; then 
+          echo "TAG $TAG ALREADY EXISTS" 
+        else 
+          echo "TAG $TAG IS NEW"
+          git tag -a $TAG -m 'tag set by workflow action'
+          git push origin tag $TAG
+        fi
+       
+  - name: checkout locally again
+    if: ${{ env.ACT }}
+    uses: actions/checkout@master
+  
