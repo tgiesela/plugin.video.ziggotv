@@ -35,7 +35,7 @@ runs:
         repository: tgiesela/repository.ziggotv
         path: repopath
         ref: ${{ inputs.branch }}
-        token: ${{ github.token }}
+        token: ${{ secrets.ZIGGOTVTOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v6
