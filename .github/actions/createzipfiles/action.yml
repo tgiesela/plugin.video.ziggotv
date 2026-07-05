@@ -15,6 +15,10 @@ inputs:
   branch:
     description: 'Branch in repository.ziggotv to work on'
     default: 'master'
+  token:
+    description: 'Token to access the repository'
+    required: true
+
 outputs:
   PLUGINZIPFILE:
     description: 'The location of the plugin zipfile'
@@ -35,7 +39,7 @@ runs:
         repository: tgiesela/repository.ziggotv
         path: repopath
         ref: ${{ inputs.branch }}
-        token: ${{ secrets.ZIGGOTVTOKEN }}
+        token: ${{ inputs.token }}
 
     - name: Set up Python
       uses: actions/setup-python@v6

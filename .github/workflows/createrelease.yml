@@ -33,6 +33,7 @@ jobs:
           versiontag: ${{ steps.addversiontag.outputs.VERSION_TAG }}
           zipfilelocation: repo
           branch: master
+          token: ${{ secrets.ZIGGOTVTOKEN }}
 
       - name: release
         uses: ncipollo/release-action@v1
