@@ -50,6 +50,7 @@ runs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
+      shell: bash
   
     - name: get repository config
       id: get-repository-config
@@ -88,12 +89,14 @@ runs:
           cd -
           echo PLUGINZIPFILE=$ZIPDIR/plugin.video.ziggotv/plugin.video.ziggotv-${ADDON_VERSION}.zip >> ${GITHUB_OUTPUT}
           echo REPOSITORYZIPFILE=$ZIPDIR/repository.ziggotv/repository.ziggotv-${REPOSITORY_VERSION}.zip >> ${GITHUB_OUTPUT}
+      shell: bash
 
     - name: setup git config
       working-directory: repopath
       run: |
         git config --local user.email "github-actions@users.noreply.github.com"
         git config --local user.name "github-actions"
+      shell: bash
 
     - name: store zipfiles in repository
       id: store-zipfiles
@@ -114,3 +117,4 @@ runs:
         git add -A
         git commit -m 'Added zipfile version ${{inputs.version}}'
         git push
+      shell: bash

@@ -24,6 +24,7 @@ runs:
     run: |
       git config --local user.email "github-actions@users.noreply.github.com"
       git config --local user.name "github-actions"
+    shell: bash
   
   - name: add-tag
     id: addtag
@@ -40,6 +41,7 @@ runs:
           git tag -a $TAG -m 'tag set by workflow action'
           git push origin tag $TAG
         fi
+    shell: bash
        
   - name: checkout locally again
     if: ${{ env.ACT }}

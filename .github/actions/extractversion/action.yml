@@ -22,6 +22,7 @@ runs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
+      shell: bash
 
     - name: extract-version
       id: extractversion
