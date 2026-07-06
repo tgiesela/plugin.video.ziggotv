@@ -15,7 +15,7 @@ runs:
   # This step is only run in act, because it copies our local repository with changes
   # which prevents git checkout of the version tag
   - name: checkout
-    uses: actions/checkout@v4
+    uses: actions/checkout@master
     with:
       ref: master
       token: ${{ github.token }}
